@@ -4,6 +4,16 @@
 
 期限は設けず、6つのステージをチェックリストで区切って進む。最後に、閉域でも動く監視ダッシュボード「watchdeck」（Go＋PostgreSQL＋TypeScript/React）を自力で完成させる。
 
+## 使い方
+
+このリポジトリはテンプレート。ここに直接書き込まず、コピーして作った自分のリポジトリの `main` で学習を進める。
+
+```sh
+gh repo create offgrid-log --template kom3da/offgrid --private --clone
+```
+
+まっさらなマシンからの手順（Windows・macOS・Linux共通。学習はすべてUbuntuの中で行う）は、[はじめかた](docs/00a-getting-started.md)にある。カリキュラムが改訂されたら、`./scripts/update-curriculum.sh <版>` で取り込む。
+
 ## 最初に読む
 
 ブラウザで読む場合：<https://kom3da.github.io/offgrid/>（`docs/` と同じ内容）
@@ -11,6 +21,7 @@
 | ドキュメント | 内容 |
 | --- | --- |
 | [docs/00-overview.md](docs/00-overview.md) | 目的、ゴール像、前提 |
+| [docs/00a-getting-started.md](docs/00a-getting-started.md) | はじめかた（Day 0の環境準備、毎回の始め方と終わり方） |
 | [docs/01-roadmap.md](docs/01-roadmap.md) | 6ステージの構成と配分 |
 | [docs/02-ai-free-day.md](docs/02-ai-free-day.md) | 週1回の「AIなしデー」のルールと1日のテンプレート |
 | [docs/03-foundation.md](docs/03-foundation.md) | Stage 0：コンピュータ・Linux・Git・ネットワーク・HTTP（F1〜F10） |
@@ -46,7 +57,7 @@
 ├── CHANGELOG.md       # 改訂履歴
 ├── docs/              # カリキュラム本体
 ├── drills/
-│   ├── foundation/    # Stage 0（F01-binary/ など）
+│   ├── foundation/    # Stage 0（F01-binary/ など。README.md が課題シート）
 │   ├── go/            # Go（G02-fizzbuzz/ など）
 │   ├── ts/            # HTML・JS・TS（T03-todo/ など）
 │   ├── sql/           # PostgreSQL（D03-aggregate/ など）
@@ -57,8 +68,8 @@
 ├── capstone/          # 卒業制作 watchdeck
 ├── logs/              # AIなしデーの振り返り（YYYY/MM-DD.md）
 ├── templates/         # 振り返りテンプレート
-├── prompts/           # デバッグドリル生成・改訂用プロンプト
-├── scripts/           # 補助スクリプト（GitHub への初回 push）
+├── prompts/           # AIに頼むときの文面（デバッグドリル、課題シート、週次レビュー、採点、実技、改訂）
+├── scripts/           # 補助スクリプト（ダミーのログ生成、カリキュラムの取り込み）
 └── site/              # docs/ をブラウザで読むためのサイト（Astro Starlight）
 ```
 
@@ -91,7 +102,7 @@ AIなしデーの終わりに `git tag noai-YYYY-MM-DD` を付ける。
 
 ## 版と改訂
 
-版はカレンダー形式（`v2026.10`）。改訂の手順は [docs/12-revision.md](docs/12-revision.md) を参照。
+版はカレンダー形式（`v2026.10`、同じ月の2回目以降は `v2026.10.1`）。改訂の手順は [docs/12-revision.md](docs/12-revision.md) を参照。
 
 ## 注意
 

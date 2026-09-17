@@ -3,7 +3,9 @@
     "allow": [
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(./scripts/push-to-github.sh)",
-      "Bash(python3 -)"
+      "Bash(python3 -)",
+      "Bash(limactl shell --workdir / offgrid bash -lc ' *)",
+      "Bash(limactl shell *)"
     ]
   }
 }

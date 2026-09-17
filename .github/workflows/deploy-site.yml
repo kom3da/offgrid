@@ -22,6 +22,8 @@ concurrency:
 
 jobs:
   build:
+    # Only the template repository publishes the site; copies made from the template skip this
+    if: github.repository == 'kom3da/offgrid'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

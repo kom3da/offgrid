@@ -2,6 +2,18 @@
 
 版はカレンダー形式（`vYYYY.MM`）。
 
+## v2026.10.1
+
+「まっさらなマシンから始める学習者」の立場で通して見つかった不足の補完。
+
+- テンプレート化：学習者は `gh repo create --template` で自分のリポジトリを作り、その `main` で進める。改訂は `scripts/update-curriculum.sh <版>` で取り込む
+- 環境：全員がUbuntuで学習する方針に統一（WindowsはWSL2、macOSはLima、Linuxはそのまま）。macOS向けの注記を削除
+- [はじめかた](docs/00a-getting-started.md)を新設：Day 0の準備、F6までの「決まり文句」、初回のウォームアップ。macOS＋Limaの手順は実機で検証済み、WSL2は未検証
+- Stage 0の課題シート（`drills/foundation/F01〜F10/README.md`）と、ダミーのアクセスログを作る `scripts/gen-access-log.sh` を追加
+- `prompts/` に、週次レビュー、`explain.md` の採点、実技の出題、課題シート生成を追加
+- `PROGRESS.md` にユニットごとのチェック欄を追加
+- 作者のアカウントに依存していた `scripts/push-to-github.sh` を削除
+
 ## v2026.10
 
 独立レビューの指摘を受けた改訂。
