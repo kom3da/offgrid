@@ -11,12 +11,9 @@ on:
       - "templates/retrospective.md"
       - "PROGRESS.md"
       - ".github/workflows/tool.yml"
+  # PR では絞り込まない。必須チェックにしているので、走らないと
+  # 「待ち」のまま止まってしまう（paths で絞ると、それが起きる）
   pull_request:
-    paths:
-      - "tools/offgrid/**"
-      - "drills/**/TASKS.md"
-      - "templates/retrospective.md"
-      - "PROGRESS.md"
   workflow_dispatch:
 
 jobs:

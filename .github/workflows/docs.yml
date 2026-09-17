@@ -15,16 +15,9 @@ on:
       - "PROGRESS.md"
       - ".github/check-docs.py"
       - ".github/workflows/docs.yml"
+  # PR では絞り込まない。必須チェックにしているので、走らないと
+  # 「待ち」のまま止まってしまう（paths で絞ると、それが起きる）
   pull_request:
-    paths:
-      - "docs/**"
-      - "drills/**/TASKS.md"
-      - "prompts/**"
-      - "templates/**"
-      - "README.md"
-      - "CLAUDE.md"
-      - "PROGRESS.md"
-      - ".github/check-docs.py"
   workflow_dispatch:
 
 jobs:
