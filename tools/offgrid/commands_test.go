@@ -20,14 +20,15 @@ func withInput(t *testing.T, answers ...string) {
 }
 
 // capture は、コマンドが画面に出したものを受け取る（学習者が読む文を確かめるため）。
+// 標準出力と標準エラーの両方。selftest は、問題の詳細を標準エラーに出す。
 func capture(t *testing.T, run func()) string {
 	t.Helper()
-	prev := os.Stdout
+	prev, prevErr := os.Stdout, os.Stderr
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.Stdout = w
+	os.Stdout, os.Stderr = w, w
 	done := make(chan string)
 	go func() {
 		var b strings.Builder
@@ -43,7 +44,7 @@ func capture(t *testing.T, run func()) string {
 	}()
 	run()
 	w.Close()
-	os.Stdout = prev
+	os.Stdout, os.Stderr = prev, prevErr
 	return <-done
 }
 

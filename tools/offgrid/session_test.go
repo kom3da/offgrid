@@ -308,3 +308,262 @@ func TestCheckPlanPerTrack(t *testing.T) {
 		t.Errorf("D: 実行するコマンドを見せていない: %q", note)
 	}
 }
+
+// mkSheet は、検査用に別トラックの課題シートを足す（checkPlan のトラック別の分岐のため）。
+func mkSheet(t *testing.T, root, track, dirName, unit, theme string) string {
+	t.Helper()
+	dir := filepath.Join(root, "drills", track, dirName)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	body := strings.Replace(sampleSheet, `title: "F3 テキスト処理"`,
+		`title: "`+unit+" "+theme+`"`, 1)
+	if err := os.WriteFile(filepath.Join(dir, "TASKS.md"), []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+// pastLogs は、済んだセッションのログを作る（第N回にするため）。
+func pastLogs(t *testing.T, root string, n int) {
+	t.Helper()
+	dir := filepath.Join(root, "logs", "2026")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < n; i++ {
+		name := filepath.Join(dir, "01-"+string(rune('0'+(i+1)/10))+string(rune('0'+(i+1)%10))+".md")
+		if err := os.WriteFile(name, []byte("# 過去の回\n\n## やったこと\n- メインドリル（ユニット）：やった\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// フルの回（7回目以降）で、PostgreSQL と午後の枠が案内されること。
+func TestCmdRunFullDayIncludesDBAndAfternoon(t *testing.T) {
+	root := newRepo(t)
+	pastLogs(t, root, 6) // これで第7回になる
+	p, err := LoadProgress(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := LoadSession(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Number != 7 {
+		t.Fatalf("第%d回（7回目のはず）", s.Number)
+	}
+	if p.DBUnit != "D1" {
+		t.Fatalf("DBユニット = %q", p.DBUnit)
+	}
+
+	// ウォームアップ、メイン=d、PostgreSQL=d、午後=Enter、振り返り=q、終わり=n
+	withInput(t, "", "d", "d", "", "q", "n")
+	out := capture(t, func() {
+		if err := cmdRun(root, p, s); err != nil {
+			t.Errorf("cmdRun: %v", err)
+		}
+	})
+	var heads []string
+	for _, line := range strings.Split(out, "\n") {
+		if m := stepHeadRe.FindStringSubmatch(line); m != nil {
+			heads = append(heads, m[1])
+		}
+	}
+	if len(heads) != 6 {
+		t.Fatalf("枠が %d 個（フルの回は6個）: %v", len(heads), heads)
+	}
+	joined := strings.Join(heads, " / ")
+	for _, want := range []string{"ウォームアップ", "メイン（F3）", "PostgreSQL（D1）", "コードリーディング", "振り返り", "終わりの手続き"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("「%s」の枠が無い: %s", want, joined)
+		}
+	}
+	// DBの枠でも課題が案内され、state に残ること
+	if !LoadState(root, s).IsDone(StepDB) {
+		t.Error("PostgreSQL の枠が済みになっていない")
+	}
+}
+
+// DBユニットが未設定のときは、書き換え方を案内して先へ進むこと。
+func TestCmdRunTellsHowToSetTheDBUnit(t *testing.T) {
+	root := newRepo(t)
+	pastLogs(t, root, 6)
+	// 「次のPostgreSQLユニット」を、テンプレートの初期値（ユニットIDでない）に戻す
+	raw := read(t, filepath.Join(root, "PROGRESS.md"))
+	raw = strings.Replace(raw, "- 次のPostgreSQLユニット：D1",
+		"- 次のPostgreSQLユニット：（Stage 1に入ったら D1 と書く）", 1)
+	if err := os.WriteFile(filepath.Join(root, "PROGRESS.md"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	p, _ := LoadProgress(root)
+	s, _ := LoadSession(root)
+	if p.DBUnit != "" {
+		t.Fatalf("初期値を読んでしまっている: %q", p.DBUnit)
+	}
+
+	withInput(t, "", "d", "", "", "q", "n") // DBの枠は Enter で通過
+	out := capture(t, func() {
+		if err := cmdRun(root, p, s); err != nil {
+			t.Errorf("cmdRun: %v", err)
+		}
+	})
+	flat := strings.Join(strings.Fields(out), " ")
+	if !strings.Contains(flat, "次のPostgreSQLユニット") || !strings.Contains(flat, "書き換える") {
+		t.Errorf("書き換え方を案内していない:\n%s", out)
+	}
+}
+
+// push の経路。remote を手元に作って、実際に届くことを確かめる。
+func TestCmdEndPushesToOrigin(t *testing.T) {
+	root := newRepo(t)
+	initGit(t, root)
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	if out, err := exec.Command("git", "init", "-q", "--bare", bare).CombinedOutput(); err != nil {
+		t.Fatalf("bare の作成: %v\n%s", err, out)
+	}
+	for _, args := range [][]string{
+		{"remote", "add", "origin", bare},
+		{"push", "-q", "-u", "origin", "HEAD"},
+	} {
+		if out, err := gitOut(root, args...); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	p, _ := LoadProgress(root)
+	s, _ := LoadSession(root)
+	if err := os.WriteFile(filepath.Join(root, "drills", "foundation", "F03-pipeline", "notes.md"),
+		[]byte("メモ\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// 振り返りは埋めない(n) → メッセージ → 確認(y) → push する(y)
+	withInput(t, "n", "パイプラインを試した", "y", "y")
+	out := capture(t, func() {
+		if err := cmdEnd(root, p, s); err != nil {
+			t.Errorf("cmdEnd: %v", err)
+		}
+	})
+	if !strings.Contains(out, "push しました") {
+		t.Errorf("push したと言っていない:\n%s", out)
+	}
+	// remote 側に届いていること
+	got, err := exec.Command("git", "--git-dir", bare, "log", "--format=%s", "-1").CombinedOutput()
+	if err != nil {
+		t.Fatalf("bare の log: %v\n%s", err, got)
+	}
+	if !strings.Contains(string(got), "[no-ai] F3: パイプラインを試した") {
+		t.Errorf("remote に届いていない: %s", got)
+	}
+	// push 済みなので、未 push の警告は出ない
+	if strings.Contains(out, "push していないコミットが") {
+		t.Errorf("push したのに、未pushの警告が出ている:\n%s", out)
+	}
+}
+
+// コミットしたが push しなかったときは、残っていることを知らせること。
+func TestCmdEndWarnsAboutUnpushedCommits(t *testing.T) {
+	root := newRepo(t)
+	initGit(t, root)
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	if out, err := exec.Command("git", "init", "-q", "--bare", bare).CombinedOutput(); err != nil {
+		t.Fatalf("bare の作成: %v\n%s", err, out)
+	}
+	for _, args := range [][]string{{"remote", "add", "origin", bare}, {"push", "-q", "-u", "origin", "HEAD"}} {
+		if out, err := gitOut(root, args...); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	p, _ := LoadProgress(root)
+	s, _ := LoadSession(root)
+	if err := os.WriteFile(filepath.Join(root, "drills", "foundation", "F03-pipeline", "notes.md"),
+		[]byte("メモ\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	withInput(t, "n", "メモを書いた", "y", "n") // push は断る
+	out := capture(t, func() {
+		if err := cmdEnd(root, p, s); err != nil {
+			t.Errorf("cmdEnd: %v", err)
+		}
+	})
+	if !strings.Contains(out, "push していないコミットが1件あります") {
+		t.Errorf("未pushを知らせていない:\n%s", out)
+	}
+}
+
+// G・C・T トラックの確認コマンド。
+func TestCheckPlanGoAndTypeScript(t *testing.T) {
+	root := newRepo(t)
+
+	// G：課題ディレクトリに go.mod があるときだけ走らせる
+	gdir := mkSheet(t, root, "go", "G01-basics", "G1", "Goの文法")
+	gsh, err := LoadSheet(root, "G1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cmds, note, _ := checkPlan(root, gsh); len(cmds) != 0 || !strings.Contains(note, "go.mod") {
+		t.Errorf("G: go.mod が無いのに走らせようとしている（cmds=%v note=%q）", cmds, note)
+	}
+	if err := os.WriteFile(filepath.Join(gdir, "go.mod"), []byte("module x\n\ngo 1.22\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cmds, _, dir := checkPlan(root, gsh)
+	if len(cmds) != 2 || cmds[0][1] != "vet" || cmds[1][1] != "test" {
+		t.Errorf("G: go vet と go test を走らせていない: %v", cmds)
+	}
+	if dir != gdir {
+		t.Errorf("G: 走らせる場所が違う: %s", dir)
+	}
+
+	// C：卒業制作は capstone/ を見る（課題ディレクトリではない）
+	mkSheet(t, root, "capstone", "C01-requirements", "C1", "要件定義")
+	csh, err := LoadSheet(root, "C1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	capstone := filepath.Join(root, "capstone")
+	if err := os.MkdirAll(capstone, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(capstone, "go.mod"), []byte("module w\n\ngo 1.22\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, dir := checkPlan(root, csh); dir != capstone {
+		t.Errorf("C: capstone/ ではなく %s を見ている", dir)
+	}
+
+	// T：package.json があるときだけ走らせる
+	tdir := mkSheet(t, root, "ts", "T01-html-css", "T1", "HTMLとCSS")
+	tsh, err := LoadSheet(root, "T1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cmds, note, _ := checkPlan(root, tsh); len(cmds) != 0 || !strings.Contains(note, "package.json") {
+		t.Errorf("T: package.json が無いのに走らせようとしている（cmds=%v note=%q）", cmds, note)
+	}
+	if err := os.WriteFile(filepath.Join(tdir, "package.json"), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cmds, _, _ = checkPlan(root, tsh)
+	if len(cmds) != 2 || cmds[0][1] != "tsc" || cmds[1][1] != "vitest" {
+		t.Errorf("T: tsc と vitest を走らせていない: %v", cmds)
+	}
+}
+
+// runIn が、出力と失敗をそのまま返すこと（画面にそのまま見せるため）。
+func TestRunInReturnsOutputAndFailure(t *testing.T) {
+	dir := t.TempDir()
+	out, err := runIn(dir, []string{"sh", "-c", "echo ひとつめ; exit 0"})
+	if err != nil || !strings.Contains(out, "ひとつめ") {
+		t.Errorf("成功した出力を返していない（out=%q err=%v）", out, err)
+	}
+	out, err = runIn(dir, []string{"sh", "-c", "echo こわれた >&2; exit 3"})
+	if err == nil {
+		t.Error("失敗を返していない")
+	}
+	if !strings.Contains(out, "こわれた") {
+		t.Errorf("標準エラーの出力を捨てている: %q", out)
+	}
+}

@@ -32,6 +32,7 @@ func newServer(t *testing.T) (*server, http.Handler, string) {
 	mux.HandleFunc("/tick", s.handleTick)
 	mux.HandleFunc("/retro", s.handleRetro)
 	mux.HandleFunc("/stuck", s.handleStuck)
+	mux.HandleFunc("/note", s.handleNote)
 	mux.HandleFunc("/doc/", s.handleDoc)
 	mux.HandleFunc("/file/", s.handleFile)
 	return s, s.guard(mux), root
@@ -307,5 +308,83 @@ func TestReadOnlyPagesDoNotStartASession(t *testing.T) {
 	}
 	if _, err := os.Stat(sess.Log); err != nil {
 		t.Errorf("案内を始めても用意されない: %v", err)
+	}
+}
+
+// 振り返りへの書き込みが、画面から通ること。
+func TestRetroPostWritesTheField(t *testing.T) {
+	s, h, root := newServer(t)
+	sess, _ := LoadSession(root)
+	// 画面を開くと、その日の振り返りが用意される
+	w := get(t, h, "/retro")
+	if w.Code != http.StatusOK {
+		t.Fatalf("/retro = %d", w.Code)
+	}
+	fields := RetroFields(sess.Log)
+	if len(fields) == 0 {
+		t.Fatal("空いている欄が無い")
+	}
+	w = post(t, h, "/retro", url.Values{
+		"file":                   {rel(root, sess.Log)},
+		"field-" + fields[0].Key: {"F1をやった"},
+	})
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("POST /retro = %d, body=%s", w.Code, w.Body.String())
+	}
+	raw, _ := os.ReadFile(sess.Log)
+	if !strings.Contains(string(raw), "メインドリル（ユニット）：F1をやった") {
+		t.Errorf("狙った欄に入っていない:\n%s", raw)
+	}
+	// 同じ欄に二度書こうとしたら、画面で知らせる（黙って連結しない）
+	w = post(t, h, "/retro", url.Values{
+		"file":                   {rel(root, sess.Log)},
+		"field-" + fields[0].Key: {"もう一度"},
+	})
+	if !strings.Contains(w.Body.String(), "書けなかった欄があります") {
+		t.Errorf("埋まっている欄への書き込みを、黙って受けている（code=%d）", w.Code)
+	}
+	raw, _ = os.ReadFile(sess.Log)
+	if strings.Contains(string(raw), "もう一度") {
+		t.Errorf("埋まっている欄に上書きしている:\n%s", raw)
+	}
+	_ = s
+}
+
+// 詰まりメモとメモが、画面から書けること。
+func TestStuckAndNotePostWrite(t *testing.T) {
+	_, h, root := newServer(t)
+	sess, _ := LoadSession(root)
+
+	if w := post(t, h, "/stuck", url.Values{"text": {"sort の順が合わない"}}); w.Code != http.StatusSeeOther {
+		t.Fatalf("POST /stuck = %d", w.Code)
+	}
+	raw, err := os.ReadFile(sess.Log)
+	if err != nil {
+		t.Fatalf("詰まりメモで振り返りが作られていない: %v", err)
+	}
+	body := string(raw)
+	at := strings.Index(body, "## 詰まったこと")
+	next := strings.Index(body[at:], "## 今日わかったこと") + at
+	if !strings.Contains(body[at:next], "sort の順が合わない") {
+		t.Errorf("「詰まったこと」に入っていない:\n%s", body[at:next])
+	}
+
+	// メモは、そのユニットの notes.md に入る
+	if w := post(t, h, "/note", url.Values{"unit": {"F3"}, "text": {"printf は改行を付けない"}}); w.Code != http.StatusSeeOther {
+		t.Fatalf("POST /note = %d", w.Code)
+	}
+	sh, _ := LoadSheet(root, "F3")
+	notes, err := os.ReadFile(filepath.Join(sh.Dir(), "notes.md"))
+	if err != nil {
+		t.Fatalf("notes.md が作られていない: %v", err)
+	}
+	if !strings.Contains(string(notes), "printf は改行を付けない") {
+		t.Errorf("メモが入っていない:\n%s", notes)
+	}
+
+	// 戻る先に外部のURLを渡しても、そこへは飛ばさない
+	w := post(t, h, "/note", url.Values{"unit": {"F3"}, "text": {"x"}, "back": {"https://evil.example/"}})
+	if loc := w.Header().Get("Location"); strings.HasPrefix(loc, "http") {
+		t.Errorf("外部のURLへ飛ばしている: %q", loc)
 	}
 }
