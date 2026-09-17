@@ -1,0 +1,27 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Go
+*.exe
+*.test
+*.out
+coverage.*
+/bin/
+dist/
+
+# Node
+node_modules/
+.vite/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# data
+*.dump
+*.sqlite
+pgdata/
