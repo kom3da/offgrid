@@ -403,6 +403,63 @@ func cmdFind(root string, args []string) error {
 	return nil
 }
 
+// checkPlan は、そのユニットで走らせる確認コマンドを決める。
+// 戻り値は（コマンドの並び、走らせるものが無いときの説明、実行するディレクトリ）。
+func checkPlan(root string, sh *Sheet) ([][]string, string, string) {
+	dir := sh.Dir()
+	switch sh.Unit[:1] {
+	case "F", "O":
+		files, _ := filepath.Glob(filepath.Join(dir, "*.sh"))
+		sort.Strings(files)
+		if len(files) == 0 {
+			return nil, "シェルスクリプトがまだない", dir
+		}
+		if _, err := exec.LookPath("shellcheck"); err != nil {
+			return nil, "shellcheck が入っていない（sudo apt install shellcheck）", dir
+		}
+		cmd := []string{"shellcheck"}
+		for _, f := range files {
+			cmd = append(cmd, filepath.Base(f))
+		}
+		return [][]string{cmd}, "", dir
+	case "G", "C":
+		target := dir
+		if sh.Unit[:1] == "C" {
+			target = filepath.Join(root, "capstone")
+		}
+		if _, err := os.Stat(filepath.Join(target, "go.mod")); err != nil {
+			return nil, fmt.Sprintf("%s/go.mod がまだない（go mod init から）", rel(root, target)), target
+		}
+		return [][]string{{"go", "vet", "./..."}, {"go", "test", "-race", "-cover", "./..."}}, "", target
+	case "T":
+		if _, err := os.Stat(filepath.Join(dir, "package.json")); err != nil {
+			return nil, fmt.Sprintf("%s/package.json がまだない（npm init から）", rel(root, dir)), dir
+		}
+		return [][]string{{"npx", "tsc", "--noEmit", "--strict"}, {"npx", "vitest", "run"}}, "", dir
+	case "D":
+		files, _ := filepath.Glob(filepath.Join(dir, "*.sql"))
+		sort.Strings(files)
+		if len(files) == 0 {
+			return nil, ".sql ファイルがまだない", dir
+		}
+		var b strings.Builder
+		b.WriteString("次のコマンドで実行できる（データベース名は課題シートを見る）")
+		for _, f := range files {
+			fmt.Fprintf(&b, "\ndocker exec -i pg-offgrid psql -U postgres -v ON_ERROR_STOP=1 < %s", rel(root, f))
+		}
+		return nil, b.String(), dir
+	}
+	return nil, "確認コマンドは課題シートの「完了条件の確かめ方」を見る", dir
+}
+
+// runIn は、確認コマンドを走らせて、出力をそのまま返す（ブラウザにも見せるため）。
+func runIn(dir string, cmd []string) (string, error) {
+	c := exec.Command(cmd[0], cmd[1:]...)
+	c.Dir = dir
+	out, err := c.CombinedOutput()
+	return string(out), err
+}
+
 func cmdCheck(root string, p *Progress, args []string) error {
 	unit := p.Unit
 	if len(args) > 0 {
@@ -412,60 +469,8 @@ func cmdCheck(root string, p *Progress, args []string) error {
 	if err != nil {
 		return err
 	}
-	dir := sh.Dir()
-	letter := sh.Unit[:1]
+	cmds, note, dir := checkPlan(root, sh)
 	rule(fmt.Sprintf("%s の確認（%s）", sh.Unit, rel(root, dir)))
-	var cmds [][]string
-	note := ""
-	switch letter {
-	case "F", "O":
-		files, _ := filepath.Glob(filepath.Join(dir, "*.sh"))
-		sort.Strings(files)
-		switch {
-		case len(files) == 0:
-			note = "シェルスクリプトがまだない"
-		default:
-			if _, err := exec.LookPath("shellcheck"); err != nil {
-				note = "shellcheck が入っていない（sudo apt install shellcheck）"
-			} else {
-				args := []string{"shellcheck"}
-				for _, f := range files {
-					args = append(args, filepath.Base(f))
-				}
-				cmds = append(cmds, args)
-			}
-		}
-	case "G", "C":
-		target := dir
-		if letter == "C" {
-			target = filepath.Join(root, "capstone")
-		}
-		if _, err := os.Stat(filepath.Join(target, "go.mod")); err == nil {
-			dir = target
-			cmds = append(cmds, []string{"go", "vet", "./..."}, []string{"go", "test", "-race", "-cover", "./..."})
-		} else {
-			note = fmt.Sprintf("%s/go.mod がまだない（go mod init から）", rel(root, target))
-		}
-	case "T":
-		if _, err := os.Stat(filepath.Join(dir, "package.json")); err == nil {
-			cmds = append(cmds, []string{"npx", "tsc", "--noEmit", "--strict"}, []string{"npx", "vitest", "run"})
-		} else {
-			note = fmt.Sprintf("%s/package.json がまだない（npm init から）", rel(root, dir))
-		}
-	case "D":
-		files, _ := filepath.Glob(filepath.Join(dir, "*.sql"))
-		sort.Strings(files)
-		if len(files) == 0 {
-			note = ".sql ファイルがまだない"
-		} else {
-			var b strings.Builder
-			b.WriteString("次のコマンドで実行できる（データベース名は課題シートを見る）")
-			for _, f := range files {
-				fmt.Fprintf(&b, "\ndocker exec -i pg-offgrid psql -U postgres -v ON_ERROR_STOP=1 < %s", rel(root, f))
-			}
-			note = b.String()
-		}
-	}
 	if note != "" {
 		say(note)
 	}

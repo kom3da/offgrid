@@ -19,7 +19,7 @@ import (
 //go:embed web
 var webFS embed.FS
 
-var tmpl = template.Must(template.ParseFS(webFS, "web/layout.html"))
+var tmpl = template.Must(template.ParseFS(webFS, "web/layout.html", "web/session.html"))
 
 // serveState は、1つの画面に渡すもの。テンプレートから読む。
 type serveState struct {
@@ -46,6 +46,39 @@ type serveState struct {
 	HitCount                         int
 	Heading, Message                 string
 	Links                            []docLink
+
+	// 案内の画面（/session）で使うもの
+	State         *SessionState
+	Step          Step
+	StepIDStr     string
+	PrevStepID    StepID
+	StepViews     []stepView
+	StepIndex     int
+	StepCount     int
+	Elapsed       string
+	Finished      bool
+	Task          *taskView
+	OnlyLater     bool
+	ShowHint      bool
+	StuckOpen     bool
+	Hints         []sectionView
+	Guide         template.HTML
+	CanFinishUnit bool
+	Dirty         string
+	Ahead         int
+	Advice        template.HTML
+	TaskMins      int
+	LastStuck     []string
+	Leftover      []int
+	CheckOut      string
+	CheckCmd      string
+}
+
+type stepView struct {
+	Index         int
+	Label         string
+	Minutes       string
+	Done, Current bool
 }
 
 type trackView struct {
@@ -510,6 +543,13 @@ func cmdServe(root string, args []string) error {
 		}
 		http.NotFound(w, r)
 	})
+	mux.HandleFunc("/session", s.handleSession)
+	mux.HandleFunc("/session/step", s.handleSessionStep)
+	mux.HandleFunc("/session/task", s.handleSessionTask)
+	mux.HandleFunc("/end", s.handleEnd)
+	mux.HandleFunc("/end/check", s.handleEndCheck)
+	mux.HandleFunc("/end/done", s.handleEndDone)
+	mux.HandleFunc("/end/commit", s.handleEndCommit)
 	mux.HandleFunc("/unit/", s.handleUnit)
 	mux.HandleFunc("/tick", s.handleTick)
 	mux.HandleFunc("/retro", s.handleRetro)

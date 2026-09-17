@@ -33,3 +33,6 @@ pgdata/
 # Python
 __pycache__/
 *.pyc
+
+# offgrid が作る、その日の進行の記録（コミットしなくてよい）
+logs/**/.*.state.json

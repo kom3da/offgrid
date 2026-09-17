@@ -10,7 +10,8 @@
 <header class="top">
 	<a class="brand" href="/">offgrid</a>
 	<nav>
-		<a href="/"{{if eq .Nav "home"}} aria-current="page"{{end}}>いま</a>
+		<a href="/session"{{if eq .Nav "session"}} aria-current="page"{{end}}>いまやること</a>
+		<a href="/"{{if eq .Nav "home"}} aria-current="page"{{end}}>全体</a>
 		<a href="/unit/{{.Unit}}"{{if eq .Nav "unit"}} aria-current="page"{{end}}>課題</a>
 		<a href="/retro"{{if eq .Nav "retro"}} aria-current="page"{{end}}>振り返り</a>
 		<a href="/doc/01-overview"{{if eq .Nav "doc"}} aria-current="page"{{end}}>カリキュラム</a>
@@ -35,7 +36,8 @@
 <p class="muted">次のユニットは <strong>{{.Progress.Unit}}</strong>{{with .Sheet}}（{{.Title}}）{{end}}。今日の終わりの目安は {{.Session.Finish}}。</p>
 
 <div class="row">
-	<a class="btn primary" href="/unit/{{.Progress.Unit}}">課題を開く</a>
+	<a class="btn primary big" href="/session">案内つきで進める</a>
+	<a class="btn" href="/unit/{{.Progress.Unit}}">課題の一覧</a>
 	<a class="btn" href="/retro">振り返りを書く</a>
 	{{if .Progress.DBUnit}}<a class="btn" href="/unit/{{.Progress.DBUnit}}">PostgreSQL（{{.Progress.DBUnit}}）</a>{{end}}
 </div>

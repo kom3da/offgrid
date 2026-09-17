@@ -1,0 +1,375 @@
+package main
+
+import (
+	"fmt"
+	"html/template"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+)
+
+// 案内の画面（/session）。1つの枠、1つの課題だけを出して、ボタンで進める。
+
+// lastStuckNotes は、前回の振り返りの「詰まったこと」を読む。
+// 先生が「前回ここで止まったね」と言えるようにするため。
+func lastStuckNotes(sess *Session) []string {
+	if len(sess.Past) == 0 {
+		return nil
+	}
+	raw, err := os.ReadFile(sess.Past[len(sess.Past)-1])
+	if err != nil {
+		return nil
+	}
+	var out []string
+	inside := false
+	for _, line := range strings.Split(string(raw), "\n") {
+		switch {
+		case strings.HasPrefix(line, "## 詰まったこと"):
+			inside = true
+		case strings.HasPrefix(line, "#"):
+			inside = false
+		case inside && strings.HasPrefix(line, "- ") && strings.TrimSpace(line) != "-":
+			out = append(out, strings.TrimPrefix(line, "- "))
+		}
+	}
+	if len(out) > 3 {
+		out = out[:3]
+	}
+	return out
+}
+
+// taskAdvice は、時間の経ち方に応じた口出し。答えは言わない。
+func taskAdvice(mins int) string {
+	switch {
+	case mins >= 45:
+		return "この課題に45分。ここで打ち切って、「詰まった」に書いてから次へ進む。残した課題は、この枠の最後に戻ってくる。"
+	case mins >= 15:
+		return "この課題に15分。手を止めて、順番に切り替える。エラー文を最後まで読む → `man` や `go doc` で単語を調べる → 問題が起きる最小のコードに切り出す → それでも進まなければ検索（上限内で）。"
+	default:
+		return ""
+	}
+}
+
+// stepSheet は、その枠で扱う課題シートを返す（枠が課題を持たないときは nil）。
+func (s *server) stepSheet(p *Progress, step Step) *Sheet {
+	var unit string
+	switch step.ID {
+	case StepMain:
+		unit = p.Unit
+	case StepDB:
+		unit = p.DBUnit
+	default:
+		return nil
+	}
+	sh, err := LoadSheet(s.root, unit)
+	if err != nil {
+		return nil
+	}
+	return sh
+}
+
+// guideText は、課題を持たない枠の説明。
+func (s *server) guideText(p *Progress, sess *Session, step Step) string {
+	switch step.ID {
+	case StepWarmup:
+		text := sess.Warmup() + "\n\n＋ 前回のレビューで指摘された箇所の直しを1件。"
+		if lg := sess.ReviewLog(); lg != "" {
+			text += fmt.Sprintf("\n\n見返すログ：[%s](%s)", rel(s.root, lg), rel(s.root, lg))
+		}
+		return text
+	case StepDB:
+		return "PROGRESS.md の「現在」に「- 次のPostgreSQLユニット：D1」の行を足すと、ここでも課題を1問ずつ案内する。"
+	case StepAfternoon:
+		if sess.Afternoon() == "コードリーディング" {
+			return "読解課題を1本。今のステージに合うものを[デバッグドリルとコードリーディング](docs/05-debug-and-reading.md)から選ぶ。処理の流れを図か箇条書きにまとめ、`drills/reading/` に置く。"
+		}
+		return "仕込みバグを3つ直す。問題は `drills/debug/` の中。答え（`answers/`）は、3つ直し終わるまで開かない。直したら、そのバグを見つけるテストを1本足す。"
+	case StepRetro:
+		return "今日やったこと、詰まったこと、分かったことを書く。空いている欄が入力欄として並ぶので、上から埋める。"
+	case StepEnd:
+		return "振り返りの記入漏れ、残すもの、コミットを確かめる。"
+	}
+	return ""
+}
+
+func (s *server) sessionState(title, nav string) (*serveState, *Progress, *Session, *SessionState, []Step, error) {
+	st, p, sess, err := s.base(title, nav)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+	state := LoadState(s.root, sess)
+	steps := sessionSteps(p, sess)
+	st.State = state
+	st.StepCount = len(steps)
+	for i, step := range steps {
+		st.StepViews = append(st.StepViews, stepView{
+			Index:   i + 1,
+			Label:   step.Label,
+			Minutes: step.Minutes,
+			Done:    state.IsDone(step.ID),
+		})
+	}
+	return st, p, sess, state, steps, nil
+}
+
+func (s *server) handleSession(w http.ResponseWriter, r *http.Request) {
+	st, p, sess, state, steps, err := s.sessionState("案内", "session")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	step, ok := state.Current(steps)
+	if !ok {
+		st.Finished = true
+		s.render(w, "session", st)
+		return
+	}
+	_ = state.Start(step.ID)
+	for i := range st.StepViews {
+		if st.StepViews[i].Label == step.Label {
+			st.StepViews[i].Current = true
+			st.StepIndex = i + 1
+			if i > 0 {
+				st.PrevStepID = steps[i-1].ID
+			}
+		}
+	}
+	st.Step, st.StepIDStr = step, string(step.ID)
+	st.Elapsed = state.Elapsed(step.ID)
+	st.ShowHint = r.URL.Query().Get("hint") == "1"
+	st.StuckOpen = r.URL.Query().Get("stuck") == "1"
+
+	if sh := s.stepSheet(p, step); sh != nil {
+		st.Sheet = sh
+		if _, err := sh.EnsureWork(); err != nil {
+			s.fail(w, st, "書けません", err.Error())
+			return
+		}
+		st.TaskDone, st.TaskTotal = sh.Counts()
+		st.TaskPercent = percent(st.TaskDone, st.TaskTotal)
+		link := s.linkRewriter(sh.Path)
+		if n, onlyLater := state.NextTask(sh); n > 0 {
+			state.OpenTask(sh.Unit, n)
+			st.Task = &taskView{N: n, HTML: template.HTML(renderMarkdown(sh.Tasks[n], link, nil))}
+			st.OnlyLater = onlyLater
+			st.TaskMins = state.TaskMinutes(sh.Unit, n)
+			if advice := taskAdvice(st.TaskMins); advice != "" {
+				st.Advice = template.HTML(renderMarkdown(advice, nil, nil))
+				st.StuckOpen = st.TaskMins >= 45
+			}
+			if st.ShowHint {
+				for _, name := range []string{"キーワード", "詰まりやすいところ", "平日に読むもの"} {
+					if body := sh.Section(name); body != "" {
+						st.Hints = append(st.Hints, sectionView{Name: name, HTML: template.HTML(renderMarkdown(body, link, nil))})
+					}
+				}
+			}
+			s.render(w, "session", st)
+			return
+		}
+		// 課題が全部できた枠
+		st.Guide = template.HTML(renderMarkdown(
+			fmt.Sprintf("%s の課題は、全部できました（%d/%d）。\n\n完了条件は、終わりの手続きで確かめる。",
+				sh.Unit, st.TaskDone, st.TaskTotal), nil, nil))
+		s.render(w, "session", st)
+		return
+	}
+	if step.ID == StepWarmup {
+		st.LastStuck = lastStuckNotes(sess)
+	}
+	st.Guide = template.HTML(renderMarkdown(s.guideText(p, sess, step), s.linkRewriter(filepath.Join(s.root, "x")), nil))
+	s.render(w, "session", st)
+}
+
+func (s *server) handleSessionStep(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/session", http.StatusSeeOther)
+		return
+	}
+	_, _, sess, err := s.base("", "session")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	state := LoadState(s.root, sess)
+	id := StepID(r.FormValue("step"))
+	switch r.FormValue("action") {
+	case "finish":
+		_ = state.Finish(id)
+	case "reopen":
+		_ = state.Reopen(id)
+	}
+	http.Redirect(w, r, "/session", http.StatusSeeOther)
+}
+
+func (s *server) handleSessionTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/session", http.StatusSeeOther)
+		return
+	}
+	_, p, sess, err := s.base("", "session")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	state := LoadState(s.root, sess)
+	unit := r.FormValue("unit")
+	n, _ := strconv.Atoi(r.FormValue("n"))
+	sh, err := LoadSheet(s.root, unit)
+	if err != nil || n <= 0 {
+		http.Redirect(w, r, "/session", http.StatusSeeOther)
+		return
+	}
+	switch r.FormValue("action") {
+	case "done":
+		_ = sh.Tick(n, true)
+	case "later":
+		_ = state.Skip(unit, n)
+	case "stuck":
+		if memo := strings.TrimSpace(r.FormValue("memo")); memo != "" {
+			_ = AppendStuck(sess.Log, fmt.Sprintf("%s 課題%d: %s", unit, n, memo))
+		}
+		_ = state.Skip(unit, n)
+	case "hint":
+		http.Redirect(w, r, "/session?hint=1", http.StatusSeeOther)
+		return
+	case "finish-step":
+		id := StepMain
+		if unit == p.DBUnit && unit != p.Unit {
+			id = StepDB
+		}
+		_ = state.Finish(id)
+	}
+	http.Redirect(w, r, "/session", http.StatusSeeOther)
+}
+
+// ---------------------------------------------------------------- 終わりの手続き
+
+func (s *server) handleEnd(w http.ResponseWriter, r *http.Request) {
+	st, p, sess, _, _, err := s.sessionState("終わりの手続き", "session")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	st.Fields = RetroFields(sess.Log)
+	st.LogPath = rel(s.root, sess.Log)
+	state := LoadState(s.root, sess)
+	if sh, err := LoadSheet(s.root, p.Unit); err == nil {
+		st.Sheet = sh
+		st.Leftover = state.LeftoverTasks(sh)
+		st.TaskDone, st.TaskTotal = sh.Counts()
+		st.TaskPercent = percent(st.TaskDone, st.TaskTotal)
+		for _, f := range sh.KeepFiles() {
+			info, err := os.Stat(filepath.Join(sh.Dir(), f))
+			st.Keep = append(st.Keep, keepView{Name: f, Have: err == nil && info.Size() > 0})
+		}
+		st.CanFinishUnit = st.TaskTotal > 0 && st.TaskDone == st.TaskTotal &&
+			len(sh.MissingFiles()) == 0 && !p.IsDone(p.Unit)
+	}
+	if dirty, err := gitOut(s.root, "status", "--porcelain"); err == nil {
+		st.Dirty = strings.TrimRight(dirty, "\n")
+	}
+	if ahead, err := gitOut(s.root, "log", "--oneline", "@{u}.."); err == nil && strings.TrimSpace(ahead) != "" {
+		st.Ahead = len(strings.Split(strings.TrimSpace(ahead), "\n"))
+	}
+	s.render(w, "end", st)
+}
+
+// handleEndCheck は、そのユニットの確認コマンドを走らせて、結果をそのまま見せる。
+func (s *server) handleEndCheck(w http.ResponseWriter, r *http.Request) {
+	st, p, _, _, _, err := s.sessionState("確認", "session")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	sh, err := LoadSheet(s.root, p.Unit)
+	if err != nil {
+		s.fail(w, st, "見つかりません", err.Error())
+		return
+	}
+	cmds, note, dir := checkPlan(s.root, sh)
+	var b strings.Builder
+	if note != "" {
+		b.WriteString(note + "\n")
+	}
+	for _, c := range cmds {
+		fmt.Fprintf(&b, "$ %s\n", strings.Join(c, " "))
+		out, err := runIn(dir, c)
+		b.WriteString(out)
+		if err != nil {
+			b.WriteString("→ 失敗（出力を読んで直す）\n")
+		} else {
+			b.WriteString("→ 通りました\n")
+		}
+	}
+	if b.Len() == 0 {
+		b.WriteString("走らせるものがありません。課題シートの「完了条件の確かめ方」を見る。")
+	}
+	st.CheckCmd = sh.Unit
+	st.CheckOut = b.String()
+	st.Fields = RetroFields(st.Session.Log)
+	st.LogPath = rel(s.root, st.Session.Log)
+	st.Sheet = sh
+	st.TaskDone, st.TaskTotal = sh.Counts()
+	st.TaskPercent = percent(st.TaskDone, st.TaskTotal)
+	for _, f := range sh.KeepFiles() {
+		info, statErr := os.Stat(filepath.Join(sh.Dir(), f))
+		st.Keep = append(st.Keep, keepView{Name: f, Have: statErr == nil && info.Size() > 0})
+	}
+	st.CanFinishUnit = st.TaskTotal > 0 && st.TaskDone == st.TaskTotal &&
+		len(sh.MissingFiles()) == 0 && !p.IsDone(p.Unit)
+	if dirty, gerr := gitOut(s.root, "status", "--porcelain"); gerr == nil {
+		st.Dirty = strings.TrimRight(dirty, "\n")
+	}
+	s.render(w, "end", st)
+}
+
+func (s *server) handleEndDone(w http.ResponseWriter, r *http.Request) {
+	st, p, _, err := s.base("", "session")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	unit := strings.ToUpper(strings.TrimSpace(r.FormValue("unit")))
+	if ok, err := p.MarkDone(unit); err != nil || !ok {
+		s.fail(w, st, "記録できません", fmt.Sprintf("PROGRESS.md に「- [ ] %s ...」の行がありません", unit))
+		return
+	}
+	if next := strings.ToUpper(strings.TrimSpace(r.FormValue("next"))); next != "" {
+		_ = p.SetNext(next, strings.HasPrefix(next, "D"))
+	}
+	http.Redirect(w, r, "/end", http.StatusSeeOther)
+}
+
+func (s *server) handleEndCommit(w http.ResponseWriter, r *http.Request) {
+	st, p, _, err := s.base("", "session")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	action := r.FormValue("action")
+	if action == "commit" || action == "commit-push" {
+		msg := strings.TrimSpace(r.FormValue("message"))
+		if msg == "" {
+			s.fail(w, st, "コミットできません", "何をやったかを、ひとことで書いてください")
+			return
+		}
+		if _, err := gitOut(s.root, "add", "-A"); err != nil {
+			s.fail(w, st, "git add が失敗しました", err.Error())
+			return
+		}
+		if out, err := gitOut(s.root, "commit", "-m", fmt.Sprintf("[no-ai] %s: %s", p.Unit, msg)); err != nil {
+			s.fail(w, st, "コミットが失敗しました", out)
+			return
+		}
+	}
+	if action == "push" || action == "commit-push" {
+		if out, err := gitOut(s.root, "push", "origin", "HEAD"); err != nil {
+			s.fail(w, st, "push が失敗しました", out)
+			return
+		}
+	}
+	http.Redirect(w, r, "/end", http.StatusSeeOther)
+}

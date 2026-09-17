@@ -1,0 +1,191 @@
+{{define "session"}}
+<nav class="steps" aria-label="今日の流れ">
+	{{range .StepViews}}
+	<div class="step{{if .Done}} done{{end}}{{if .Current}} now{{end}}">
+		<span class="dot">{{if .Done}}✓{{else}}{{.Index}}{{end}}</span>
+		<span class="name">{{.Label}}</span>
+		{{if .Minutes}}<span class="mins">{{.Minutes}}</span>{{end}}
+	</div>
+	{{end}}
+</nav>
+
+{{if .Finished}}
+<div class="panel center">
+	<h1>今日のぶんは、全部終わりました</h1>
+	<p class="muted">お疲れさま。次の回は、また <code>offgrid</code> から始める。</p>
+	<div class="row center">
+		<a class="btn" href="/">いまの状態を見る</a>
+		<a class="btn" href="/retro">振り返りを読み返す</a>
+	</div>
+</div>
+{{else}}
+
+<div class="nowbar">
+	<div>
+		<div class="muted small">{{.StepIndex}} / {{.StepCount}}　第{{.Session.Number}}回　Stage {{.Progress.Stage}}</div>
+		<h1>{{.Step.Label}}{{if .Step.Minutes}} <span class="muted">（{{.Step.Minutes}}）</span>{{end}}</h1>
+	</div>
+	<div class="nowbar-right">
+		{{if .Elapsed}}<div class="muted small">この枠に {{.Elapsed}}</div>{{end}}
+		<div class="muted small">終わりの目安 {{.Session.Finish}}</div>
+	</div>
+</div>
+
+{{if .Task}}
+<div class="panel task-now">
+	<div class="task-head">
+		<span class="badge">課題 {{.Task.N}}</span>
+		<div class="meter{{if lt .TaskDone .TaskTotal}} part{{end}}"><span style="width: {{.TaskPercent}}%"></span></div>
+		<span class="count">{{.TaskDone}} / {{.TaskTotal}}</span>
+	</div>
+	{{if .OnlyLater}}<p class="note">あとで回した課題に戻ってきました。</p>{{end}}
+	<div class="task-body">{{.Task.HTML}}</div>
+	{{if .Advice}}<div class="advice"><strong>{{.TaskMins}}分たちました</strong>{{.Advice}}</div>{{end}}
+
+	<form class="actions" action="/session/task" method="post">
+		<input type="hidden" name="unit" value="{{.Sheet.Unit}}">
+		<input type="hidden" name="n" value="{{.Task.N}}">
+		<button class="btn primary big" name="action" value="done">できた</button>
+		<button class="btn" name="action" value="later">あとで</button>
+		<button class="btn" name="action" value="hint">{{if .ShowHint}}手がかりを閉じる{{else}}手がかり{{end}}</button>
+		<button class="btn" name="action" value="finish-step">この枠を終える</button>
+	</form>
+
+	<details class="stuck" {{if .StuckOpen}}open{{end}}>
+		<summary>詰まった</summary>
+		<p class="small muted">15分たったら、エラー文を全文読む → <code>man</code> → 最小の再現 → 検索、の順に切り替える。45分で打ち切って、次の課題へ。</p>
+		<form action="/session/task" method="post">
+			<input type="hidden" name="unit" value="{{.Sheet.Unit}}">
+			<input type="hidden" name="n" value="{{.Task.N}}">
+			<input type="hidden" name="action" value="stuck">
+			<div class="field">
+				<label for="memo">何が起きた？（振り返りの「詰まったこと」に、時刻付きで書く）</label>
+				<input id="memo" type="text" name="memo" placeholder="例: xxd の中央の列が読めない" autofocus>
+			</div>
+			<button class="btn" type="submit">書いて、あとで回す</button>
+		</form>
+	</details>
+</div>
+
+{{if .ShowHint}}
+<div class="panel hint">
+	<p class="small muted">手がかり。答えは書いていない。</p>
+	{{range .Hints}}<h2>{{.Name}}</h2>{{.HTML}}{{end}}
+</div>
+{{end}}
+
+{{else}}
+
+<div class="panel">
+	{{.Guide}}
+	{{if .LastStuck}}
+	<div class="advice">
+		<strong>前回、ここで止まっています</strong>
+		<ul>{{range .LastStuck}}<li>{{.}}</li>{{end}}</ul>
+		<p class="small">同じところで止まるなら、それが今の弱点。ウォームアップの題材にしてよい。</p>
+	</div>
+	{{end}}
+	<form class="actions" action="/session/step" method="post">
+		<input type="hidden" name="step" value="{{.Step.ID}}">
+		{{if eq .StepIDStr "retro"}}
+		<a class="btn primary big" href="/retro">振り返りを書く</a>
+		{{else if eq .StepIDStr "end"}}
+		<a class="btn primary big" href="/end">終わりの手続きへ</a>
+		{{else}}
+		<button class="btn primary big" name="action" value="finish">終わった</button>
+		{{end}}
+		<button class="btn" name="action" value="finish">この枠を飛ばす</button>
+	</form>
+</div>
+
+{{end}}
+
+<div class="row small">
+	<a class="btn" href="/unit/{{if .Sheet}}{{.Sheet.Unit}}{{else}}{{.Progress.Unit}}{{end}}">このユニットの全部を見る</a>
+	<a class="btn" href="/">いまの状態</a>
+	{{if gt .StepIndex 1}}
+	<form action="/session/step" method="post" style="display:inline">
+		<input type="hidden" name="step" value="{{.PrevStepID}}">
+		<input type="hidden" name="action" value="reopen">
+		<button class="btn" type="submit">前の枠に戻る</button>
+	</form>
+	{{end}}
+</div>
+{{end}}
+{{end}}
+
+{{define "end"}}
+<h1>終わりの手続き</h1>
+
+<h2>1. 振り返り</h2>
+{{if .Fields}}
+<p class="warn-line">書いていない欄が{{len .Fields}}個あります。</p>
+<ul>{{range .Fields}}<li>{{.Label}}</li>{{end}}</ul>
+<div class="row"><a class="btn primary" href="/retro">いま埋める</a></div>
+{{else}}
+<p>全部埋まっています。</p>
+{{end}}
+
+{{if .Leftover}}
+<div class="advice">
+	<strong>あとで回した課題が残っています</strong>
+	<p>課題 {{range $i, $n := .Leftover}}{{if $i}}、{{end}}{{$n}}{{end}} が、まだできていません。今日やらないなら、振り返りの「次回やること」に書いておく。</p>
+	<div class="row"><a class="btn" href="/session">課題に戻る</a></div>
+</div>
+{{end}}
+
+<h2>2. {{.Progress.Unit}} の状態</h2>
+<div class="row">
+	<div class="meter{{if lt .TaskDone .TaskTotal}} part{{end}}" style="flex:1; min-width:10rem"><span style="width: {{.TaskPercent}}%"></span></div>
+	<span class="count">課題 {{.TaskDone}} / {{.TaskTotal}}</span>
+</div>
+<ul>{{range .Keep}}<li>{{if .Have}}☑{{else}}☐{{end}} <code>{{.Name}}</code>{{if not .Have}} <span class="muted small">まだ無い（または空）</span>{{end}}</li>{{end}}</ul>
+<div class="row">
+	<form action="/end/check" method="post" style="display:inline">
+		<button class="btn" type="submit">確認コマンドを走らせる</button>
+	</form>
+	<span class="small muted">shellcheck、go vet、go test など。結果はそのまま出す</span>
+</div>
+{{if .CheckOut}}<pre><code>{{.CheckOut}}</code></pre>{{end}}
+
+{{if .CanFinishUnit}}
+<form action="/end/done" method="post" class="row">
+	<input type="hidden" name="unit" value="{{.Progress.Unit}}">
+	<div class="field" style="flex:1; min-width:12rem">
+		<label for="next">完了として記録する（次のユニットのID。空なら変えない）</label>
+		<input id="next" type="text" name="next" placeholder="例: F2">
+	</div>
+	<button class="btn primary" type="submit">{{.Progress.Unit}} を完了にする</button>
+</form>
+<p class="small muted">完了条件は、課題シートの「完了条件の確かめ方」を満たしてから。</p>
+{{else}}
+<p class="small muted">課題と「残すもの」が揃うと、ここで完了として記録できる。</p>
+{{end}}
+
+<h2>3. コミット</h2>
+{{if .Dirty}}
+<pre><code>{{.Dirty}}</code></pre>
+<form action="/end/commit" method="post">
+	<div class="field">
+		<label for="msg">コミットメッセージ（「[no-ai] {{.Progress.Unit}}: 」に続ける）</label>
+		<input id="msg" type="text" name="message" placeholder="例: xxdでUTF-8のバイト列を確認">
+	</div>
+	<div class="row">
+		<button class="btn primary" name="action" value="commit">コミットする</button>
+		<button class="btn" name="action" value="commit-push">コミットして push</button>
+	</div>
+</form>
+{{else}}
+<p>変更はありません（すべてコミット済み）。</p>
+{{end}}
+{{if .Ahead}}<p class="warn-line">push していないコミットが{{.Ahead}}件あります。<form action="/end/commit" method="post" style="display:inline"><button class="btn" name="action" value="push">push する</button></form></p>{{end}}
+
+<div class="row">
+	<form action="/session/step" method="post" style="display:inline">
+		<input type="hidden" name="step" value="end">
+		<input type="hidden" name="action" value="finish">
+		<button class="btn primary big" type="submit">今日を終える</button>
+	</form>
+	<a class="btn" href="/session">案内に戻る</a>
+</div>
+{{end}}
