@@ -8,22 +8,9 @@ offgridは、AIに頼らずに「書ける・読める・直せる」力と、�
 
 このリポジトリはテンプレート。ここに直接書き込まず、コピーして作った自分のリポジトリで学習を進める。
 
-**先に環境を用意する。** 学習はすべてUbuntuの中で行うので、下のコマンドもUbuntuのターミナルで打つ（WindowsはWSL2、macOSはLima、Linuxはそのまま）。Ubuntuの入れ方、`gh` の認証、エディタの選び方は[はじめかた](docs/02-getting-started.md)にある。**まっさらなマシンなら、まずそちらを開く。**
+**[はじめかた（Day 0）](docs/02-getting-started.md)から始める。** まっさらなマシンからの手順が1本にまとまっている（Ubuntuの用意、自分のリポジトリの作成、学習用コマンド `offgrid` の導入、エディタの選び方）。学習はすべてUbuntuの中で行う。WindowsはWSL2、macOSはLima、Linuxはそのまま。
 
-そのうえで、自分のリポジトリを作る。
-
-```sh
-gh repo create offgrid-log --template kom3da/offgrid --private --clone
-cd offgrid-log
-```
-
-次に、セッションを案内する学習用コマンド `offgrid` を入れる（[はじめかた](docs/02-getting-started.md)の手順2。CPUの種類に合わせて1つ落とすだけ）。入れたら、覚えるコマンドはこれ1つでよい。
-
-```sh
-offgrid
-```
-
-今日が何回目で何をやるかを表示して、メニューを出す。あとは[1回の回し方](#1回の回し方)のとおり、案内に従う。
+準備が済んだら、あとは毎回 `offgrid` を実行するだけ（[1回の回し方](#1回の回し方)）。
 
 ## 読む順番
 
@@ -45,7 +32,7 @@ offgrid
 - [O：運用と閉域](docs/14-track-o-ops.md)（Stage 4、O1〜O9）
 - [C：卒業制作 watchdeck](docs/15-track-c-capstone.md)（Stage 5、C1〜C8）
 
-資料は[教材とツール](docs/20-resources.md)、AIに頼むときの文面は [prompts/](prompts/) にある。セッションを案内する学習用コマンド `offgrid` は、[はじめかた](docs/02-getting-started.md)で入れる。
+資料は[教材とツール](docs/20-resources.md)、AIに頼むときの文面は [prompts/](prompts/) にある。
 
 ## ディレクトリ構成
 
