@@ -205,11 +205,6 @@ func (st *SessionState) Skip(unit string, n int) error {
 	return st.save()
 }
 
-func (st *SessionState) ClearSkips(unit string) error {
-	delete(st.Skipped, unit)
-	return st.save()
-}
-
 func (st *SessionState) isSkipped(unit string, n int) bool {
 	for _, v := range st.Skipped[unit] {
 		if v == n {
