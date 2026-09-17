@@ -33,6 +33,10 @@ func newServer(t *testing.T) (*server, http.Handler, string) {
 	mux.HandleFunc("/retro", s.handleRetro)
 	mux.HandleFunc("/stuck", s.handleStuck)
 	mux.HandleFunc("/note", s.handleNote)
+	mux.HandleFunc("/session/step", s.handleSessionStep)
+	mux.HandleFunc("/end/done", s.handleEndDone)
+	mux.HandleFunc("/help", s.handleHelp)
+	mux.HandleFunc("/find", s.handleFind)
 	mux.HandleFunc("/doc/", s.handleDoc)
 	mux.HandleFunc("/file/", s.handleFile)
 	return s, s.guard(mux), root

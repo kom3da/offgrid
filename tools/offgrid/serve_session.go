@@ -422,7 +422,13 @@ func (s *server) handleNote(w http.ResponseWriter, r *http.Request) {
 	}
 	unit := r.FormValue("unit")
 	text := strings.TrimSpace(r.FormValue("text"))
-	if sh, err := LoadSheet(s.root, unit); err == nil && text != "" {
+	if text != "" {
+		// ユニットが読めないときに黙って捨てると、書いたつもりのメモが消える
+		sh, err := LoadSheet(s.root, unit)
+		if err != nil {
+			s.fail(w, st, "メモを書けません", err.Error())
+			return
+		}
 		if err := sh.AppendNote(text); err != nil {
 			s.fail(w, st, "書けません", err.Error())
 			return
