@@ -35,9 +35,11 @@ jobs:
       - name: go vet
         working-directory: tools/offgrid
         run: go vet ./...
+      # -shuffle=on は、テストが互いの状態を汚していると落ちる
+      # （termWidth を戻さないテストが、あとのテストを落とした実例がある）
       - name: go test
         working-directory: tools/offgrid
-        run: go test -race ./...
+        run: go test -race -shuffle=on ./...
       - name: selftest（本物のカリキュラムを読めるか）
         working-directory: tools/offgrid
         run: go run . selftest

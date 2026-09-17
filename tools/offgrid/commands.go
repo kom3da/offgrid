@@ -219,6 +219,19 @@ func cmdRun(root string, p *Progress, s *Session) error {
 	}
 }
 
+// waitOrAbort は「終わったら Enter」を待つ。q なら中断する。
+// 答えを捨てていたので、q と打っても中断せず、その枠を終えたことになっていた。
+func waitOrAbort() error {
+	got, err := ask("\n  終わったら Enter（q=中断）: ", "", "q")
+	if err != nil {
+		return err
+	}
+	if got == "q" {
+		return errAbort{}
+	}
+	return nil
+}
+
 // runStep は、1つの枠を案内する。
 func runStep(root string, p *Progress, s *Session, state *SessionState, step Step) error {
 	switch step.ID {
@@ -231,8 +244,7 @@ func runStep(root string, p *Progress, s *Session, state *SessionState, step Ste
 		if err != nil {
 			if step.ID == StepDB {
 				say("PROGRESS.md の「次のPostgreSQLユニット」を、いま進めるDBユニット（例：D1）に書き換えると、ここでも案内します")
-				_, err := ask("\n  終わったら Enter（q=中断）: ", "", "q")
-				return err
+				return waitOrAbort()
 			}
 			return err
 		}
@@ -252,16 +264,14 @@ func runStep(root string, p *Progress, s *Session, state *SessionState, step Ste
 			}
 			say(dim("同じところで止まるなら、それが今の弱点。ウォームアップの題材にしてよい"))
 		}
-		_, err := ask("\n  終わったら Enter（q=中断）: ", "", "q")
-		return err
+		return waitOrAbort()
 	case StepAfternoon:
 		if s.Afternoon() == "コードリーディング" {
 			say("読解課題は docs/05-debug-and-reading.md の一覧から、今のステージのものを選ぶ。メモは drills/reading/ に置く")
 		} else {
 			say("問題は drills/debug/ の中。答え（answers/）は、3つ直し終わるまで開かない。直したら、そのバグを見つけるテストを1本足す")
 		}
-		_, err := ask("\n  終わったら Enter（q=中断）: ", "", "q")
-		return err
+		return waitOrAbort()
 	case StepRetro:
 		return cmdRetro(root, s, nil)
 	case StepEnd:
