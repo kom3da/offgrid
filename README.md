@@ -56,7 +56,7 @@ gh repo create offgrid-log --template kom3da/offgrid --private --clone
 ├── PROGRESS.md        # 自分の進捗
 ├── templates/         # 振り返りテンプレート
 ├── prompts/           # AIに頼むときの文面
-├── scripts/           # 補助スクリプト（ダミーのログ生成、カリキュラムの取り込み）
+├── scripts/           # offgrid（学習用コマンド）、ダミーのログ生成、カリキュラムの取り込み
 ├── site/              # ドキュメントサイト（Astro Starlight）。テンプレート側でだけ使う
 ├── CLAUDE.md          # Claude Code 向けのコンテキストとレビュー方針
 └── CHANGELOG.md       # 版ごとの変更履歴
@@ -66,13 +66,15 @@ gh repo create offgrid-log --template kom3da/offgrid --private --clone
 
 ## 1回の回し方
 
-1. `PROGRESS.md` で、次のユニットを確認する
-2. 振り返りテンプレートをコピーする
+1. エディタのAI機能をオフにする
+2. 今日やることを表示し、振り返りのファイルを用意する（AIもネットワークも使わない）
    ```sh
-   mkdir -p logs/$(date +%Y) && cp -n templates/retrospective.md logs/$(date +%Y)/$(date +%m-%d).md
+   ./scripts/offgrid
    ```
-3. エディタのAI機能をオフにして、そのユニットの `TASKS.md` を開き、時間割どおりに進める
-4. 夕方に振り返りを書き、`PROGRESS.md` を更新して、コミットする
+3. 表示された課題シート（`TASKS.md`）を開き、時間割どおりに進める
+4. 終わりに `./scripts/offgrid end` を実行する。振り返りの書き忘れ、残すものの不足、コミットの漏れを教えてくれる
+
+ペースは週1回でも、週2〜3回でもよい（[AIなしデーの進め方](docs/04-ai-free-day.md)）。
 
 ## コミット規約
 

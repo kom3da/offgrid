@@ -1,0 +1,474 @@
+#!/usr/bin/env bash
+# offgrid の学習用コマンド。AIもネットワークも使わない。
+# 使い方: ./scripts/offgrid [サブコマンド] [引数]
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+使い方: ./scripts/offgrid [サブコマンド]
+
+  today            今日やることを表示し、振り返りのファイルを用意する（既定）
+  status           進捗の全体像と、作業漏れの疑いを表示する
+  unit [ID]        課題シートを表示する（例: unit F3。省略すると今のユニット）
+  find <語>        ドキュメントと課題シートを全文検索する（ネットワーク不要）
+  check [ID]       確認コマンド（go vet、shellcheck など）と、残すものの有無を見る
+  stuck <文>       詰まりメモを、今日の振り返りに時刻付きで追記する
+  timer [分]       残り時間を表示する（既定15分。詰まったときの区切りに使う）
+  note             今日の振り返りのパスを表示する
+  done [ID]        ユニットの完了を PROGRESS.md に記録する（確認あり）
+  end              終わりの手続き（記入漏れ、残すもの、コミットの確認）
+
+このコマンドはAIを使わない。答えも出さない。AIに頼むときの文面は prompts/ にある。
+USAGE
+}
+
+# ---------- 共通 ----------
+
+read_progress() {
+  stage_line="$(sed -n 's/^- ステージ：[[:space:]]*//p' PROGRESS.md | head -1)"
+  unit="$(sed -n 's/^- 次のユニット：[[:space:]]*//p' PROGRESS.md | head -1)"
+  if [ -z "$stage_line" ] || [ -z "$unit" ]; then
+    echo "error: PROGRESS.md の「現在」に、ステージと次のユニットを書いてください" >&2
+    exit 1
+  fi
+  stage="$(printf '%s' "$stage_line" | tr -dc '0-9' | cut -c1)"
+}
+
+# ユニットID（F3 など）から、課題シートのパスを返す
+sheet_path() {
+  letter="$(printf '%s' "$1" | cut -c1 | tr '[:lower:]' '[:upper:]')"
+  number="$(printf '%s' "$1" | tr -dc '0-9')"
+  [ -n "$number" ] || return 1
+  glob="$(printf '%s%02d' "$letter" "$number")"
+  found="$(find drills -type f -path "*/${glob}-*/TASKS.md" | head -1)"
+  [ -n "$found" ] || found="$(find drills -type f -path "*/${glob}-*/TASKS.local.md" | head -1)"
+  [ -n "$found" ] || return 1
+  printf '%s\n' "$found"
+}
+
+session_state() {
+  log="logs/$(date +%Y)/$(date +%m-%d).md"
+  past_logs="$(find logs -type f -name '*.md' ! -path "$log" | sort)"
+  if [ -z "$past_logs" ]; then done_count=0; else
+    done_count="$(printf '%s\n' "$past_logs" | wc -l | tr -d '[:space:]')"
+  fi
+  session=$((done_count + 1))
+}
+
+ensure_log() {
+  mkdir -p "$(dirname "$log")"
+  [ -e "$log" ] || cp templates/retrospective.md "$log"
+}
+
+# 課題シートの「残すもの」から、単純なファイル名だけを取り出す
+# バッククォートは Markdown の記法として探すので、展開させない
+# shellcheck disable=SC2016
+expected_files() {
+  sed -n '/^## 残すもの$/,/^## /p' "$1" |
+    grep -oE '`[A-Za-z0-9._-]+\.(md|sh|sql|go|ts|tsx|js|txt|log|csv)`' |
+    tr -d '`' | grep -vE '^TASKS' | sort -u
+}
+
+# そのユニットで、まだ無い（または空の）ファイルを列挙する
+missing_files() {
+  sheet="$1"
+  dir="$(dirname "$sheet")"
+  for f in $(expected_files "$sheet"); do
+    case "$f" in
+      access.log) continue ;;  # 作り直せるものはコミットしない
+    esac
+    if [ ! -s "$dir/$f" ]; then printf '%s\n' "$f"; fi
+  done
+}
+
+# 振り返りの、テンプレートのまま残っている欄を列挙する
+unfilled_fields() {
+  target="$1"
+  awk '
+    /^#/ { heading = $0; next }
+    /^- *$/ || /^[0-9]+\. *$/ { if (heading != "") print "  " heading; heading = "" ; next }
+    /：[[:space:]]*$/ { print "  " $0 }
+  ' "$target" | sort -u
+}
+
+# ---------- today ----------
+
+cmd_today() {
+  read_progress
+  session_state
+  sheet="$(sheet_path "$unit" || true)"
+  ensure_log
+
+  if [ $((session % 2)) -eq 1 ]; then
+    afternoon="コードリーディング（読解課題を1本）"
+    warmup="前回のセッションでやったこと"
+  else
+    afternoon="デバッグドリル（仕込みバグを3つ）"
+    warmup="4セッション以上前にやったこと"
+  fi
+  if [ "$done_count" -eq 0 ]; then
+    warmup="初回なので、再現するものがない。代わりに「Ubuntuのシェルを開き、cd ~/offgrid-log で移動し、ls で中身を見る」を、何も見ずにやる"
+    afternoon="コードリーディング（短い man ページを1つ。例: man ls）"
+  fi
+
+  case "$session" in
+    1 | 2 | 3) finish="12:00まで（3時間。最後の30分で振り返り）" ;;
+    4 | 5 | 6) finish="14:00まで（4時間。最後の30分で振り返り）" ;;
+    *) finish="16:00まで（6時間）" ;;
+  esac
+
+  case "$stage" in
+    0) main_block="3.5時間" ; db="なし" ; searches="5回" ;;
+    1 | 2) main_block="2.5時間" ; db="1時間（PostgreSQLのユニット）" ; searches="5回" ;;
+    3) main_block="3.5時間（DBを含む）" ; db="メイン枠の中で進める" ; searches="3回" ;;
+    *) main_block="3.5時間" ; db="メイン枠の中で進める" ; searches="0回（オフラインのドキュメントだけ）" ;;
+  esac
+
+  echo "=============================================="
+  echo " 第${session}回 / Stage ${stage} / ユニット ${unit}"
+  echo "=============================================="
+  echo
+  echo "■ 今日やること"
+  echo "  1. ウォームアップ（30分）：${warmup}を、何も見ずに再現する"
+  echo "     ＋ 前回のレビューで指摘された箇所の直しを1件"
+  echo "  2. メイン（${main_block}）：${sheet:-（課題シートが見つかりません）}"
+  echo "     PostgreSQL：${db}"
+  echo "  3. 午後（1.5時間）：${afternoon}"
+  echo "  4. 振り返り（30分）：${log}"
+  echo
+  echo "■ 今日の終わり"
+  echo "  ${finish}"
+  echo
+  echo "■ ルール"
+  echo "  AIの補完とチャットはオフ。Web検索は${searches}まで"
+  echo "  詰まったら15分で手順に切り替え、45分で打ち切る（./scripts/offgrid timer 15）"
+  echo
+  echo "■ 開くファイル"
+  if [ -n "$sheet" ]; then
+    echo "  課題シート    : ${sheet}"
+    echo "  メモの置き場所: $(dirname "$sheet")/"
+  else
+    echo "  課題シートが見つかりません。PROGRESS.md の「次のユニット」を確かめてください"
+    echo "  テンプレートに無いユニットは、prompts/unit-drill.md で自分用のシートを作れます"
+  fi
+  echo "  振り返り      : ${log}"
+
+  if [ "$done_count" -gt 0 ]; then
+    echo
+    echo "■ ウォームアップで見返すログ"
+    if [ $((session % 2)) -eq 1 ]; then
+      printf '%s\n' "$past_logs" | tail -1 | sed 's/^/  前回: /'
+    else
+      printf '%s\n' "$past_logs" | tail -4 | head -1 | sed 's/^/  4回以上前: /'
+    fi
+    prev="$(printf '%s\n' "$past_logs" | tail -1)"
+    holes="$(unfilled_fields "$prev")"
+    if [ -n "$holes" ]; then
+      echo
+      echo "■ 前回の振り返り（${prev}）に、書いていない欄があります"
+      printf '%s\n' "$holes"
+      echo "  今日の終わりに、まとめて埋めなくてよい。思い出せるうちに書く"
+    fi
+  fi
+  echo
+  echo "■ 終わったら"
+  echo "  ./scripts/offgrid end"
+}
+
+# ---------- status ----------
+
+cmd_status() {
+  read_progress
+  session_state
+  echo "■ 現在"
+  echo "  Stage ${stage} / 次のユニット ${unit} / 次は第${session}回"
+  if [ "$done_count" -gt 0 ]; then
+    echo "  済んだセッション: ${done_count}回（最後: $(printf '%s\n' "$past_logs" | tail -1)）"
+    echo "  次の見直しまで: あと $((4 - done_count % 4))回（4回ごとに logs/ を並べて見直す）"
+  else
+    echo "  済んだセッション: 0回"
+  fi
+  echo
+  echo "■ ユニットの進み具合（PROGRESS.md より）"
+  awk '
+    /^### / { track = $0; sub(/^### /, "", track) }
+    /^- \[x\]/ { d[track]++; t[track]++ }
+    /^- \[ \]/ { t[track]++ }
+    END { for (k in t) printf "  %-30s %2d / %2d\n", k, d[k] + 0, t[k] }
+  ' PROGRESS.md | sort
+  printf '  %-30s %2d / %2d\n' "合計" "$(grep -c '^- \[x\]' PROGRESS.md || true)" "$(grep -c '^- \[[ x]\]' PROGRESS.md || true)"
+
+  echo
+  echo "■ 作業漏れの疑い"
+  found_issue=0
+  # PROGRESS.md のチェックと、実際に残っているファイルを突き合わせる
+  while read -r id; do
+    [ -n "$id" ] || continue
+    sheet="$(sheet_path "$id" || true)"
+    [ -n "$sheet" ] || continue
+    dir="$(dirname "$sheet")"
+    files_here="$(find "$dir" -maxdepth 1 -type f ! -name 'TASKS*.md' | head -1)"
+    checked="$(grep -c "^- \[x\] ${id} " PROGRESS.md || true)"
+    miss="$(missing_files "$sheet" | tr '\n' ' ' | sed 's/ *$//')"
+    if [ "$checked" -eq 0 ] && [ -n "$files_here" ]; then
+      echo "  ${id}: 書いたものがあるのに、PROGRESS.md が未チェック → 完了条件を確かめて ./scripts/offgrid done ${id}"
+      found_issue=1
+    elif [ "$checked" -gt 0 ] && [ -n "$miss" ]; then
+      echo "  ${id}: 完了になっているが、残すものが無い → ${miss}"
+      found_issue=1
+    fi
+  done <<EOF
+$(sed -n 's/^- \[[ x]\] \([FGTDOC][0-9]*\) .*/\1/p' PROGRESS.md)
+EOF
+  # 振り返りの記入漏れ（新しいものから3件まで）
+  if [ -n "$past_logs" ]; then
+    shown=0
+    rest=0
+    for l in $(printf '%s\n' "$past_logs" | sort -r); do
+      n="$(unfilled_fields "$l" | wc -l | tr -d '[:space:]')"
+      [ "$n" -gt 0 ] || continue
+      found_issue=1
+      if [ "$shown" -lt 3 ]; then
+        echo "  ${l}: 書いていない欄が${n}個（./scripts/offgrid note で開く欄の一覧は end で出る）"
+        shown=$((shown + 1))
+      else
+        rest=$((rest + 1))
+      fi
+    done
+    [ "$rest" -gt 0 ] && echo "  ほか、書いていない欄のある振り返りが${rest}件"
+  fi
+  # git の状態
+  if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+    echo "  コミットしていない変更がある → ./scripts/offgrid end"
+    found_issue=1
+  fi
+  ahead="$(git log --oneline '@{u}..' 2>/dev/null | wc -l | tr -d '[:space:]' || true)"
+  if [ -n "$ahead" ] && [ "$ahead" != "0" ]; then
+    echo "  push していないコミットが ${ahead}件ある → git push origin main"
+    found_issue=1
+  fi
+  [ "$found_issue" -eq 0 ] && echo "  （なし）"
+  echo
+  echo "■ 次の関門"
+  echo "  Stage ${stage} の確認項目と実技は docs/06-evaluation.md"
+}
+
+# ---------- unit / find ----------
+
+cmd_unit() {
+  id="${1:-}"
+  if [ -z "$id" ]; then read_progress; id="$unit"; fi
+  path="$(sheet_path "$id" || true)"
+  if [ -z "$path" ]; then echo "error: ${id} の課題シートが見つかりません" >&2; exit 1; fi
+  if [ -t 1 ] && command -v less >/dev/null 2>&1; then less "$path"; else cat "$path"; fi
+}
+
+cmd_find() {
+  word="${1:-}"
+  if [ -z "$word" ]; then echo "使い方: ./scripts/offgrid find <語>" >&2; exit 1; fi
+  echo "■ ドキュメント"
+  grep -rn --include='*.md' -- "$word" docs || echo "  （なし）"
+  echo
+  echo "■ 課題シート"
+  grep -rn --include='TASKS*.md' -- "$word" drills || echo "  （なし）"
+  echo
+  echo "■ 自分のメモと振り返り"
+  grep -rn --include='*.md' --exclude='TASKS*.md' -- "$word" drills logs 2>/dev/null || echo "  （なし）"
+}
+
+# ---------- check ----------
+
+run() {
+  echo "＋ $*"
+  "$@" || echo "  → 失敗（出力を読んで直す）"
+}
+
+cmd_check() {
+  id="${1:-}"
+  if [ -z "$id" ]; then read_progress; id="$unit"; fi
+  sheet="$(sheet_path "$id" || true)"
+  if [ -z "$sheet" ]; then echo "error: ${id} の課題シートが見つかりません" >&2; exit 1; fi
+  dir="$(dirname "$sheet")"
+  letter="$(printf '%s' "$id" | cut -c1 | tr '[:lower:]' '[:upper:]')"
+  echo "■ ${id} の確認（${dir}）"
+  case "$letter" in
+    F | O)
+      found="$(find "$dir" -maxdepth 1 -name '*.sh' | sort)"
+      if [ -z "$found" ]; then echo "  シェルスクリプトがまだない"
+      elif command -v shellcheck >/dev/null 2>&1; then
+        # shellcheck disable=SC2086
+        run shellcheck $found
+      else echo "  shellcheck が入っていない（sudo apt install shellcheck）"; fi
+      ;;
+    G | C)
+      target="$dir"
+      [ "$letter" = "C" ] && target="capstone"
+      if [ -e "$target/go.mod" ]; then
+        ( cd "$target" && run go vet ./... && run go test -race -cover ./... )
+      else echo "  ${target}/go.mod がまだない（go mod init から）"; fi
+      ;;
+    T)
+      if [ -e "$dir/package.json" ]; then
+        ( cd "$dir" && run npx tsc --noEmit --strict && run npx vitest run )
+      else echo "  ${dir}/package.json がまだない（npm init から）"; fi
+      ;;
+    D)
+      found="$(find "$dir" -maxdepth 1 -name '*.sql' | sort)"
+      if [ -z "$found" ]; then echo "  .sql ファイルがまだない"
+      else
+        echo "  次のコマンドで実行できる（データベース名は課題シートを見る）"
+        printf '%s\n' "$found" | sed 's|^|    docker exec -i pg-offgrid psql -U postgres -v ON_ERROR_STOP=1 < |'
+      fi
+      ;;
+    *) echo "  確認コマンドは課題シートの「完了条件の確かめ方」を見る" ;;
+  esac
+  echo
+  echo "■ 残すもの"
+  exp="$(expected_files "$sheet")"
+  if [ -z "$exp" ]; then
+    echo "  課題シートの「残すもの」を見る"
+  else
+    for f in $exp; do
+      if [ -s "$dir/$f" ]; then echo "  [済] ${f}"; else echo "  [未] ${f}"; fi
+    done
+  fi
+  echo
+  echo "■ 完了条件の確かめ方"
+  sed -n '/^## 完了条件の確かめ方$/,/^## /p' "$sheet" | sed '1d;$d' | sed 's/^/  /'
+}
+
+# ---------- stuck / timer / note ----------
+
+cmd_stuck() {
+  if [ "$#" -eq 0 ]; then echo "使い方: ./scripts/offgrid stuck \"<詰まったこと>\"" >&2; exit 1; fi
+  session_state
+  ensure_log
+  entry="- $(date +%H:%M) $*"
+  # 「詰まったこと」の欄の最後に差し込む（空の「- 」があれば、それを置き換える）
+  awk -v e="$entry" '
+    /^## 詰まったこと/ { print; inside = 1; pending = ""; next }
+    inside && /^- *$/ { print e; printf "%s", pending; inside = 0; next }
+    inside && /^[[:space:]]*$/ { pending = pending "\n"; next }
+    inside && /^#/ { print e; printf "%s", pending; print; inside = 0; next }
+    inside { printf "%s", pending; pending = ""; print; next }
+    { print }
+    END { if (inside) { print e; printf "%s", pending } }
+  ' "$log" > "$log.tmp" && mv "$log.tmp" "$log"
+  echo "${log} の「詰まったこと」に書きました。15分たったら手順に切り替え、45分で打ち切る"
+}
+
+cmd_timer() {
+  minutes="${1:-15}"
+  case "$minutes" in '' | *[!0-9]*) echo "使い方: ./scripts/offgrid timer [分]" >&2; exit 1 ;; esac
+  echo "${minutes}分を計ります（Ctrl+C で止める）"
+  remaining="$minutes"
+  while [ "$remaining" -gt 0 ]; do
+    sleep 60
+    remaining=$((remaining - 1))
+    if [ "$remaining" -gt 0 ] && [ $((remaining % 5)) -eq 0 ]; then echo "  残り ${remaining}分"; fi
+  done
+  printf '\a'
+  echo "時間です。詰まっているなら、エラー文を全文読む→man→最小の再現→検索、の順に切り替える"
+}
+
+cmd_note() {
+  session_state
+  ensure_log
+  echo "$log"
+}
+
+# ---------- done / end ----------
+
+cmd_done() {
+  id="${1:-}"
+  if [ -z "$id" ]; then read_progress; id="$unit"; fi
+  id="$(printf '%s' "$id" | tr '[:lower:]' '[:upper:]')"
+  line="$(grep -n "^- \[ \] ${id} " PROGRESS.md | head -1 || true)"
+  if [ -z "$line" ]; then
+    if grep -q "^- \[x\] ${id} " PROGRESS.md; then echo "${id} は、すでに完了になっています"; exit 0; fi
+    echo "error: PROGRESS.md に「- [ ] ${id} ...」の行がありません" >&2
+    exit 1
+  fi
+  sheet="$(sheet_path "$id" || true)"
+  if [ -n "$sheet" ]; then
+    echo "■ ${id} の完了条件の確かめ方"
+    sed -n '/^## 完了条件の確かめ方$/,/^## /p' "$sheet" | sed '1d;$d' | sed 's/^/  /'
+    miss="$(missing_files "$sheet" | tr '\n' ' ')"
+    if [ -n "$miss" ]; then
+      echo
+      echo "■ 残すものが、まだ無い（または空）"
+      echo "  ${miss}"
+    fi
+    echo
+  fi
+  printf '上を満たしましたか？ 記録する場合は y を入力 [y/N]: '
+  read -r answer
+  case "$answer" in y | Y) ;; *) echo "記録しませんでした"; exit 0 ;; esac
+  number="${line%%:*}"
+  awk -v n="$number" -v d="$(date +%F)" 'NR==n { sub(/^- \[ \]/, "- [x]"); print $0 " — " d; next } { print }' PROGRESS.md > PROGRESS.md.tmp
+  mv PROGRESS.md.tmp PROGRESS.md
+  echo "記録しました: $(sed -n "${number}p" PROGRESS.md)"
+  echo "「現在」の「次のユニット」も、自分で書き換えてください"
+}
+
+cmd_end() {
+  read_progress
+  session_state
+  ensure_log
+  echo "■ 今日の振り返り（${log}）"
+  holes="$(unfilled_fields "$log")"
+  if [ -n "$holes" ]; then
+    echo "  書いていない欄があります"
+    printf '%s\n' "$holes"
+  else
+    echo "  全部埋まっています"
+  fi
+  echo
+  echo "■ ${unit} の残すもの"
+  sheet="$(sheet_path "$unit" || true)"
+  if [ -n "$sheet" ]; then
+    miss="$(missing_files "$sheet" | tr '\n' ' ')"
+    if [ -n "$miss" ]; then echo "  まだ無い（または空）: ${miss}"; else echo "  揃っています"; fi
+  fi
+  echo
+  echo "■ 次にやること"
+  echo "  1. 完了条件を満たしたなら: ./scripts/offgrid done ${unit}"
+  echo "  2. PROGRESS.md の「次のユニット」を、次に進むものに書き換える"
+  echo
+  echo "■ まだコミットしていないもの"
+  if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+    git status --short | sed 's/^/  /'
+    echo
+    echo "  git add -A"
+    echo "  git commit -m \"[no-ai] ${unit}: <やったこと>\""
+    echo "  git push origin main"
+  else
+    echo "  なし（すべてコミット済み）"
+  fi
+  ahead="$(git log --oneline '@{u}..' 2>/dev/null | wc -l | tr -d '[:space:]' || true)"
+  if [ -n "$ahead" ] && [ "$ahead" != "0" ]; then echo "  push していないコミットが ${ahead}件あります"; fi
+}
+
+# ---------- 入口 ----------
+
+main() {
+  cd "$(dirname "$0")/.."
+  sub="${1:-today}"
+  [ "$#" -gt 0 ] && shift
+  case "$sub" in
+    today) cmd_today ;;
+    status) cmd_status ;;
+    unit) cmd_unit "$@" ;;
+    find) cmd_find "$@" ;;
+    check) cmd_check "$@" ;;
+    stuck) cmd_stuck "$@" ;;
+    timer) cmd_timer "$@" ;;
+    note) cmd_note ;;
+    done) cmd_done "$@" ;;
+    end) cmd_end ;;
+    -h | --help | help) usage ;;
+    *) echo "error: 知らないサブコマンド: ${sub}" >&2; echo >&2; usage >&2; exit 1 ;;
+  esac
+}
+
+main "$@"
