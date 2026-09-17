@@ -91,10 +91,31 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.ver.outputs.tag }}
         run: |
+          # 先にリリースだけ作る。資産を一緒に渡すと、1つのアップロードが失敗した時点で
+          # リリースごと作られない（GitHub の upload API は 500 を返すことがある）
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" tools/offgrid/dist/* --clobber
             gh release edit "$TAG" --notes-file /tmp/notes.md
           else
-            gh release create "$TAG" tools/offgrid/dist/* \
-              --title "$TAG" --notes-file /tmp/notes.md
+            gh release create "$TAG" --title "$TAG" --notes-file /tmp/notes.md
+          fi
+
+          # 1つずつ上げ、失敗したものだけ入れ直す
+          for f in tools/offgrid/dist/*; do
+            ok=
+            for try in 1 2 3; do
+              if gh release upload "$TAG" "$f" --clobber; then ok=1; break; fi
+              echo "::warning::$(basename "$f") のアップロードに失敗（${try}/3）。待って再試行する"
+              sleep 15
+            done
+            [ -n "$ok" ] || { echo "::error::$(basename "$f") を上げられませんでした"; exit 1; }
+          done
+
+          # 欠けたまま公開されるのを防ぐ（実際に1つ欠けたことがある）
+          want=$(ls tools/offgrid/dist | wc -l | tr -d ' ')
+          got=$(gh release view "$TAG" --json assets --jq '.assets|length')
+          echo "資産: $got / $want"
+          if [ "$got" != "$want" ]; then
+            echo "::error::資産が $want 件そろっていません（$got 件）"
+            gh release view "$TAG" --json assets --jq '.assets[].name'
+            exit 1
           fi
