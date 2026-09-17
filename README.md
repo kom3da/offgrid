@@ -12,10 +12,10 @@
 | [docs/01-roadmap.md](docs/01-roadmap.md) | 6ステージの構成と配分 |
 | [docs/02-ai-free-day.md](docs/02-ai-free-day.md) | 週1回の「AIなしデー」のルールと1日のテンプレート |
 | [docs/03-foundation.md](docs/03-foundation.md) | Stage 0：コンピュータ・Linux・Git・ネットワーク・HTTP（F1〜F10） |
-| [docs/04-go-track.md](docs/04-go-track.md) | Go（G1〜G18） |
-| [docs/05-typescript-track.md](docs/05-typescript-track.md) | HTML・JavaScript・TypeScript・React（T1〜T10） |
+| [docs/04-go-track.md](docs/04-go-track.md) | Go（G1〜G20） |
+| [docs/05-typescript-track.md](docs/05-typescript-track.md) | HTML・JavaScript・TypeScript・React（T1〜T11） |
 | [docs/06-postgresql-track.md](docs/06-postgresql-track.md) | PostgreSQL（D1〜D15） |
-| [docs/07-ops-offline-track.md](docs/07-ops-offline-track.md) | Stage 4：運用と閉域（O1〜O8） |
+| [docs/07-ops-offline-track.md](docs/07-ops-offline-track.md) | Stage 4：運用と閉域（O1〜O9） |
 | [docs/08-capstone-watchdeck.md](docs/08-capstone-watchdeck.md) | Stage 5：卒業制作 watchdeck（C1〜C8） |
 | [docs/09-debug-and-reading.md](docs/09-debug-and-reading.md) | デバッグドリルとコードリーディング |
 | [docs/10-evaluation.md](docs/10-evaluation.md) | 到達レベルとステージ別チェックリスト |
@@ -28,12 +28,12 @@
 
 | ステージ | ユニット | 目安（AIなしデー） |
 | --- | --- | --- |
-| Stage 0：基礎 | F1〜F10 | 8〜12回 |
-| Stage 1：Go入門 | G1〜G11、D1〜D5 | 10〜15回 |
-| Stage 2：Webの基礎 | T1〜T10、G12〜G14、D6〜D12 | 12〜18回 |
-| Stage 3：並行処理とDB連携 | G15〜G18、D13〜D15 | 8〜12回 |
-| Stage 4：運用と閉域 | O1〜O8 | 8〜12回 |
-| Stage 5：卒業制作 | C1〜C8 | 12〜20回 |
+| Stage 0：基礎 | F1〜F10 | 10〜14回 |
+| Stage 1：Go入門 | G1〜G11、D1〜D5 | 18〜24回 |
+| Stage 2：Webの基礎 | T1〜T10、G12〜G14、D6〜D12 | 20〜26回 |
+| Stage 3：並行処理とDB連携 | G15〜G20、T11、D13〜D15 | 12〜16回 |
+| Stage 4：運用と閉域 | O1〜O9 | 12〜16回 |
+| Stage 5：卒業制作 | C1〜C8 | 25〜35回（必須版） |
 
 ## ディレクトリ構成
 
@@ -92,5 +92,6 @@ AIなしデーの終わりに `git tag noai-YYYY-MM-DD` を付ける。
 
 ## 注意
 
-- 題材は公開情報とダミーデータのみ。業務上の機密や実在システムの非公開情報は置かない
-- 非公開（private）リポジトリとして運用する
+- このリポジトリは公開している。一度pushした内容は、消しても残る前提で扱う
+- 題材は公開情報とダミーデータのみ。業務上の機密、実在システムの非公開情報、実在のホスト名・IPアドレス・認証情報は置かない。`logs/` の振り返りにも、仕事の内容は書かない
+- 書籍の問題文や本文は転載しない（自分の解答と、出典のページ番号だけを残す）
