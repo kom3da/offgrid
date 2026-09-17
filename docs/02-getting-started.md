@@ -251,10 +251,12 @@ git push origin main
 テンプレートの内容（学習テキスト）は、誤りの修正や教材の更新のために、ときどき改訂される（[改訂の運用](30-revision.md)）。自分の学習の進み具合とは関係がないので、取り込むかどうか、いつ取り込むかは自分で決めてよい。取り込むには、AIを使ってよい日に、版を指定して実行する。版の一覧と変更点は、[CHANGELOG](../CHANGELOG.md)にある。
 
 ```sh
-./scripts/update-curriculum.sh v2026.10.2
+./scripts/update-curriculum.sh v1.0.0
 git diff --stat          # 何が変わったかを確認する
-git add -A && git commit -m "[docs] Update curriculum to v2026.10.2"
+git add -A && git commit -m "[docs] Update curriculum to v1.0.0"
 ```
+
+版の最初の数字（`1`）が上がったときは、**学習用コマンドも入れ替える**（手順2のダウンロードをもう一度やる）。課題シートの書き方が変わり、古いツールでは読めなくなるため。
 
 途中で失敗したら、`git restore . && git clean -fd docs prompts templates scripts` で、取り込む前の状態に戻せる。
 

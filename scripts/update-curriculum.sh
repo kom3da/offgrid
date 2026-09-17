@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # テンプレート（kom3da/offgrid）の指定した版から、カリキュラム部分だけを取り込む。
-# 使い方: ./scripts/update-curriculum.sh v2026.10.2
+# 使い方: ./scripts/update-curriculum.sh v1.0.0
 # 置き換えるのは docs/ prompts/ templates/ scripts/ tools/ CLAUDE.md README.md CHANGELOG.md と、
 # drills/ の中の TASKS.md（課題シート）だけ。それ以外の自分のファイルには触れない。
 set -euo pipefail
@@ -8,7 +8,7 @@ set -euo pipefail
 # Wrapped in a function so that bash reads the whole file before scripts/ is replaced
 main() {
   TEMPLATE="${TEMPLATE:-kom3da/offgrid}"
-  tag="${1:?usage: update-curriculum.sh <tag>  (e.g. v2026.10.2)}"
+  tag="${1:?usage: update-curriculum.sh <tag>  (e.g. v1.0.0)}"
   dirs=(docs prompts templates scripts tools)
   files=(CLAUDE.md README.md CHANGELOG.md)
 
