@@ -8,19 +8,32 @@ import { Icon } from '@astrojs/starlight/components';
 {/* This is intentionally inlined to avoid FOUC. */}
 <script is:inline>
 	window.StarlightThemeProvider = (() => {
-		const storedTheme =
-			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const key = 'starlight-theme';
+		let stored = null;
+		try {
+			stored = localStorage.getItem(key);
+		} catch {
+			stored = null;
+		}
+		// 一度も選んでいない人には、ライトを既定にする（Starlight と Rapide の既定は OS 設定）。
+		// 「システム」を選んだ人は空文字が入るので、その選択は尊重する。
+		if (stored === null) {
+			try {
+				localStorage.setItem(key, 'light');
+			} catch {
+				/* localStorage が使えない環境でも、下でライトにする */
+			}
+			stored = 'light';
+		}
 		const theme =
-			storedTheme === 'light' || storedTheme === 'dark'
-				? storedTheme
-				: storedTheme === 'auto'
-					? window.matchMedia('(prefers-color-scheme: dark)').matches
-						? 'dark'
-						: 'light'
+			stored === 'dark' || stored === 'light'
+				? stored
+				: window.matchMedia('(prefers-color-scheme: dark)').matches
+					? 'dark'
 					: 'light';
-		document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light';
+		document.documentElement.dataset.theme = theme;
 		return {
-			updatePickers(theme = storedTheme || 'light') {
+			updatePickers(theme = stored || 'auto') {
 				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
 					const select = picker.querySelector('select');
 					if (select) select.value = theme;
