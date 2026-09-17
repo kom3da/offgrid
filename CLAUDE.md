@@ -13,7 +13,8 @@ Claude Code がこのリポジトリで作業・レビューするときのコ�
 
 - 学習者の前提：コンピュータの仕組み、Linux、Git、ネットワーク、Go、PostgreSQL、TypeScript のいずれも「ほぼ知らない」。専門用語には短い説明を付ける
 - 期限なし。6 つのステージ（Stage 0〜5）とユニット（F / G / T / D / O / C、全73本）で進む。構成は `docs/03-roadmap.md`、現在地は `PROGRESS.md`
-- 学習の環境は、全員が Ubuntu（WSL2、Lima、Linux）。コマンドの説明は Ubuntu（GNU、bash 5）を前提にする。PostgreSQL はコンテナ `pg-offgrid`（postgres:18）
+- 学習の環境は、全員が Ubuntu（WSL2、Lima、Linux）。コマンドの説明は Ubuntu 26.04（bash 5.3）を前提にする。PostgreSQL はコンテナ `pg-offgrid`（postgres:18）
+- **Ubuntu 26.04 の `ls`・`sort`・`uniq`・`wc`・`cut`・`head`・`tail`・`cat`・`chmod`・`stat` は、GNU ではなく [uutils](https://uutils.github.io/)（Rust 実装）。** `grep`・`sed`・`awk`・`find`・`cp`・`mv`・`rm` は GNU のまま。カリキュラムで使うオプションは両方で効き、`man` も入っている実装の内容が出る（実機で確認済み）。「GNU の〜」と断定する書き方はせず、`man` で確かめる形に書く
 - 進め方は「AIなしデー」（1セッション）の積み上げ。週に何回やるかは学習者が決める。ルールは `docs/04-ai-free-day.md`
 - 学習者は `offgrid` という学習用コマンド（`tools/offgrid`）で進める。`offgrid run` と `offgrid serve` がセッションを1問ずつ案内し、`offgrid status` が作業漏れを出す。AIもネットワークも使わない
 - 最終目標：`capstone/` に閉域でも動く監視ダッシュボード「watchdeck」を作る（`docs/15-track-c-capstone.md`）
