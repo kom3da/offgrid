@@ -4,7 +4,7 @@ title: "教材・リソース"
 
 紙の書籍かPDFを中心に揃え、オンライン教材は事前にオフラインで使えるようにしておく。書名と入手方法は購入前に最新版を確認すること（記憶に基づく一覧）。
 
-書籍は先にまとめて買わない。最初に買うのは2冊だけにし、残りはそのステージの開始時に、その時点の最新版を確認して買う。各ユニットで「読む章」は、ステージ開始時の小改訂（[改訂の運用](12-revision.md)）で、目次を検索で確認して追記する。読む時間は、平日の火曜と木曜（[平日の補助メニュー](02-ai-free-day.md)）。
+書籍は先にまとめて買わない。最初に買うのは2冊だけにし、残りはそのステージの開始時に、その時点の最新版を確認して買う。各ユニットで読む章は、今後の版で順次追加する（[改訂の運用](12-revision.md)）。それまでは、課題シートの「平日に読むもの」を手がかりに、目次から選ぶ。読む時間は、平日の火曜と木曜と、AIなしデーのメイン①の最初の30分（[AIなしデーの運用](02-ai-free-day.md)）。
 
 ## 書籍
 
@@ -23,7 +23,7 @@ title: "教材・リソース"
 | Go | 『Go言語による並行処理』（Katherine Cox-Buday） | G15、G16 | Stage 3の開始時 |
 | アルゴリズム | 『なっとく！アルゴリズム』（Aditya Bhargava） | G9、G10 | Stage 1の開始時 |
 | JavaScript | 『JavaScript Primer』（Web版は無料） | T2〜T4 | Stage 2の開始時 |
-| TypeScript | 『サバイバルTypeScript』（Web版は無料） | T5〜T7 | Stage 2の開始時 |
+| TypeScript | 『サバイバルTypeScript』（Web版は無料） | T5、T6、T8 | Stage 2の開始時 |
 | TypeScript | 『プロを目指す人のためのTypeScript入門』（鈴木僚太） | T5〜T8 | Stage 2の開始時 |
 | SQL | 『SQL ゼロからはじめるデータベース操作』（ミック） | D1〜D5 | Stage 1の開始時 |
 | DB設計 | 『達人に学ぶDB設計徹底指南書』（ミック） | D6、D7 | Stage 2の開始時 |
@@ -52,11 +52,11 @@ AIなしデーでは、初回からオフラインのドキュメントを使う
 
 | ステージ | 用意するもの |
 | --- | --- |
-| Stage 0 | Linux標準教科書とPro GitのPDF、DevDocsでBash・Git・HTTPをオフライン化、`man`が引けることの確認 |
+| Stage 0 | Linux標準教科書とPro GitのPDF、DevDocsでBash・Git・HTTP・Dockerをオフライン化、`man`が引けることの確認 |
 | Stage 1 | A Tour of Goと`pkgsite`のローカル起動、PostgreSQLマニュアルのPDF、サンプルDBのpagila |
 | Stage 2 | DevDocsでMDN（HTML・CSS・JavaScript）・TypeScript・Reactをオフライン化、JavaScript Primerのclone |
 | Stage 3 | `pgx`のソースとドキュメントのclone、コードリーディング対象のOSSのclone |
-| Stage 4 | [閉域環境の準備チェックリスト](07-ops-offline-track.md)（O7）で、ここまでの手順をコード化する |
+| Stage 4 | Ansible・Docker Compose・負荷試験ツール（`vegeta`か`k6`）のドキュメントを保存する。systemdは`man systemd.service`、`man journalctl`が引けることを確認する。[閉域環境の準備チェックリスト](07-ops-offline-track.md)（O7）で、ここまでの手順をコード化する |
 
 DevDocsのオフライン保存はブラウザの中に置かれるので、ブラウザのデータを消すと失われる。消えたら取り直す。
 

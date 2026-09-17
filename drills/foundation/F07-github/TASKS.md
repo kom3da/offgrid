@@ -1,6 +1,6 @@
 # F7：Gitの応用とGitHub（課題シート）
 
-この `README.md` は書き換えない。自分が書いたものは、同じディレクトリに別のファイルとして置く。
+この `TASKS.md` はカリキュラムの一部なので、書き換えない。コマンドを試す場所は、下の「準備」で作る `~/sandbox/` の中。メモ（`notes.md`）、`explain.md`、自分で書いたスクリプトは、リポジトリの中のこのディレクトリに、AI機能を切ったVS Codeで書く（F6からは `vim` や `nano` でもよい）。
 
 ## ねらい
 
@@ -16,7 +16,12 @@ SSH鍵でGitHubにつなぎ、ブランチを使った開発の流れ（分岐�
 mkdir -p ~/sandbox/f07 && cd ~/sandbox/f07 && git init
 ```
 
-GitHubを使う課題（1、6）のために、練習用のリポジトリをGitHubに1つ作る（`gh repo create f07-practice --private --source=. --remote=origin`）。終わったら消してよい。
+GitHubを使う課題（1、6）のために、練習用のリポジトリをGitHubに1つ作る。最初のコミットを `main` に積んでから、次を実行する（`--push` で、`main` をGitHubに送る）。終わったら消してよい。
+
+```sh
+echo '# f07 practice' > README.md && git add README.md && git commit -m 'first commit'
+gh repo create f07-practice --private --source=. --remote=origin --push
+```
 
 ## 課題
 
@@ -24,6 +29,7 @@ GitHubを使う課題（1、6）のために、練習用のリポジトリをGit
    - `ssh-keygen -t ed25519` で鍵を作る。できた2つのファイルのうち、人に渡してよいのはどちらか。それぞれのパーミッションを `ls -l` で確かめ、なぜそうなっているかを考える（F2）
    - 公開鍵をGitHubに登録し、`ssh -T git@github.com` でつながることを確かめる
    - `git remote -v` で今の接続先を見て、`git remote set-url` でSSHのURLに変える
+   - `~/.ssh/config` に、`github.com` へつなぐときに使う鍵（`IdentityFile`）を書く。このファイルは何のためにあるか。パーミッションはどうあるべきか
 2. ブランチ：`git switch -c feature` でブランチを作り、コミットを2つ積む。`main` に戻り、ファイルがどう見えるかを確かめる。`git merge feature` で取り込む。`git log --graph --oneline --all` で形を見る
 3. マージの2つの形：`main` 側にもコミットがある状態で、別のブランチをマージする。課題2のときと、履歴の形がどう違うか
 4. **本題** コンフリクト：2つのブランチで、同じファイルの同じ行を、違う内容に変更する。マージして、コンフリクトを起こす。ファイルに入った印（`<<<<<<<`、`=======`、`>>>>>>>`）を読み、手で直してコミットする

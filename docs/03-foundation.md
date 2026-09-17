@@ -2,7 +2,7 @@
 title: "Stage 0：基礎トラック"
 ---
 
-プログラミングの前に、コンピュータ・Linux・Git・通信の仕組みを押さえる。ここを飛ばすと、後のステージでエラーの意味が読めなくなる。課題はすべてUbuntuのターミナルで行い、`drills/foundation/<ユニット>-<名前>/` に記録する。各ユニットでやることは、そのディレクトリの `README.md`（課題シート）に、小問の形で書いてある。
+プログラミングの前に、コンピュータ・Linux・Git・通信の仕組みを押さえる。ここを飛ばすと、後のステージでエラーの意味が読めなくなる。課題はすべてUbuntuのターミナルで行い、`drills/foundation/<ユニット>-<名前>/` に記録する。各ユニットでやることは、そのディレクトリの `TASKS.md`（課題シート）に、小問の形で書いてある。
 
 | ユニット | テーマ | 課題 | 完了条件 |
 | --- | --- | --- | --- |
@@ -14,7 +14,7 @@ title: "Stage 0：基礎トラック"
 | F6 | エディタとGit入門 | ターミナルのエディタ（vimかnano）、`git init`、`add`、`commit`、`log`、`diff`、`.gitignore` | このリポジトリに、自分の手でコミットを積める |
 | F7 | Gitの応用とGitHub | SSH鍵の作成（`ssh-keygen`）とGitHubへの登録、`~/.ssh/config`。ブランチ、マージ、コンフリクト解消、`rebase`、`push`、プルリクエスト | わざとコンフリクトを作り、解消してpushできる |
 | F8 | ネットワークの基礎 | IPアドレス、ポート、TCPとUDP、DNS、`ip`、`ping`、`ss`、`dig` | 名前解決（DNS）からTCP接続までの流れを何も見ずに `explain.md` に書き、`dig`と`ss`の出力で示せる |
-| F9 | HTTPの基礎 | リクエストとレスポンス、メソッド、ステータスコード、ヘッダ、TLSの概要、`curl -v` | `curl -v`の出力を保存し、1行ずつの意味（DNS→TCP→TLS→HTTPのどの段階か）を何も見ずに `explain.md` に書ける |
+| F9 | HTTPの基礎 | リクエストとレスポンス、メソッド、ステータスコード、ヘッダ、TLSの概要、`curl -v` | 保存した`curl -v`の出力の各行を、DNS・TCP・TLS・HTTPの4段階に分けられる。HTTPの部分（リクエストとレスポンス）は、1行ずつの意味を `explain.md` に書ける。見てよいのは、保存した出力だけ |
 | F10 | パッケージ管理とDocker入門 | `apt`、コンテナとは何か、`docker run`、`ps`、`logs`、`exec` | PostgreSQLのコンテナを起動し、中に入れる（Stage 1の準備） |
 
 ## Stage 0で意識すること
@@ -28,16 +28,16 @@ title: "Stage 0：基礎トラック"
 
 ## 課題シート
 
-- [F1 コンピュータの仕組み](../drills/foundation/F01-binary/README.md)
-- [F2 シェル入門](../drills/foundation/F02-shell/README.md)
-- [F3 テキスト処理](../drills/foundation/F03-pipeline/README.md)
-- [F4 プロセスとOS](../drills/foundation/F04-process/README.md)
-- [F5 シェルスクリプト](../drills/foundation/F05-script/README.md)
-- [F6 エディタとGit入門](../drills/foundation/F06-git/README.md)
-- [F7 Gitの応用とGitHub](../drills/foundation/F07-github/README.md)
-- [F8 ネットワークの基礎](../drills/foundation/F08-network/README.md)
-- [F9 HTTPの基礎](../drills/foundation/F09-http/README.md)
-- [F10 パッケージ管理とDocker入門](../drills/foundation/F10-docker/README.md)
+- [F1 コンピュータの仕組み](../drills/foundation/F01-binary/TASKS.md)
+- [F2 シェル入門](../drills/foundation/F02-shell/TASKS.md)
+- [F3 テキスト処理](../drills/foundation/F03-pipeline/TASKS.md)
+- [F4 プロセスとOS](../drills/foundation/F04-process/TASKS.md)
+- [F5 シェルスクリプト](../drills/foundation/F05-script/TASKS.md)
+- [F6 エディタとGit入門](../drills/foundation/F06-git/TASKS.md)
+- [F7 Gitの応用とGitHub](../drills/foundation/F07-github/TASKS.md)
+- [F8 ネットワークの基礎](../drills/foundation/F08-network/TASKS.md)
+- [F9 HTTPの基礎](../drills/foundation/F09-http/TASKS.md)
+- [F10 パッケージ管理とDocker入門](../drills/foundation/F10-docker/TASKS.md)
 
 F3で使うダミーのアクセスログは、`scripts/gen-access-log.sh` で作る。
 

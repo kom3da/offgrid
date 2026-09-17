@@ -19,10 +19,10 @@ flowchart LR
 
 | ステージ | 目安（AIなしデー） | ユニット | 主な内容 | 成果物 | 詳細 |
 | --- | --- | --- | --- | --- | --- |
-| Stage 0：基礎 | 10〜14回 | F1〜F10 | 2進数と文字コード、シェル、プロセス、Git、SSH、TCP/IP、HTTP、Docker入門 | シェルスクリプト数本、GitHubへのpush | [03](03-foundation.md) |
+| Stage 0：基礎 | 13〜17回 | F1〜F10 | 2進数と文字コード、シェル、プロセス、Git、SSH、TCP/IP、HTTP、Docker入門 | シェルスクリプト数本、GitHubへのpush | [03](03-foundation.md) |
 | Stage 1：Go入門 | 18〜24回 | G1〜G11、D1〜D5 | 文法、エラー処理、テスト、データ構造とアルゴリズム、SQLの基本 | CLIツール3本（テスト付き） | [04](04-go-track.md)、[06](06-postgresql-track.md) |
 | Stage 2：Webの基礎 | 20〜26回 | T1〜T10、G12〜G14、D6〜D12 | HTML/JS/TS、React、GoのHTTP API、テーブル設計 | REST API＋管理画面 | [04](04-go-track.md)、[05](05-typescript-track.md)、[06](06-postgresql-track.md) |
-| Stage 3：並行処理とDB連携 | 12〜16回 | G15〜G20、T11、D13〜D15 | goroutine、context、pgx、HTTPクライアント、SSE、マイグレーション、実行計画、時系列データ | DBを使い、リアルタイム配信するAPI | [04](04-go-track.md)、[05](05-typescript-track.md)、[06](06-postgresql-track.md) |
+| Stage 3：並行処理とDB連携 | 16〜22回 | G15〜G20、T11、D13〜D15 | goroutine、context、pgx、HTTPクライアント、SSE、マイグレーション、実行計画、時系列データ | DBを使い、リアルタイム配信するAPI | [04](04-go-track.md)、[05](05-typescript-track.md)、[06](06-postgresql-track.md) |
 | Stage 4：運用と閉域 | 12〜16回 | O1〜O9 | systemd、調査ツール、Docker、構成管理、負荷試験、オフライン開発 | オフラインで再構築できる開発環境 | [07](07-ops-offline-track.md) |
 | Stage 5：卒業制作 | 25〜35回（必須版） | C1〜C8 | 監視ダッシュボードの設計・実装・運用 | 閉域で動く統合システム一式 | [08](08-capstone-watchdeck.md) |
 
@@ -36,7 +36,7 @@ flowchart LR
 | Stage 1〜2 | 2.5時間 | 1時間 | 1.5時間 | 1時間 |
 | Stage 3〜5 | 3.5時間（DBを含む） | ― | 1.5時間 | 1時間 |
 
-目安の回数は、真の初学者を想定した概算。既に知っているユニットは[テストアウト](00-overview.md)で飛ばせるので、実際はこれより短くなることが多い。AIなしデー4回ごとの見直しで、実績に合わせて直す。
+目安の回数は、真の初学者を想定した概算で、ステージ通過の実技と、4回ごとの見直しの回を含む。Stage 0は、最初の6回が短縮版（段階的な導入）であることも見込んでいる。既に知っているユニットは[テストアウト](00-overview.md)で飛ばせるので、実際はこれより短くなることが多い。AIなしデー4回ごとの見直しで、実績に合わせて直す。
 
 Stage 2では、Goのユニットを先に進める。G12はT4の前に、G13〜G14はT10の前に済ませておく（T4とT10が、そのAPIを呼ぶため）。
 

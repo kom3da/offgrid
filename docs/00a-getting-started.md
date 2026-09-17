@@ -32,7 +32,7 @@ WSL2は、Windowsの中でLinuxを動かす公式の仕組み。
    wsl --install
    ```
 
-3. 再起動後に開く「Ubuntu」の画面で、Ubuntu用のユーザー名とパスワードを決める（Windowsのものと別でよい）
+3. 再起動後に開く「Ubuntu」の画面で、Ubuntu用のユーザー名とパスワードを決める（Windowsのものと別でよい）。パスワードは、打っても画面に何も出ないが、入力されている
 4. 次からは、スタートメニューの「Ubuntu」を開けばシェルが出る
 
 うまくいかないときは、BIOS（UEFI）の設定で「仮想化支援機能（Intel VT-x / AMD-V）」が有効かを確認する。
@@ -46,7 +46,7 @@ WSL2は、Windowsの中でLinuxを動かす公式の仕組み。
 Limaは、macOSの中にLinuxの仮想マシン（VM。マシンの中で動く、もう1台のマシン）を作る道具。Intel・Apple Siliconの両方で動く。
 
 1. 「ターミナル」アプリを開く（Spotlightで「ターミナル」と検索）
-2. Homebrew（macOS用のパッケージ管理ツール）が入っていなければ、<https://brew.sh> の1行をコピーして実行する
+2. Homebrew（macOS用のパッケージ管理ツール）が入っていなければ、<https://brew.sh> の1行をコピーして実行する。途中で聞かれるパスワードは、打っても画面に何も出ないが、入力されている。終わったときに「Next steps」としてコマンドが2〜3行表示されたら、それもコピーして実行する（`brew` コマンドを使えるようにする設定）
 3. Limaを入れ、UbuntuのVMを作る（初回は数分かかる）
 
    ```sh
@@ -88,7 +88,7 @@ sudo apt install -y git gh shellcheck
 - `gh`：GitHubをコマンドで操作する道具
 - `shellcheck`：シェルスクリプトの間違いを指摘してくれる道具（F5で使う）
 
-`man`、`xxd`、`grep`、`curl`、`vim`、`nano` などは、最初から入っている。Dockerは、F10で入れる。
+`sudo` で聞かれるパスワードは、手順1で決めたUbuntuのもの（Limaでは聞かれない）。`man`、`xxd`、`grep`、`curl`、`vim`、`nano` などは、最初から入っている。Dockerは、F10で入れる。
 
 ## 3. GitHubにつなぐ
 
@@ -105,7 +105,10 @@ sudo apt install -y git gh shellcheck
    ```sh
    git config --global user.name "自分の名前またはID"
    git config --global user.email "メールアドレス"
+   git config --global init.defaultBranch main
    ```
+
+   3行目は、新しく作るリポジトリの最初のブランチ名を `main` にそろえる設定（設定しないと `master` になることがある）。
 
 SSH鍵を使う接続は、F7で自分の手で設定する。
 
@@ -120,7 +123,7 @@ cd offgrid-log
 ```
 
 - `offgrid-log` は自分のリポジトリの名前。好きな名前でよい
-- `--private` は非公開。振り返りや詰まりメモを気兼ねなく書ける。公開して続ける励みにしたいなら `--public` にする（その場合、仕事の内容や実在のホスト名を書かないこと）
+- `--private` は非公開。公開して続ける励みにしたいなら `--public` にする。どちらの場合も、「いつか公開されるかもしれない」前提で書く（仕事の内容、実在のホスト名、認証情報は書かない）
 - 学習は、このリポジトリの `main` ブランチでそのまま進める。ブランチの使い方はF7で学ぶ
 
 `site/` と `.github/` は、テンプレートのドキュメントサイト用。自分のリポジトリでは使わないので、消してよい（残しても害はない）。
@@ -131,11 +134,24 @@ AIなしデーでは、AI機能を切ったエディタを使う。
 
 1. 手元のOS（Ubuntuの外）に、Visual Studio Codeを入れる
 2. VS Codeから、Ubuntuの中のファイルを開けるようにする
-   - Windows：拡張機能「WSL」を入れ、Ubuntuのシェルで `code .` を実行する
-   - macOS：拡張機能「Remote - SSH」を入れる。Macの `~/.ssh/config` の先頭に `Include ~/.lima/*/ssh.config` と書くと、接続先に `lima-offgrid` が出る
+   - Windows：拡張機能「WSL」を入れる。Ubuntuの画面を一度閉じて開き直し、`cd ~/offgrid-log` のあと `code .` を実行する
+   - macOS：拡張機能「Remote - SSH」を入れる。Macのターミナル（Ubuntuの外）で次を実行し、開いたファイルの**先頭**に `Include ~/.lima/*/ssh.config` と1行書いて保存する。VS Codeの左下の「><」→「ホストに接続する」に `lima-offgrid` が出るので、接続して `offgrid-log` フォルダを開く
+
+     ```sh
+     mkdir -p ~/.ssh && touch ~/.ssh/config && open -e ~/.ssh/config
+     ```
+
    - Linux：そのまま開く
-3. 左下の歯車 → 「プロファイル」→「プロファイルの作成」で、`no-ai` という名前のプロファイルを作る。このプロファイルでは、AIの拡張機能（Copilot、Claude Codeなど）をすべて無効にする
-4. AIなしデーの朝に `no-ai` プロファイルへ切り替える
+3. 左下の歯車 →「プロファイル」→「プロファイルの作成」で、`no-ai` という名前のプロファイルを作る。「コピー元」に既定のプロファイルを選ぶ（空のプロファイルにすると、手順2の拡張機能まで消える）
+4. `no-ai` プロファイルで、AIの拡張機能（Copilot、Claude Codeなど）を無効にする。さらに、設定で `chat.disableAIFeatures` を検索してオンにする（VS Code本体に組み込まれたAI機能を切る）
+5. AIなしデーの朝に `no-ai` プロファイルへ切り替える
+
+### 平日に使うAIの置き場所
+
+リポジトリはUbuntuの中にあるので、平日にレビューや採点を頼むAIも、Ubuntuの中のファイルを読める必要がある。どちらかを選ぶ。
+
+- VS Codeの既定のプロファイル（AIあり）でUbuntuに接続し、その中でAIの拡張機能を使う
+- ターミナルで使うAI（Claude Codeなど）を、Ubuntuの中にインストールする（入れ方は、その道具の公式の手順に従う）
 
 F6からは、ターミナルの中のエディタ（`vim` か `nano`）も使う。
 
@@ -145,6 +161,7 @@ F6からは、ターミナルの中のエディタ（`vim` か `nano`）も使�
 - [ ] Stage 0のオフライン教材を用意する（[ステージ開始時のオフライン教材セットアップ](11-resources.md)）
 - [ ] [学習ロードマップ](01-roadmap.md)と[AIなしデーの運用](02-ai-free-day.md)を読む
 - [ ] 最初のAIなしデーの日付を決め、カレンダーに入れる。最初の3回は午前だけ（3時間）
+- [ ] テンプレートの改訂を知りたければ、GitHubの <https://github.com/kom3da/offgrid> で「Watch」→「Custom」→「Releases」を選ぶ
 
 ## AIなしデーの始め方と終わり方
 
@@ -154,29 +171,35 @@ F6でGitを学ぶまでは、下のコマンドを「毎回打つ決まり文句
 
 ```sh
 cd ~/offgrid-log
-mkdir -p logs/$(date +%Y) && cp templates/retrospective.md logs/$(date +%Y)/$(date +%m-%d).md
+mkdir -p logs/$(date +%Y) && cp -n templates/retrospective.md logs/$(date +%Y)/$(date +%m-%d).md
 ```
 
-その日のユニットの課題シートは、`drills/` の中の `README.md`（例：`drills/foundation/F01-binary/README.md`）。自分が書いたものは、同じディレクトリに別のファイルとして置く。`README.md` は書き換えない。
+`cp -n` は「同じ名前のファイルが既にあれば、上書きしない」。同じ日にもう一度打っても、書きかけの振り返りは消えない。
+
+その日のユニットの課題シートは、`drills/` の中の `TASKS.md`（例：`drills/foundation/F01-binary/TASKS.md`）。コマンドを試す場所は `~/sandbox/`、メモや `explain.md` を書く場所は、課題シートと同じディレクトリ。`TASKS.md` は書き換えない。
 
 終わるとき（`F1: ...` の部分は、その日にやったことに変える）：
 
 ```sh
 git add -A
 git commit -m "[no-ai] F1: xxdでUTF-8のバイト列を確認"
-git tag noai-$(date +%F)
-git push origin main --tags
+git push origin main
 ```
 
 初回のウォームアップは、再現する内容がまだないので、「Ubuntuのシェルを開き、`cd ~/offgrid-log` で移動し、`ls` で中身を見る」を何も見ずにやる。
 
 ## カリキュラムが改訂されたとき
 
-テンプレート側の `docs/` は、ときどき改訂される（[改訂の運用](12-revision.md)）。自分のリポジトリに取り込むには、AIを使ってよい日に、取り込みたい版を指定して実行する。
+テンプレートの内容（学習テキスト）は、誤りの修正や教材の更新のために、ときどき改訂される（[改訂の運用](12-revision.md)）。自分の学習の進み具合とは関係がないので、取り込むかどうか、いつ取り込むかは自分で決めてよい。取り込むには、AIを使ってよい日に、版を指定して実行する。版の一覧と変更点は、[CHANGELOG](../CHANGELOG.md)にある。
 
 ```sh
-./scripts/update-curriculum.sh v2026.10.1
-git add -A && git commit -m "[docs] Update curriculum to v2026.10.1"
+./scripts/update-curriculum.sh v2026.10.2
+git diff --stat          # 何が変わったかを確認する
+git add -A && git commit -m "[docs] Update curriculum to v2026.10.2"
 ```
 
-置き換わるのは、`docs/`、`prompts/`、`templates/`、`scripts/`、`CLAUDE.md`、`README.md`、`CHANGELOG.md` と、`drills/` の中の `README.md`（課題シート）だけ。`PROGRESS.md`、`logs/`、`answers/`、`capstone/` と、`drills/` に自分で置いたファイルには触れない。
+途中で失敗したら、`git restore . && git clean -fd docs prompts templates scripts` で、取り込む前の状態に戻せる。
+
+置き換わるのは、`docs/`、`prompts/`、`templates/`、`scripts/`、`CLAUDE.md`、`README.md`、`CHANGELOG.md` と、`drills/` の中の `TASKS.md`（課題シート）だけ。これらは自分では書き換えない（書き換えても、次の取り込みで消える）。
+
+自分のものとして自由に書いてよいのは、`PROGRESS.md`、`logs/`、`answers/`、`capstone/` と、`drills/` の中の `TASKS.md` 以外のファイル。取り込みでは触れられない。

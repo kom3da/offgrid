@@ -1,4 +1,4 @@
-# explain.md の採点プロンプト（月曜）
+# explain.md の採点プロンプト（水曜）
 
 「説明できる」の完了条件は、何も見ずに書いた `explain.md` をAIに採点してもらって確かめる（`docs/10-evaluation.md`）。
 

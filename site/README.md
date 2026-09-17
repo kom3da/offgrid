@@ -11,6 +11,7 @@ npm run build    # dist/ に出力（dist/ はコミットしない）
 - 公開：main に push すると、GitHub Actions（`.github/workflows/deploy-site.yml`）がビルドして GitHub Pages に出す
 - 検索（Pagefind）と図（mermaid）は、どちらもビルドに同梱される。CDN は使わない
 - `docs/` の各ファイルは、先頭の `title:` がページの見出しになる
+- `docs/` は、サブディレクトリを作らず平らに保つ（サイドバーの自動生成と、リンクの書き換えが、この前提で作られている）
 - `docs/` 内の相対リンク（`01-roadmap.md` など）は、`src/plugins/remark-doc-links.mjs` がサイト用のURLに書き換える
 
 このサイトは AI が用意した補助ツールで、学習の課題ではない（T7 のビルド環境は、これを見ずに自分で組む）。
