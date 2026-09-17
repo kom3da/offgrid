@@ -37,32 +37,80 @@ type SessionState struct {
 	path    string
 }
 
-// Step は、その回の並び。DBの枠は Stage 1〜2 だけ。
+// Step は、その回の並びの1つ。
 type Step struct {
 	ID      StepID
 	Label   string
 	Minutes string
 }
 
+// sessionSteps は、その回の並び。ここが「今日の流れ」の唯一の出どころで、
+// ターミナル・ブラウザ・今日の一覧は、すべてこれを見る。
+//
+// 最初の6回は短くする（docs/04 の「段階的な導入」）。3時間の日に3.5時間のメインを
+// 出してしまうと、初回からいきなり時間割が破れるため、DBと午後の枠はフルの回から。
 func sessionSteps(p *Progress, s *Session) []Step {
 	plan := StagePlan(p.Stage)
+	main, full := plan.Main, s.Number > 6
+	switch {
+	case s.Number <= 3:
+		main = "2時間"
+	case s.Number <= 6:
+		main = "3時間"
+	}
 	steps := []Step{
 		{StepWarmup, "ウォームアップ", "30分"},
-		{StepMain, "メイン（" + p.Unit + "）", plan.Main},
+		{StepMain, "メイン（" + p.Unit + "）", main},
 	}
-	if plan.DB != "" {
+	if full && plan.DB != "" {
 		label := "PostgreSQL"
 		if p.DBUnit != "" {
 			label += "（" + p.DBUnit + "）"
 		}
 		steps = append(steps, Step{StepDB, label, plan.DB})
 	}
+	if full {
+		steps = append(steps, Step{StepAfternoon, s.Afternoon(), "1.5時間"})
+	}
 	steps = append(steps,
-		Step{StepAfternoon, s.Afternoon(), "1.5時間"},
 		Step{StepRetro, "振り返り", "30分"},
 		Step{StepEnd, "終わりの手続き", ""},
 	)
 	return steps
+}
+
+// sessionFlow は「今日の流れ」を、人が読む形で返す。
+// 同じ並びを3か所で組み立てていたせいで食い違ったので、1つにまとめた。
+func sessionFlow(root string, p *Progress, s *Session) []string {
+	var out []string
+	for _, step := range sessionSteps(p, s) {
+		head := step.Label
+		if step.Minutes != "" {
+			head += "（" + step.Minutes + "）"
+		}
+		switch step.ID {
+		case StepWarmup:
+			head += "：" + s.Warmup()
+		case StepMain:
+			if sh, err := LoadSheet(root, p.Unit); err == nil {
+				head += "：" + rel(root, sh.Path)
+			}
+			// このステージはDBがメイン枠に合流する。書いておかないと、Dのユニットを忘れる
+			if StagePlan(p.Stage).DBInMain && p.DBUnit != "" {
+				head += "　＋ PostgreSQL（" + p.DBUnit + "）"
+			}
+		case StepDB:
+			if p.DBUnit == "" {
+				head += "：（PROGRESS.md の「次のPostgreSQLユニット」を D1 に書き換える）"
+			}
+		case StepRetro:
+			head += "：" + rel(root, s.Log)
+		case StepEnd:
+			continue // 流れの一覧には出さない（案内の中で出てくる）
+		}
+		out = append(out, head)
+	}
+	return out
 }
 
 func statePath(root string, s *Session) string {

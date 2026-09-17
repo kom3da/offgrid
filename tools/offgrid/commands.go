@@ -230,14 +230,26 @@ func runStep(root string, p *Progress, s *Session, state *SessionState, step Ste
 		sh, err := LoadSheet(root, unit)
 		if err != nil {
 			if step.ID == StepDB {
-				say("PROGRESS.md の「現在」に「- 次のPostgreSQLユニット：D1」の行を足すと、ここでも案内します")
+				say("PROGRESS.md の「次のPostgreSQLユニット」を、いま進めるDBユニット（例：D1）に書き換えると、ここでも案内します")
 				_, err := ask("\n  終わったら Enter（q=中断）: ", "", "q")
 				return err
 			}
 			return err
 		}
 		say(dim("シート: " + rel(root, sh.Path)))
-		return guideUnit(sh, s, state)
+		if err := guideUnit(sh, s, state); err != nil {
+			return err
+		}
+		// Stage 3 は、DBがこの枠に合流する（docs/03-roadmap.md）
+		if step.ID == StepMain && StagePlan(p.Stage).DBInMain && p.DBUnit != "" {
+			if db, err := LoadSheet(root, p.DBUnit); err == nil {
+				fmt.Println()
+				rule("同じ枠で PostgreSQL（" + db.Unit + "）")
+				say(dim("このステージは、DBがメイン枠に合流する。残りの時間で進める"))
+				return guideUnit(db, s, state)
+			}
+		}
+		return nil
 	case StepWarmup:
 		say(s.Warmup())
 		say("＋ 前回のレビューで指摘された箇所の直しを1件")
@@ -275,29 +287,14 @@ func runStep(root string, p *Progress, s *Session, state *SessionState, step Ste
 func cmdToday(root string, p *Progress, s *Session) error {
 	welcome(root, p, s)
 	dashboard(root, p, s)
-	plan := StagePlan(p.Stage)
-	sheetPath := p.Unit
-	if sh, err := LoadSheet(root, p.Unit); err == nil {
-		sheetPath = rel(root, sh.Path)
-	}
 	fmt.Println()
 	rule("今日の流れ")
-	steps := []string{
-		"ウォームアップ（30分）：" + s.Warmup(),
-		fmt.Sprintf("メイン（%s）：%s", plan.Main, sheetPath),
-	}
-	if plan.DB != "" {
-		db := p.DBUnit
-		if db == "" {
-			db = "（PROGRESS.md に「次のPostgreSQLユニット」を書く）"
-		}
-		steps = append(steps, fmt.Sprintf("PostgreSQL（%s）：%s", plan.DB, db))
-	}
-	steps = append(steps,
-		fmt.Sprintf("%s（1.5時間）", s.Afternoon()),
-		"振り返り（30分）："+rel(root, s.Log))
-	for i, t := range steps {
+	for i, t := range sessionFlow(root, p, s) {
 		say(fmt.Sprintf("%d. %s", i+1, t))
+	}
+	if s.Number <= 6 {
+		fmt.Println()
+		say(dim(fmt.Sprintf("最初の6回は短くしてある（今日は%s）。7回目からフルの時間割になる", s.Finish())))
 	}
 	fmt.Println()
 	say(bold("案内つきで進める → offgrid run"))

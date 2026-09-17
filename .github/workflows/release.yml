@@ -44,6 +44,8 @@ jobs:
           TAG: ${{ steps.ver.outputs.tag }}
         run: |
           mkdir -p dist
+          # Learners run the tool inside Ubuntu (docs/02), so linux is what they install.
+          # darwin is built for maintaining the curriculum from a Mac.
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
             os="${target%/*}"; arch="${target#*/}"
             out="dist/offgrid-${os}-${arch}"

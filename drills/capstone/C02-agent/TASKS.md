@@ -8,7 +8,7 @@ title: "C2 agentの実装"
 
 各サーバーで動き、CPU・メモリ・ディスクの使用率を10秒ごとに集めて送る agent を、Goの標準ライブラリだけで書く。閉域の現場では、既製の監視エージェントを入れられないことがある。OSが公開している数字を自分で読み、意味のある値に直す力が要る。
 
-## このステップで身につけること
+## このユニットで身につけること
 
 - `/proc/stat` と `/proc/meminfo` を読み、必要な数字を取り出す
 - 「起動してからの累計」の数字2回ぶんから、その間の使用率を求める
@@ -47,7 +47,7 @@ mkdir -p cmd/agent internal
 touch ../drills/capstone/C02-agent/notes.md
 ```
 
-確認は、`capstone/` で `go vet ./... && go test -race -cover ./...`。Web検索は0回。標準ライブラリは、`go doc` とローカルの `pkgsite` で引く。
+確認は、`capstone/` で `go vet ./... && go test -race -cover ./...`。標準ライブラリは、`go doc` かローカルの `pkgsite` で引く。
 
 ## 課題
 

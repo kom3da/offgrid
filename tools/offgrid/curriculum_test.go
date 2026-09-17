@@ -326,8 +326,27 @@ func TestSessionAndRetro(t *testing.T) {
 }
 
 func TestStagePlanAndSessionShape(t *testing.T) {
-	if StagePlan("0").DB != "" || StagePlan("1").DB == "" || StagePlan("3").DB == "" || StagePlan("4").DB != "" {
+	if StagePlan("0").DB != "" || StagePlan("1").DB == "" || StagePlan("4").DB != "" {
 		t.Error("ステージごとの時間割が違う")
+	}
+	// Stage 3 はDBがメイン枠に合流する（別枠を立てない）
+	if p3 := StagePlan("3"); p3.DB != "" || !p3.DBInMain {
+		t.Errorf("Stage 3 の扱いが違う: %+v", p3)
+	}
+	// 短縮の回は、時間割が1日に収まること
+	short := sessionSteps(&Progress{Stage: "0", Unit: "F3"}, &Session{Number: 1})
+	for _, st := range short {
+		if st.ID == StepAfternoon || st.ID == StepDB {
+			t.Errorf("短縮の回に %s の枠が出ている", st.ID)
+		}
+	}
+	full := sessionSteps(&Progress{Stage: "1", Unit: "G1", DBUnit: "D1"}, &Session{Number: 7})
+	var ids []StepID
+	for _, st := range full {
+		ids = append(ids, st.ID)
+	}
+	if len(ids) != 6 {
+		t.Errorf("フルの回の枠 = %v", ids)
 	}
 	s := &Session{Number: 1}
 	if s.Afternoon() != "コードリーディング" || !strings.Contains(s.Finish(), "12:00") {
@@ -423,5 +442,22 @@ func TestRealCurriculum(t *testing.T) {
 		if len(sh.KeepFiles()) == 0 {
 			t.Errorf("%s: 「残すもの」からファイル名を読めていない", name)
 		}
+	}
+}
+
+func TestWrapKeepsWordsWhole(t *testing.T) {
+	termWidth = 40
+	got := wrap("メイン（G17）：drills/go/G17-database/TASKS.md　＋ PostgreSQL（D13）", "  ")
+	for _, line := range got {
+		if strings.HasSuffix(strings.TrimRight(line, " "), "PostgreSQ") {
+			t.Errorf("英単語の途中で折り返している:\n%s", strings.Join(got, "\n"))
+		}
+	}
+	joined := strings.ReplaceAll(strings.Join(got, ""), " ", "")
+	if !strings.Contains(joined, "PostgreSQL") {
+		t.Errorf("PostgreSQL が分断されている:\n%s", strings.Join(got, "\n"))
+	}
+	if !strings.Contains(joined, "drills/go/G17-database/TASKS.md") {
+		t.Errorf("パスが分断されている:\n%s", strings.Join(got, "\n"))
 	}
 }

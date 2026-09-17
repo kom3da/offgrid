@@ -214,27 +214,12 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, nil, "読めません", err.Error())
 		return
 	}
-	plan := StagePlan(p.Stage)
-	sheetPath := p.Unit
 	if sh, err := LoadSheet(s.root, p.Unit); err == nil {
 		st.Sheet = sh
 		st.TaskDone, st.TaskTotal = sh.Counts()
 		st.TaskPercent = percent(st.TaskDone, st.TaskTotal)
-		sheetPath = rel(s.root, sh.Path)
 	}
-	steps := []string{
-		"ウォームアップ（30分）：" + sess.Warmup(),
-		fmt.Sprintf("メイン（%s）：%s", plan.Main, sheetPath),
-	}
-	if plan.DB != "" {
-		db := p.DBUnit
-		if db == "" {
-			db = "（PROGRESS.md に「次のPostgreSQLユニット」を書く）"
-		}
-		steps = append(steps, fmt.Sprintf("PostgreSQL（%s）：%s", plan.DB, db))
-	}
-	steps = append(steps, fmt.Sprintf("%s（1.5時間）", sess.Afternoon()), "振り返り（30分）："+rel(s.root, sess.Log))
-	st.Steps = steps
+	st.Steps = sessionFlow(s.root, p, sess)
 	for _, t := range p.Tracks {
 		if len(t.Units) == 0 {
 			continue

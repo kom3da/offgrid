@@ -1,5 +1,5 @@
 ---
-title: "explain.md の採点プロンプト（水曜）"
+title: "explain.md の採点プロンプト"
 ---
 
 「説明できる」の完了条件は、何も見ずに書いた `explain.md` をAIに採点してもらって確かめる（`docs/06-evaluation.md`）。

@@ -33,7 +33,7 @@ title: "O9 負荷試験入門"
 
 ## 平日に読むもの
 
-- 道具は `vegeta` か `k6` の、どちらか1つを選ぶ。**平日のうちに、バイナリと公式ドキュメントを `~/offline-bundle/` に保存し、O7の `fetch.sh` にも足す。** AIなしデーのWeb検索は0回
+- 道具は `vegeta` か `k6` の、どちらか1つを選ぶ。**平日のうちに、バイナリと公式ドキュメントを `~/offline-bundle/` に保存し、O7の `fetch.sh` にも足す。** O8の閉域シミュレーションで、ネットワークなしで動かせる必要がある
   - `vegeta`：GitHubの `README.md`（使い方、対象ファイルの書式、`report` の種類）。`vegeta -h`、`vegeta attack -h`、`vegeta report -h`
   - `k6`：公式ドキュメントの「Running k6」「Options」「Metrics」「Scenarios」の各ページ。`k6 run --help`
 - `go tool pprof -h`。O3で保存したGoの公式ブログ「Profiling Go Programs」と、自分のO3の `cheatsheet.md`

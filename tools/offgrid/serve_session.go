@@ -58,6 +58,15 @@ func (s *server) stepSheet(p *Progress, step Step) *Sheet {
 	switch step.ID {
 	case StepMain:
 		unit = p.Unit
+		// このステージはDBがメイン枠に合流する（docs/03-roadmap.md）。
+		// メインの課題が終わったら、同じ枠で続けてDBのユニットを出す。
+		if StagePlan(p.Stage).DBInMain && p.DBUnit != "" {
+			if main, err := LoadSheet(s.root, p.Unit); err == nil {
+				if done, total := main.Counts(); total > 0 && done == total {
+					unit = p.DBUnit
+				}
+			}
+		}
 	case StepDB:
 		unit = p.DBUnit
 	default:
@@ -80,7 +89,7 @@ func (s *server) guideText(p *Progress, sess *Session, step Step) string {
 		}
 		return text
 	case StepDB:
-		return "PROGRESS.md の「現在」に「- 次のPostgreSQLユニット：D1」の行を足すと、ここでも課題を1問ずつ案内する。"
+		return "PROGRESS.md の「次のPostgreSQLユニット」を、いま進めるDBユニット（例：D1）に書き換えると、ここでも課題を1問ずつ案内する。"
 	case StepAfternoon:
 		if sess.Afternoon() == "コードリーディング" {
 			return "読解課題を1本。今のステージに合うものを[デバッグドリルとコードリーディング](docs/05-debug-and-reading.md)から選ぶ。処理の流れを図か箇条書きにまとめ、`drills/reading/` に置く。"

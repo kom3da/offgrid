@@ -8,7 +8,7 @@ title: "C6 配布の形にする（Dockerfile・compose・systemd）"
 
 手元で `go run` と `npm run dev` で動いているものを、他のマシンに持っていける形にする。中央側（server、PostgreSQL、web）は `docker compose up` の一発で、agent は単体の静的バイナリと systemd で動かす。閉域の現場に持ち込めるのは、ファイルだけ。イメージとバイナリと設定例が揃っていて、手順が短いことが、そのまま品質になる。
 
-## このステップで身につけること
+## このユニットで身につけること
 
 - server を、マルチステージビルドで小さなイメージにする。ビルドは `-mod=vendor` で、ネットワークなしで通す
 - web のビルド結果を、中央側のどこから配信するかを決めて組み込む
@@ -47,7 +47,7 @@ mkdir -p deploy
 touch ../drills/capstone/C06-packaging/notes.md
 ```
 
-agent を systemd で試す場所は、O2 で使った自分のUbuntu（または検証用の仮想マシン）。設定例に書く接続先は `server.example.test` のようなダミーにし、トークンは `changeme` のような値にする。本物は `.env`（Gitの管理外）にだけ書く。Web検索は0回。
+agent を systemd で試す場所は、O2 で使った自分のUbuntu（または検証用の仮想マシン）。設定例に書く接続先は `server.example.test` のようなダミーにし、トークンは `changeme` のような値にする。本物は `.env`（Gitの管理外）にだけ書く。
 
 ## 課題
 

@@ -12,7 +12,7 @@
 gh repo create offgrid-log --template kom3da/offgrid --private --clone
 ```
 
-まっさらなマシンからの手順（Windows・macOS・Linux共通。学習はすべてUbuntuの中で行う）は、[はじめかた](docs/02-getting-started.md)にある。カリキュラムが改訂されたら、`./scripts/update-curriculum.sh v1.0.0` のように版を指定して取り込む。
+まっさらなマシンからの手順（Windows・macOS・Linux共通。学習はすべてUbuntuの中で行う）は、[はじめかた](docs/02-getting-started.md)にある。カリキュラムが改訂されたら、`./scripts/update-curriculum.sh v1.1.0` のように版を指定して取り込む。
 
 ## 読む順番
 
@@ -90,7 +90,7 @@ AIの関与度をあとから区別できるよう、コミットメッセージ
 
 ## 版と改訂
 
-版は `MAJOR.MINOR.PATCH`（例：`v1.0.0`）。1つの番号で、カリキュラムと学習用コマンドの両方を指す。MAJOR が上がるのは、課題シートの書式などツールとの約束が壊れるときだけ。学習の進み具合には、タグを付けない。変更点は [CHANGELOG.md](CHANGELOG.md)、運用は[改訂の運用](docs/30-revision.md)にある。誤りや、詰まりやすい箇所を見つけたら、Issueで知らせてほしい。
+版は `MAJOR.MINOR.PATCH`（例：`v1.1.0`）。1つの番号で、カリキュラムと学習用コマンドの両方を指す。MAJOR が上がるのは、課題シートの書式などツールとの約束が壊れるときだけ。学習の進み具合には、タグを付けない。変更点は [CHANGELOG.md](CHANGELOG.md)、運用は[改訂の運用](docs/30-revision.md)にある。誤りや、詰まりやすい箇所を見つけたら、Issueで知らせてほしい。
 
 ## 注意
 

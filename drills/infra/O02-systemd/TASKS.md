@@ -32,7 +32,7 @@ title: "O2 systemd"
 ## 平日に読むもの
 
 - 『［試して理解］Linuxのしくみ』第2章（プロセス管理（基礎編））、第5章（プロセス管理（応用編））
-- 平日のうちに、次の `man` が引けることを確かめる：`man systemctl`、`man journalctl`、`man systemd.unit`、`man systemd.service`、`man systemd.exec`。Stage 4のAIなしデーはWeb検索が0回なので、これが唯一の資料になる
+- 平日のうちに、次の `man` が引けることを確かめる：`man systemctl`、`man journalctl`、`man systemd.unit`、`man systemd.service`、`man systemd.exec`。セッション中は、これが主な資料になる
 - `man systemd.service` の、サービスの種類、起動コマンド、再起動の条件を説明している部分を、先に眺めておく
 - Dockerの公式ドキュメントの「Start containers automatically」のページを保存しておく（課題10で使う）
 

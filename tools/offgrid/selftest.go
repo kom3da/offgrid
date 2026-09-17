@@ -8,7 +8,7 @@ import (
 
 // 課題シートに必ずある見出し。ここが変わったら、このツールは読めなくなる。
 var requiredSections = []string{
-	"ねらい", "キーワード", "平日に読むもの", "準備", "課題",
+	"ねらい", "このユニットで身につけること", "キーワード", "平日に読むもの", "準備", "課題",
 	"詰まりやすいところ", "完了条件の確かめ方", "残すもの", "次につながるユニット",
 }
 
@@ -49,6 +49,10 @@ func cmdSelftest(root string, args []string) error {
 		}
 		if !strings.Contains(sh.Section("課題"), "本題") {
 			problems = append(problems, name+": 「本題」と書かれた課題がありません")
+		}
+		// 番号なしの「本題」が2つ以上あると、どれが核か分からなくなる（CLAUDE.md の書式）
+		if n := strings.Count(sh.Section("課題"), "**本題**"); n > 1 {
+			problems = append(problems, fmt.Sprintf("%s: 番号なしの「**本題**」が%d個あります（複数あるなら「**本題（その1）**」と番号を振る）", name, n))
 		}
 		if len(sh.KeepFiles()) == 0 {
 			problems = append(problems, name+": 「残すもの」からファイル名を読めません")

@@ -106,27 +106,59 @@ func wrap(text, indent string) []string {
 		if m := bulletRe.FindStringSubmatch(para); m != nil {
 			hang = strings.Repeat(" ", width(m[1]))
 		}
-		head, line := indent, ""
+		head := indent
+		var line []rune
 		for _, r := range para {
 			limit := room
-			if line == "" && head != indent {
+			if len(line) == 0 && head != indent {
 				limit = room - width(hang)
 			}
-			if width(line)+runeWidth(r) > limit {
-				out = append(out, head+line)
-				head = indent + hang
-				if r == ' ' || r == '\t' {
-					line = ""
-				} else {
-					line = string(r)
+			if len(line) > 0 && width(string(line))+runeWidth(r) > limit {
+				cut := breakAt(line, r)
+				rest := append([]rune{}, line[cut:]...)
+				for len(rest) > 0 && (rest[0] == ' ' || rest[0] == '\t') {
+					rest = rest[1:]
 				}
-				continue
+				out = append(out, head+strings.TrimRight(string(line[:cut]), " \t"))
+				head = indent + hang
+				line = rest
 			}
-			line += string(r)
+			if len(line) == 0 && head != indent && (r == ' ' || r == '\t') {
+				continue // 折り返した先頭の空白は捨てる
+			}
+			line = append(line, r)
 		}
-		out = append(out, head+line)
+		out = append(out, head+string(line))
 	}
 	return out
+}
+
+// breakAt は、行があふれたときに切る位置（ルーン単位）を返す。
+// 日本語はどこでも切れるが、コマンド名や英単語の途中で切ると読めなくなるので、
+// 英数字の連なりの先頭まで戻す。戻しすぎるときは、あきらめてそのまま切る。
+func breakAt(line []rune, next rune) int {
+	if !isWordRune(next) {
+		return len(line)
+	}
+	i := len(line)
+	for i > 0 && isWordRune(line[i-1]) {
+		i--
+	}
+	if i == 0 || len(line)-i > 24 {
+		return len(line)
+	}
+	return i
+}
+
+// isWordRune は、途中で切りたくない文字（英数字と、識別子に使う記号）。
+func isWordRune(r rune) bool {
+	switch {
+	case r >= '0' && r <= '9', r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z':
+		return true
+	case r == '-' || r == '_' || r == '.' || r == '/' || r == ':':
+		return true
+	}
+	return false
 }
 
 func say(text string) {

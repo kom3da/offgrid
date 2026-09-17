@@ -8,7 +8,7 @@ title: "C5 webの実装（一覧・グラフ・リアルタイム更新）"
 
 server の REST と SSE を受け、死活とリソースの一覧、24時間のグラフ、リアルタイム更新を持つダッシュボードを、TypeScript と React で作る。閉域では、CDN のグラフライブラリもフォントも読めない。描画を自分で書くか、同梱できるものだけで組み、`npm ci --offline` で再現できる形を保つ。
 
-## このステップで身につけること
+## このユニットで身につけること
 
 - Vite・ESLint・Vitest・Testing Library の環境を、テンプレートなしで組む（T7）
 - APIの応答と SSE のイベントを、`unknown` から型ガードで検証して受け取る（T8）
@@ -49,7 +49,7 @@ npm init -y
 touch ../../drills/capstone/C05-web/notes.md
 ```
 
-使う npm パッケージは、TypeScript、Vite、ESLint、Vitest、React、Testing Library（と、その動作に要る型定義やテスト用のDOM環境）。グラフのライブラリを使う場合は、1つに絞って npm で入れて同梱し、CDN からは読まない。インストールは、平日のネットワークがある日に済ませ、`package-lock.json` をコミットする。AIなしデーは Web検索が0回。確認は `npx tsc --noEmit --strict` と `npx vitest run`。
+使う npm パッケージは、TypeScript、Vite、ESLint、Vitest、React、Testing Library（と、その動作に要る型定義やテスト用のDOM環境）。グラフのライブラリを使う場合は、1つに絞って npm で入れて同梱し、CDN からは読まない。インストールは、平日のネットワークがある日に済ませ、`package-lock.json` をコミットする。確認は `npx tsc --noEmit --strict` と `npx vitest run`。
 
 確かめるときは、C4 の server、ダミーデータ入りのDB、動いている agent を用意する。
 
