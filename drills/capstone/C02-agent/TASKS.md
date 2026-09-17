@@ -32,7 +32,8 @@ title: "C2 agentの実装"
 
 - `man 5 proc`（版によっては `man proc_stat`、`man proc_meminfo` に分かれている）の、`/proc/stat` と `/proc/meminfo` の説明
 - `man free`、`man df`、`man 2 statfs`
-- 『［試して理解］Linuxのしくみ』の、CPU時間の内訳、メモリの空きの数え方、ファイルシステムを扱う話題
+- 『［試して理解］Linuxのしくみ』第2章（プロセス管理（基礎編））、第4章（メモリ管理システム）、第7章（ファイルシステム）
+- 『入門 監視』8章（サーバ監視）
 - 自分の G19 のコードと `explain.md`、C1 で書いた送信間隔・再試行のADRと `api.md`
 
 ## 準備

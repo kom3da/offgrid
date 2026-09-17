@@ -30,7 +30,7 @@ JavaScriptからページの要素を探し、足し、消し、ユーザーの�
 
 ## 平日に読むもの
 
-- 『JavaScript Primer』の、ユースケースの部にある、ブラウザでDOMを操作してToDoアプリを作る話題（本はモジュールやクラスを使うが、このユニットでは1つのファイルに素直に書けばよい）
+- 『JavaScript Primer』第二部（応用編）の、アプリケーション開発の準備、Todoアプリ（本はモジュールやクラスを使うが、このユニットでは1つのファイルに素直に書いてよい）
 - MDN（DevDocsのオフライン版）の、`Document.querySelector`、`Document.createElement`、`EventTarget.addEventListener`、`Node.textContent`、`Element.classList` のページ
 - 自分の使うブラウザの、開発者ツールのショートカットキー（開く、Consoleに切り替える）
 

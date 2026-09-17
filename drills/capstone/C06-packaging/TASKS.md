@@ -33,7 +33,7 @@ title: "C6 配布の形にする（Dockerfile・compose・systemd）"
 
 - Docker と Docker Compose のドキュメント（Stage 4 で保存したもの）の、マルチステージビルド、`depends_on` とヘルスチェック、環境変数とファイルの渡し方、ボリュームの話題
 - `man systemd.service`、`man systemd.exec`、`man systemd.unit`、`man journalctl`
-- 『［試して理解］Linuxのしくみ』の、プロセスの管理を扱う話題
+- 『［試して理解］Linuxのしくみ』第11章（コンテナ）、第12章（cgroup）
 - 自分の O2、O4、O5、O7 のファイルとメモ
 - 平日のうちに、ビルドと実行に使うベースイメージ（Go、Node.js、PostgreSQL、distroless、使うならリバースプロキシ）を `docker pull` し、`docker save` しておく
 

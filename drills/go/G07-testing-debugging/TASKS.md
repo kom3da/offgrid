@@ -31,8 +31,8 @@ title: "G7 テストとデバッグ"
 
 ## 平日に読むもの
 
-- 『初めてのGo言語』の、テストを扱う話題（テーブルテスト、`testdata`、カバレッジ）
-- 『プログラミング言語Go』の、テストを扱う話題
+- 『初めてのGo言語』15章（テスト）、11章（各種ツール）
+- 『プログラミング言語Go』第11章（テスト）
 - `go doc testing`（パッケージの説明文）、`go doc testing.T`、`go help test`、`go help testflag`
 - `dlv` のインストール（ネットワークが要るので平日に。`go install github.com/go-delve/delve/cmd/dlv@latest`）と、`dlv help`
 

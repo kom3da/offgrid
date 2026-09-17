@@ -33,8 +33,8 @@ title: "G19 HTTPクライアントとリトライ"
 
 ## 平日に読むもの
 
-- 『実用 Go言語』の、HTTPクライアントを扱う話題（タイムアウト、`Body` の扱い、リトライ）
-- 『Go言語による並行処理』の、タイムアウトとキャンセルを扱う話題（G16の復習）
+- 『実用 Go言語』12章（HTTPクライアント）、6章（エラーハンドリング）
+- 『Go言語による並行処理』4章（Goでの並行処理パターン）の、タイムアウトとキャンセルの節
 - `go doc http.Client`、`go doc http.Client.Do`（`Body` について何と書いてあるか）、`go doc http.NewRequestWithContext`、`go doc net/url.Error`、`go doc time.NewTimer`、`go doc math/rand/v2`
 - MDN（DevDocsのオフライン版）の、HTTPレスポンスステータスコードのうち、`503` と `Retry-After` の項目
 

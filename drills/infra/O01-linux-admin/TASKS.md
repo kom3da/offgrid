@@ -35,8 +35,9 @@ Stage 4からは、AIなしデーのWeb検索は0回。調べる手段は `man`�
 
 ## 平日に読むもの
 
-- 『［試して理解］Linuxのしくみ』の、プロセス管理、メモリ管理、ストレージを扱う章
-- 『新しいLinuxの教科書』の、ユーザーとグループ、パーミッション、アーカイブと圧縮を扱う章
+- 『［試して理解］Linuxのしくみ』第1章（Linuxの概要）、第7章（ファイルシステム）、第8章（記憶階層）
+- 『新しいLinuxの教科書』CHAPTER09（ファイルパーミッション、スーパーユーザ）、CHAPTER18（アーカイブと圧縮）
+- Linux標準教科書 8章（ユーザーとグループの管理）、9章（ファイルやディレクトリのアクセス制御）、11章（プロセス管理）
 - 平日のうちに、次の `man` が引けることを確かめる（引けないものは、パッケージを入れておく）：`man useradd`、`man sudoers`、`man df`、`man du`、`man 5 proc`（新しい版では `man proc_stat`、`man proc_meminfo` に分かれている場合がある）、`man 5 crontab`、`man systemd.timer`、`man tar`、`man sha256sum`、`man scp`、`man rsync`
 - 平日のうちに入れておくもの：`shellcheck`、`rsync`、`openssh-server`（課題9で、自分自身へ `ssh` でつなぐため）
 

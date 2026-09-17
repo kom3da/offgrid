@@ -32,8 +32,8 @@ T2で体験した「間違っていても黙って動く」問題を、実行す
 
 ## 平日に読むもの
 
-- 『サバイバルTypeScript』の、TypeScriptの概要、開発環境の準備、値・型・変数、関数、`tsconfig.json` を扱う話題
-- 『プロを目指す人のためのTypeScript入門』の、導入と基本的な文法・型、オブジェクトの型、関数の型を扱う章
+- 『プロを目指す人のためのTypeScript入門』第1章（イントロダクション）、第2章（基本的な文法・基本的な型）、第9章（TypeScriptのコンパイラオプション）
+- 『サバイバルTypeScript』の「作って学ぶTypeScript」の開発環境の準備、「読んで学ぶTypeScript」の値・型・変数、tsconfig
 - TypeScript Handbook（DevDocsのオフライン版）の「Everyday Types」と、TSConfigのリファレンス
 - パッケージの取得にはネットワークが要る。AIなしデーに回線が使えない場合は、準備の `npm install` までを平日に済ませておく
 

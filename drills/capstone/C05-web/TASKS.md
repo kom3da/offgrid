@@ -31,7 +31,8 @@ server の REST と SSE を受け、死活とリソースの一覧、24時間の
 
 ## 平日に読むもの
 
-- 『プロを目指す人のためのTypeScript入門』と『サバイバルTypeScript』の、ユニオン型、型の絞り込み、`unknown` を扱う話題
+- 『プロを目指す人のためのTypeScript入門』第6章（高度な型）、第8章（非同期処理）
+- 『入門 監視』6章（フロントエンド監視）
 - React公式ドキュメント（オフラインコピー）の、`useEffect` と外部システムとの同期、state の持ち方を扱うページ
 - MDN（オフラインコピー）の、SVG の `path`・`polyline`・`viewBox`、Canvas API の入門、`EventSource` のページ
 - Vitest と Testing Library のドキュメント（平日に保存しておく）

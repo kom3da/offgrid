@@ -48,6 +48,7 @@ export default defineConfig({
 			social: [{ icon: 'github', label: 'GitHub', href: repoUrl }],
 			plugins: [starlightThemeRapide()],
 			customCss: ['./src/styles/custom.css'],
+			components: { ThemeProvider: './src/components/ThemeProvider.astro' },
 			sidebar: [
 				{ label: 'はじめに', items: [doc('01-overview'), doc('02-getting-started')] },
 				{

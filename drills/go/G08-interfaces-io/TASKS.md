@@ -29,9 +29,9 @@ title: "G8 インターフェースとio"
 
 ## 平日に読むもの
 
-- 『初めてのGo言語』の、インターフェースを扱う話題と、`io` まわりを扱う話題
+- 『初めてのGo言語』7章（型、メソッド、インタフェース）、13章（標準ライブラリ。`io` の部分）
+- 『プログラミング言語Go』第7章（インタフェース）。練習問題から1〜2問
 - A Tour of Goの「Methods and interfaces」のうち、インターフェース、Stringers、Readersの部分
-- 『プログラミング言語Go』の、インターフェースを扱う話題と、その練習問題から1〜2問
 - Effective Goの「Interfaces and other types」の節
 - `go doc io.Reader`、`go doc io.Writer`、`go doc strings.NewReader`、`go doc bytes.Buffer`、`man grep`
 

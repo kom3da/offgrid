@@ -31,8 +31,8 @@ title: "T6 型で設計する"
 
 ## 平日に読むもの
 
-- 『プロを目指す人のためのTypeScript入門』の、ユニオン型、リテラル型、型の絞り込み、`never` 型、ジェネリクスを扱う章
-- 『サバイバルTypeScript』の、ユニオン型、判別可能なユニオン型、網羅性チェック、ジェネリクス、ユーティリティ型を扱う話題
+- 『プロを目指す人のためのTypeScript入門』第3章（オブジェクトの基本とオブジェクトの型）、第4章（TypeScriptの関数）、第6章（高度な型）
+- 『サバイバルTypeScript』の「読んで学ぶTypeScript」の型の再利用、ジェネリクス
 - TypeScript Handbook（DevDocsのオフライン版）の「Narrowing」「Generics」「Utility Types」
 
 ## 準備

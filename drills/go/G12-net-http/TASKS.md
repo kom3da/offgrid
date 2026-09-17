@@ -32,8 +32,8 @@ Goの標準ライブラリ `net/http` だけで、データの登録・取得・
 
 ## 平日に読むもの
 
-- 『Webを支える技術』の、REST、URI設計、HTTPメソッド、ステータスコードを扱う話題
-- 『実用 Go言語』の、HTTPサーバーを扱う話題
+- 『実用 Go言語』11章（HTTPサーバー）
+- 『Webを支える技術』第3章（REST ── Webのアーキテクチャスタイル）、第5章（URIの設計）、第15章〜第17章（Webサービスの設計）
 - Go公式ブログの「Routing Enhancements for Go 1.22」（オフライン用に保存しておく）
 - `go doc net/http` の冒頭の説明、`go doc http.ServeMux`（パターンの書き方と、優先順位の決まりが載っている）
 

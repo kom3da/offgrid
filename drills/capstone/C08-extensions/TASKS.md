@@ -30,8 +30,8 @@ title: "C8 発展（任意）：機能の追加と負荷試験"
 
 ## 平日に読むもの
 
-- 『Site Reliability Engineering』の、監視とアラートの考え方、負荷とキャパシティを扱う話題（英語。Web版を平日に保存しておく）
-- 『入門 監視』の、アラートと通知を扱う話題
+- 『入門 監視』2章（監視のデザインパターン）、9章（ネットワーク監視）、10章（セキュリティ監視）
+- 『Site Reliability Engineering』4章（Service Level Objectives）、6章（Monitoring Distributed Systems）、10章（Practical Alerting）、21章（Handling Overload）（英語。Web版を平日に保存しておく）
 - PostgreSQLマニュアルの「Table Partitioning」（D15）と「Monitoring Database Activity」（O9）
 - 自分の O9 の `scenario.md`・`results.md`、O6 のプレイブック、D15・G15・G19 のメモ、C7 の `retrospective.md`
 - 平日のうちに、C7 のあと実際に使っていて困ったことを3つ書き出しておく。項目を選ぶ材料にする

@@ -35,7 +35,7 @@ G20で作った「サーバーから流れ続ける応答」を、ブラウザ�
 - MDN（DevDocsのオフライン版）の「Using server-sent events」（形式と、再接続と `retry` の説明）、`EventSource`、`EventSource()` コンストラクタ、`EventSource: readyState`、`EventSource: error event`、`MessageEvent`
 - React公式ドキュメント（DevDocsのオフライン版）の「Synchronizing with Effects」と「Lifecycle of Reactive Effects」（接続を開いて閉じる例が載っている）
 - G20で自分が書いたSSEのサーバーのコードと、G14の `api.md`（認証の方法と守る範囲）
-- 『実用 Go言語』の、HTTPサーバーのストリーミング応答を扱う話題（G20の復習）
+- 『実用 Go言語』11章（HTTPサーバー）の、レスポンスの書き込みに関わる節（G20の復習）
 
 ## 準備
 

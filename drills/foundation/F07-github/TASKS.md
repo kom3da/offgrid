@@ -34,7 +34,8 @@ SSH鍵でGitHubにつなぎ、ブランチを使った開発の流れ（分岐�
 
 ## 平日に読むもの
 
-- 『Pro Git』の、「Gitのブランチ機能」の章と、GitHubを扱う章。余裕があれば、SSH公開鍵の作成を扱う節
+- 『Pro Git』3章（Gitのブランチ機能）、6章（GitHub）、7章（Gitのさまざまなツール。`reset` と `revert` の節）
+- 『新しいLinuxの教科書』APPENDIX01（リモートログインとSSH）
 - `man ssh-keygen` と `man ssh_config` の、最初の説明の部分
 - `man git-merge` の、コンフリクトの表示のされ方を説明している節
 

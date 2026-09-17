@@ -36,7 +36,8 @@ title: "F10 パッケージ管理とDocker入門"
 
 ## 平日に読むもの
 
-- 『新しいLinuxの教科書』の、パッケージ管理と `sudo` を扱う章
+- 『新しいLinuxの教科書』CHAPTER18（アーカイブと圧縮）、CHAPTER20（ソフトウェアパッケージ）
+- 『［試して理解］Linuxのしくみ』第10章（仮想化機能）、第11章（コンテナ）
 - Docker公式ドキュメントの Get started（オフラインに保存したもの）の、コンテナとイメージの説明と、`docker run` の使い方
 - `man apt`。`docker run --help`（`man docker-run` が入っていれば、そちらも）
 
@@ -61,7 +62,7 @@ mkdir -p ~/sandbox/f10 && cd ~/sandbox/f10
 
    2行目は、`sudo` なしで `docker` を使えるようにする設定。入り直す前に `docker ps` を実行すると、どうなるか。**反映するには、Ubuntuに入り直す必要がある。** WSL2ならPowerShellで `wsl --shutdown`、Limaなら `limactl stop offgrid` のあと `limactl start offgrid`、Linuxならログアウトしてログインし直す。入り直したら、`groups` に `docker` が増えていることを見て、`docker run --rm hello-world` で確かめる。表示された文章には、Dockerが今やった手順が書いてある。何段階か
 4. イメージとコンテナ：`docker run --rm hello-world` をもう一度実行する。1回目と出力はどう違うか（1回目にだけあった行は何か）。`docker images`、`docker ps`、`docker ps -a` を実行し、それぞれ何が出るか。`--rm` を付けずに `hello-world` を実行してから `docker ps -a` を見ると、何が増えるか。イメージとコンテナの違いを、この出力を証拠にして書く
-5. `docker run -it --rm ubuntu bash` でコンテナの中に入る。中で `ls /`、`ps aux`、`cat /etc/os-release`、`uname -r`、`hostname` を実行し、外（自分のUbuntu）での結果と比べる。同じものと違うものはどれか。それは「コンテナはカーネルを共有する」と、どう関係するか（`ps` が見つからないと言われたら、それも記録する。中で `apt update` と `apt install -y procps` を実行すれば入る。`sudo` が要らないのはなぜか）。中でファイルを作って `exit` し、もう一度同じコマンドで入ると、そのファイルはあるか。なぜか。`exit` した後、`docker ps -a` にこのコンテナは残っているか
+5. `docker run -it --rm ubuntu bash` でコンテナの中に入る。中で `ls /`、`ps aux`、`cat /etc/os-release`、`uname -r`、`hostname` を実行し、外（自分のUbuntu）での結果と比べる。同じものと違うものはどれか。それは「コンテナはカーネルを共有する」と、どう関係するか（中では `sudo` が要らない。なぜか）。中でファイルを作って `exit` し、もう一度同じコマンドで入ると、そのファイルはあるか。なぜか。`exit` した後、`docker ps -a` にこのコンテナは残っているか
 6. `docker run -d --name web -p 8080:80 nginx` を実行する。`curl localhost:8080` → `docker logs web` → `docker exec -it web sh` の順に試す。`-p 8080:80` の左と右は、それぞれ何の番号か。`ss -ltn` で、8080番の待ち受けを見つける（F8）。`docker logs web` の1行を、F9のサーバーのログと比べる。`docker exec` で入ったシェルを `exit` しても、コンテナは動いたままか。課題5と何が違うか
 7. コンテナの一生：`docker stop web` → `docker rm web` の順に試す。`stop` の後、`curl localhost:8080` と `docker ps`、`docker ps -a`、`docker logs web` はそれぞれどうなるか。`rm` せずにもう一度課題6の `docker run` を実行すると、どうなるか。`-d` を付けないと、どうなるか（止めるのは Ctrl+C）
 8. **本題**：[Stage 0：基礎トラック](../../../docs/10-track-f-foundation.md)の「F10で使う起動例」で、PostgreSQLを起動する。`docker logs pg-offgrid` で、起動が終わったことを示す行を探す。`docker ps` の PORTS の列を読む。コマンドのオプション（`-d`、`--name`、`-e`、`-p`、`-v`）を、1つずつ `explain.md` に説明する。`-p` の前に付いている `127.0.0.1:` は、何を制限しているか（F8）。`psql` に入り、`\l` と `\q` を試す

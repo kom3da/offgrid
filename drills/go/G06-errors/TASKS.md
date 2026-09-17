@@ -30,8 +30,8 @@ title: "G6 エラー処理"
 
 ## 平日に読むもの
 
-- 『初めてのGo言語』の、エラー処理を扱う話題（センチネルエラー、ラップ、`Is` と `As`、`defer`）
-- 『プログラミング言語Go』の、エラー処理の方針を扱う話題
+- 『初めてのGo言語』9章（エラー処理）
+- 『プログラミング言語Go』第5章（関数）の、エラーを扱う節
 - Effective Goの「Errors」の節
 - `go doc errors`（パッケージの説明文を全部読む）、`go doc fmt.Errorf`、`go doc strconv.NumError`
 

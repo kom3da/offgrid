@@ -31,7 +31,7 @@ title: "T4 非同期処理"
 
 ## 平日に読むもの
 
-- 『JavaScript Primer』の、非同期処理（コールバック、Promise、Async Function）を扱う章と、ユースケースの部にある、`fetch` でAPIを呼ぶ話題
+- 『JavaScript Primer』第一部（基本文法）の、非同期処理: Promise/Async Function、第二部（応用編）の、Ajax通信
 - MDN（DevDocsのオフライン版）の、`fetch()`、`Response`、`Promise`、「オリジン間リソース共有 (CORS)」のページ
 - `go doc net/http FileServer`、`go doc net/http Dir`（Goのサーバーから、HTMLなどのファイルを配信する方法）
 

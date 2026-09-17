@@ -31,8 +31,8 @@ T5の課題11で見たとおり、型は実行時には消える。`fetch` で�
 
 ## 平日に読むもの
 
-- 『サバイバルTypeScript』の、`unknown` 型、型ガード、型述語（ユーザー定義型ガード）、型アサーションを扱う話題
-- 『プロを目指す人のためのTypeScript入門』の、`unknown` と `any`、型の絞り込み、型述語、`as` の危険性を扱う話題
+- 『プロを目指す人のためのTypeScript入門』第6章（高度な型）
+- 『サバイバルTypeScript』の「読んで学ぶTypeScript」のAdvanced Topics（型ガード、型アサーション）
 - TypeScript Handbook（DevDocsのオフライン版）の「Narrowing」全体。特に `typeof`、`in`、型述語の項
 - MDN（DevDocsのオフライン版）の `typeof`、`Array.isArray()`、`Object.keys()`、`JSON.parse()`
 - G13で自分が書いた `api.md`（アイテムの形、エラーレスポンスの形）

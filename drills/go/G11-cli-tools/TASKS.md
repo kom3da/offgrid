@@ -32,8 +32,8 @@ Stage 1で学んだことを全部使って、人に渡せるコマンドライ�
 
 ## 平日に読むもの
 
-- 『初めてのGo言語』の、標準ライブラリを扱う話題のうち `encoding` の部分と、これまでに読んだ話題の復習
-- 『プログラミング言語Go』の、テキスト処理と、コマンドラインツールを扱う話題
+- 『初めてのGo言語』13章（標準ライブラリ。`encoding/csv` と `encoding/json` の部分）、10章（モジュールとパッケージ）
+- 『プログラミング言語Go』第4章（コンポジット型）の、テキスト処理の例
 - `go doc encoding/csv`、`go doc csv.Reader`、`go doc strconv.ParseFloat`、`go doc strings.Fields`、`go doc strings.Cut`、`go doc slices.SortFunc`、`go doc flag`
 - F3で残した `notes.md`（課題6・7で使ったコマンドの1行）
 

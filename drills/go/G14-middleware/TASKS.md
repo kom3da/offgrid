@@ -32,7 +32,8 @@ title: "G14 ミドルウェアとログ"
 
 ## 平日に読むもの
 
-- 『実用 Go言語』の、HTTPサーバーのミドルウェアと、ログを扱う話題
+- 『実用 Go言語』11章（HTTPサーバー。ミドルウェアの節）、13章（ログとオブザーバビリティ）
+- 『Webを支える技術』第9章（HTTPヘッダ）
 - Go公式ブログの「Structured Logging with slog」（オフライン用に保存しておく）
 - `go doc log/slog` の冒頭の説明、`go doc slog.Logger`
 - MDN（DevDocsのオフライン版）の「Cross-Origin Resource Sharing (CORS)」。単純リクエストとプリフライトの違いまで

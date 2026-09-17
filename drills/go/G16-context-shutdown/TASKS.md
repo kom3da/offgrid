@@ -30,8 +30,9 @@ title: "G16 contextと終了処理"
 
 ## 平日に読むもの
 
-- 『Go言語による並行処理』の、`select`、`context` パッケージ、goroutineリークの防ぎ方を扱う話題
-- 『実用 Go言語』の、`context` と、サーバーの終了処理を扱う話題
+- 『Go言語による並行処理』4章（Goでの並行処理パターン）
+- 『初めてのGo言語』14章（コンテキスト）
+- 『実用 Go言語』16章（エンタープライズなGoアプリケーションと並行処理）
 - Go公式ブログの「Go Concurrency Patterns: Context」「Go Concurrency Patterns: Pipelines and cancellation」（オフライン用に保存しておく）
 - `go doc context` の冒頭の説明、`go doc http.Server.Shutdown`、`go doc os/signal.NotifyContext`
 

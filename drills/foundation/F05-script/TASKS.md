@@ -33,7 +33,7 @@ title: "F5 シェルスクリプト"
 
 ## 平日に読むもの
 
-- 『新しいLinuxの教科書』の、シェルスクリプトを扱う章
+- 『新しいLinuxの教科書』CHAPTER15（シェルスクリプトを書こう）、CHAPTER16（シェルスクリプトの基礎知識）、CHAPTER17（シェルスクリプトを活用しよう）
 - `help test`、`help set`、`help read` の出力
 - `man shellcheck`。指摘に付く番号（`SC2086` など）の読み方を知っておく
 

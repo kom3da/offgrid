@@ -31,7 +31,7 @@ G12から育ててきたAPIの保存先を、メモリからPostgreSQLに置き�
 
 ## 平日に読むもの
 
-- 『実用 Go言語』の、データベースの扱いを扱う話題（`database/sql` での説明が中心でも、考え方は同じ）
+- 『実用 Go言語』10章（Goとリレーショナルデータベース）
 - 手元にcloneした `pgx` のREADMEと、`go doc github.com/jackc/pgx/v5`、`go doc github.com/jackc/pgx/v5/pgxpool`（`go get` の後なら、オフラインで引ける）
 - PostgreSQLマニュアルの付録「PostgreSQLエラーコード」、「CREATE TABLE」の制約の節
 

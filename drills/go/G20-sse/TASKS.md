@@ -34,7 +34,8 @@ title: "G20 Server-Sent Events"
 
 - HTML Standard（WHATWGの仕様書。オフライン用に保存しておく）の「Server-sent events」の節。とくに、イベントストリームの書式と、各フィールドの意味
 - MDN（DevDocsのオフライン版）の「Using server-sent events」と「EventSource」。`EventSource` がリクエストに何を付けられて、何を付けられないか
-- 『実用 Go言語』の、HTTPサーバーを扱う話題のうち、レスポンスの書き込みとフラッシュに関わる部分
+- 『実用 Go言語』11章（HTTPサーバー）、13章（ログとオブザーバビリティ）
+- 『初めてのGo言語』14章（コンテキスト）
 - `go doc http.Flusher`、`go doc http.ResponseController`、`go doc http.Request.Context`（いつキャンセルされるかの説明）、`go doc runtime.NumGoroutine`、`go doc net/http/pprof`、`man curl`（`-N`）
 
 ## 準備

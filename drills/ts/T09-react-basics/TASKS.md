@@ -34,6 +34,7 @@ T3で手で書いたDOM操作を、Reactに肩代わりさせる。Reactは「�
 
 ## 平日に読むもの
 
+- 『サバイバルTypeScript』の「作って学ぶTypeScript」のReactでいいねボタンを作ろう、Reactコンポーネントのテストを書こう、「読んで学ぶTypeScript」のJSX
 - React公式ドキュメント（DevDocsのオフライン版）の「Learn」から：Your First Component、Passing Props to a Component、Rendering Lists、State: A Component's Memory、State as a Snapshot、Updating Arrays in State、Sharing State Between Components、Synchronizing with Effects、You Might Not Need an Effect
 - 同じく「Learn」のUsing TypeScript（型定義パッケージと、propsやイベントの型の書き方）
 - 同じく「Reference」の `useState`、`useEffect`、`createRoot`、`StrictMode`

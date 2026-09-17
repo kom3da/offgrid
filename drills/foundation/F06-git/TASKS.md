@@ -33,7 +33,8 @@ title: "F6 エディタとGit入門"
 
 ## 平日に読むもの
 
-- 『Pro Git』の、「使い始める」と「Gitの基本」を扱う章
+- 『新しいLinuxの教科書』CHAPTER07（テキストエディタ）、CHAPTER19（バージョン管理システム）
+- 『Pro Git』1章（使い始める）、2章（Gitの基本）
 - `man gittutorial`（Gitに付いてくる入門。オフラインで読める）
 - `vimtutor` の続き（AIなしデーに30分で終わらなかったぶん）
 

@@ -31,6 +31,7 @@ title: "D15 時系列データ"
 
 ## 平日に読むもの
 
+- 『内部構造から学ぶPostgreSQL』第6章（物理設計）、第15章（テーブルメンテナンス）、第16章（インデックスメンテナンス）
 - PostgreSQL公式マニュアル（PDF）の、「データ定義」の章の「テーブルのパーティショニング」の節（宣言的パーティショニング、パーティションの追加と削除、枝刈り）、「インデックス」の章の「インデックスの種類」の BRIN の部分、「日付/時刻関数と演算子」の `date_trunc` の説明
 - `psql` の中の `\h CREATE TABLE`（`PARTITION BY` と `PARTITION OF` の部分）、`\h ALTER TABLE`（`DETACH PARTITION`）、`\h CREATE INDEX`（`USING brin`）
 - D14 の `index-design.md` と `timings.md`（測り方を同じにする）

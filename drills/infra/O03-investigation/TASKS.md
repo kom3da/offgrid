@@ -30,7 +30,7 @@ title: "O3 調査ツール"
 
 ## 平日に読むもの
 
-- 『［試して理解］Linuxのしくみ』の、システムコール、プロセス管理を扱う章。`strace` の出力例が載っている
+- 『［試して理解］Linuxのしくみ』第2章（プロセス管理（基礎編））、第3章（プロセススケジューラ）、第4章（メモリ管理システム）、第9章（ブロック層）
 - 平日のうちに、`strace` と `lsof` を入れ（`sudo apt install -y strace lsof`）、`man ss`、`man lsof`、`man strace` が引けることを確かめる。AIなしデーのWeb検索は0回
 - `go doc net/http/pprof` と `go doc runtime/pprof` の、冒頭の説明。`go tool pprof -h` の出力
 - Goの公式ブログの「Profiling Go Programs」と、公式ドキュメントの「Diagnostics」を、オフラインで読めるように保存しておく

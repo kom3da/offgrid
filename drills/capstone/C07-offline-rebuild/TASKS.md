@@ -30,8 +30,8 @@ watchdeck が「閉域で、自分以外の人でも、作り直して動かし�
 
 ## 平日に読むもの
 
-- 『入門 監視』の、アラートと手順書（runbook）の考え方、障害対応を扱う話題
-- 『Site Reliability Engineering』の、ポストモーテムと、障害に備える考え方を扱う話題（英語。Web版を平日に保存しておく）
+- 『入門 監視』3章（アラート、オンコール、インシデント管理）、11章（監視アセスメントの実行）、付録A（手順書の例：Demo.App）
+- 『Site Reliability Engineering』12章（Effective Troubleshooting）、15章（Postmortem Culture: Learning from Failure）（英語。Web版を平日に保存しておく）
 - 自分の O7 のチェックリストと、O8 の振り返り
 - 平日のうちに、AIへ C1〜C6 のコードのレビューを頼み、指摘を読んでおく（直すのは、AIなしデーに自分の手で）
 

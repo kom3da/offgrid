@@ -22,3 +22,11 @@
 .sl-markdown-content table th {
 	white-space: nowrap;
 }
+
+/* Top page: the hero has no image, so it does not need the default full-height framing */
+.hero {
+	padding-block: clamp(1rem, 4vh, 3rem) !important;
+}
+.hero > .stack {
+	max-width: 46rem;
+}

@@ -34,7 +34,7 @@ title: "F8 ネットワークの基礎"
 
 ## 平日に読むもの
 
-- 『マスタリングTCP/IP 入門編』の、TCP/IPの基礎、IP、TCPとUDP、DNSを扱う章
+- 『マスタリングTCP/IP 入門編』第1章（ネットワーク基礎知識）、第2章（TCP/IP基礎知識）、第4章（IPプロトコル）、第5章（IPに関連する技術。DNSとARP）、第6章（TCPとUDP）
 - `man ss` の、オプションの一覧と、状態（STATE）の説明
 - `man dig` の、出力の読み方と `+short`、`+trace` の説明
 

@@ -33,8 +33,8 @@ title: "G15 goroutineとchannel"
 
 ## 平日に読むもの
 
-- 『Go言語による並行処理』の、並行と並列の違い、goroutine、`sync` パッケージ、channelを扱う話題
-- 『実用 Go言語』の、並行処理を扱う話題
+- 『Go言語による並行処理』1章（並行処理入門）、2章（並行性をどうモデル化するか：CSPとは何か）、3章（Goにおける並行処理の構成要素）
+- 『初めてのGo言語』12章（並行処理）
 - Go公式ブログの「Introducing the Go Race Detector」「Share Memory By Communicating」「Fixing For Loops in Go 1.22」（オフライン用に保存しておく）
 - A Tour of Go（手元で起動したもの）の「Concurrency」、`go doc sync.WaitGroup`、`go doc sync.Mutex`
 

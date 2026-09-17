@@ -38,7 +38,8 @@ title: "O9 負荷試験入門"
   - `k6`：公式ドキュメントの「Running k6」「Options」「Metrics」「Scenarios」の各ページ。`k6 run --help`
 - `go tool pprof -h`。O3で保存したGoの公式ブログ「Profiling Go Programs」と、自分のO3の `cheatsheet.md`
 - PostgreSQLマニュアルの「Monitoring Database Activity」（`pg_stat_activity` の列の説明）と、D14で読んだ「Using EXPLAIN」
-- 『［試して理解］Linuxのしくみ』の、プロセスのスケジューリングとCPUの使われ方を扱う章
+- 『［試して理解］Linuxのしくみ』第3章（プロセススケジューラ）、第8章（記憶階層）
+- 『入門 監視』4章（統計入門）、7章（アプリケーション監視）
 
 ## 準備
 

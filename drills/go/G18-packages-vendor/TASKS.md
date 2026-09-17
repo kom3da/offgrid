@@ -31,8 +31,8 @@ title: "G18 パッケージ構成と依存管理"
 
 ## 平日に読むもの
 
-- 『実用 Go言語』の、パッケージ構成、モジュール、依存管理を扱う話題
-- 『初めてのGo言語』の、モジュール・パッケージ・importを扱う話題
+- 『初めてのGo言語』10章（モジュールとパッケージ）、11章（各種ツール）
+- 『実用 Go言語』7章（パッケージ、モジュール）、8章（Goプログラミングの環境を整備する）
 - `go help modules`、`go help mod tidy`、`go help mod vendor`、`go help build`（`-mod` の説明）、`go help environment`
 - Go Modules Reference（`go help modules` に案内がある。オフライン用に保存しておく）の、`go.mod` ファイル、`internal` ディレクトリ、ベンダリングを扱う節
 - `docs/15-track-c-capstone.md` の「ディレクトリ案」（今回の構成が、卒業制作の形になる）

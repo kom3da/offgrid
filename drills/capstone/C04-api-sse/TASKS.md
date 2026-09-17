@@ -31,9 +31,9 @@ title: "C4 serverの配信（REST・SSE・認証）"
 
 ## 平日に読むもの
 
-- 『実用 Go言語』の、HTTPサーバー、ミドルウェア、サーバーの終了処理を扱う話題
-- 『Go言語による並行処理』の、goroutine の片付けと、複数の受け手に配るパターンの話題
-- 『Webを支える技術』の、ステータスコードと認証の話題
+- 『実用 Go言語』11章（HTTPサーバー）、13章（ログとオブザーバビリティ）
+- 『Go言語による並行処理』4章（Goでの並行処理パターン）
+- 『Webを支える技術』第8章（ステータスコード）、第9章（HTTPヘッダ）
 - `go doc http.Server.Shutdown`、`go doc http.Flusher`、`go doc http.Request.Context`
 - MDN（オフラインコピー）の、Server-sent events と `EventSource` のページ
 - 自分の G14、G16、G20、T11 のコードと、C1 のSSE認証・死活判定のADR

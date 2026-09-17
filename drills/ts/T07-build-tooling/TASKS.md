@@ -31,7 +31,8 @@ title: "T7 ビルド環境を手で組む"
 
 ## 平日に読むもの
 
-- 『プロを目指す人のためのTypeScript入門』の、モジュール（`import` と `export`）を扱う話題
+- 『プロを目指す人のためのTypeScript入門』第7章（TypeScriptのモジュールシステム）
+- 『サバイバルTypeScript』の「作って学ぶTypeScript」のPrettierでコード整形を自動化しよう、ESLintでコーディング規約を自動化しよう、Vitestでテストを書こう
 - Vite、ESLint、Vitestの公式ドキュメント。DevDocsにあればオフライン保存し、なければ必要なページをブラウザで保存しておく。Viteは「Getting Started」「Features」の中のTypeScriptの項、「Config Reference」の中のServer Options。ESLintは「Configuration Files」。Vitestは「Getting Started」とAPIリファレンスの `test`、`expect`
 - 入れたパッケージの `node_modules/<パッケージ名>/` にある `README.md` と型定義（`.d.ts`）も、オフラインで読める資料になる
 - パッケージの取得にはネットワークが要る。回線が使えない場合は、`npm install` だけを平日に済ませておく（設定ファイルは、AIなしデーに自分で書く）

@@ -31,8 +31,9 @@ title: "G10 アルゴリズム"
 
 ## 平日に読むもの
 
-- 『なっとく！アルゴリズム』の、二分探索、ビッグオー記法、選択ソート、再帰を扱う話題
-- 『初めてのGo言語』の、テストを扱う話題のうち、ベンチマークの部分
+- 『なっとく！アルゴリズム』の、二分探索、選択ソート、クイックソート、再帰を扱う章（章番号は、手元の本の目次で確認する）
+- 『コンピュータはなぜ動くのか』第5章（アルゴリズムと仲良くなる7つのポイント）
+- 『初めてのGo言語』15章（テスト）の、ベンチマークの節
 - `go doc testing.B`、`go doc testing` の説明文のうちベンチマークの部分、`go help testflag`（`-bench`、`-benchmem`、`-benchtime`）
 - `go doc slices.Sort`、`go doc slices.BinarySearch`、`go doc slices.Index`、`go doc math/rand`
 

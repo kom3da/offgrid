@@ -33,7 +33,7 @@ T9のReactと、T8の検証を組み合わせ、G12〜G14のAPIにつながる�
 ## 平日に読むもの
 
 - React公式ドキュメント（DevDocsのオフライン版）の「Synchronizing with Effects」の、データ取得（Fetching data）の項と、「You Might Not Need an Effect」の同じ話題
-- 『プロを目指す人のためのTypeScript入門』の、非同期処理と `Promise` の型を扱う話題
+- 『プロを目指す人のためのTypeScript入門』第8章（非同期処理）
 - Viteのドキュメントの「Env Variables and Modes」
 - Vitestのドキュメントの「Mocking」と、`vi` のAPIリファレンス、「Test Environment」
 - Testing Libraryの公式ドキュメント（オフライン保存しておく。T7のViteと同じ扱い）。「Queries」の優先順位、`findBy` と `getBy` と `queryBy` の違い、`user-event` の導入

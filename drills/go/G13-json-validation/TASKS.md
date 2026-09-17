@@ -29,10 +29,10 @@ title: "G13 JSON・入力検証・テスト"
 
 ## 平日に読むもの
 
-- 『実用 Go言語』の、JSONの扱いと、HTTPサーバーのテストを扱う話題
+- 『実用 Go言語』9章（さまざまなデータフォーマット。JSONの部分）、14章（テスト）
+- 『Webを支える技術』第8章（ステータスコード）
 - Go公式ブログの「JSON and Go」（オフライン用に保存しておく）
 - `go doc encoding/json` の冒頭、`go doc json.Decoder`、`go doc net/http/httptest`
-- 『Webを支える技術』の、ステータスコード（400番台）を扱う話題
 
 ## 準備
 
