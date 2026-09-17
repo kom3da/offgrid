@@ -446,6 +446,9 @@ func TestRealCurriculum(t *testing.T) {
 }
 
 func TestWrapKeepsWordsWhole(t *testing.T) {
+	// termWidth はパッケージ変数。戻さないと、あとのテストの折り返しが変わる
+	prev := termWidth
+	t.Cleanup(func() { termWidth = prev })
 	termWidth = 40
 	got := wrap("メイン（G17）：drills/go/G17-database/TASKS.md　＋ PostgreSQL（D13）", "  ")
 	for _, line := range got {

@@ -70,6 +70,25 @@ func cmdSelftest(root string, args []string) error {
 		if total < len(sheets) {
 			problems = append(problems, fmt.Sprintf("PROGRESS.md: ユニットの欄が%d個で、課題シート%d本より少ない", total, len(sheets)))
 		}
+		// カリキュラムを取り込んでユニットが増えたとき、PROGRESS.md は学習者のものなので
+		// 置き換わらない。行が無いまま進めると、完了を記録できずに詰まる。
+		have := map[string]bool{}
+		for _, t := range p.Tracks {
+			for _, u := range t.Units {
+				have[strings.ToUpper(u.ID)] = true
+			}
+		}
+		var missing []string
+		for _, sh := range sheets {
+			if !have[strings.ToUpper(sh.Unit)] {
+				missing = append(missing, sh.Unit)
+			}
+		}
+		if len(missing) > 0 {
+			problems = append(problems, fmt.Sprintf(
+				"PROGRESS.md: 課題シートはあるのに欄が無いユニット: %s（「- [ ] %s ...」の行を足してください）",
+				strings.Join(missing, "、"), missing[0]))
+		}
 		if !quiet {
 			fmt.Printf("PROGRESS.md: Stage %s / 次のユニット %s / ユニット欄 %d個\n", p.Stage, p.Unit, total)
 		}
