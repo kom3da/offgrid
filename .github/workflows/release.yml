@@ -1,0 +1,67 @@
+# 版のタグを push したら、学習用コマンドのバイナリを作ってリリースに添える。
+# カリキュラムの版とツールの版が、いつも同じ番号になる。
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "リリースを作るタグ（例: v2026.10.6）"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # テンプレートのリポジトリでだけ動かす
+    if: github.repository == 'kom3da/offgrid'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          # 外部の依存が無いので、キャッシュするものもない
+          cache: false
+
+      - name: 版を決める
+        id: ver
+        run: echo "tag=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: 検査
+        working-directory: tools/offgrid
+        run: |
+          go vet ./...
+          go test ./...
+          go run . selftest
+
+      - name: バイナリを作る
+        working-directory: tools/offgrid
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          mkdir -p dist
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
+            os="${target%/*}"; arch="${target#*/}"
+            out="dist/offgrid-${os}-${arch}"
+            GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 \
+              go build -trimpath -ldflags "-s -w -X main.version=${TAG}" -o "$out" .
+            ( cd dist && sha256sum "$(basename "$out")" >> checksums.txt )
+          done
+          ls -l dist
+
+      - name: リリースに添える
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" tools/offgrid/dist/* --clobber
+          else
+            gh release create "$TAG" tools/offgrid/dist/* \
+              --title "$TAG" \
+              --notes "学習用コマンド offgrid（$TAG）。導入は docs/02-getting-started.md を参照。変更点は CHANGELOG.md にある。"
+          fi

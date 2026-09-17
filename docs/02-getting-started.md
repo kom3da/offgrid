@@ -90,6 +90,26 @@ sudo apt install -y git gh shellcheck
 
 `sudo` で聞かれるパスワードは、手順1で決めたUbuntuのもの（Limaでは聞かれない）。`man`、`xxd`、`grep`、`curl`、`vim`、`nano` などは、最初から入っている。Dockerは、F10で入れる。
 
+**学習用コマンド `offgrid` を入れる。** セッションを案内してくれる道具で、今日いちばん大事な準備。`uname -m` の結果が `aarch64` なら `arm64`、`x86_64` なら `amd64` を選ぶ。
+
+```sh
+mkdir -p ~/.local/bin
+uname -m
+# aarch64 なら arm64、x86_64 なら amd64 に読み替える
+curl -fsSL -o ~/.local/bin/offgrid \
+  https://github.com/kom3da/offgrid/releases/latest/download/offgrid-linux-arm64
+chmod +x ~/.local/bin/offgrid
+offgrid version
+```
+
+`offgrid: command not found` と出たら、`~/.local/bin` が `PATH` に入っていない。次を実行して、シェルを開き直す（`PATH` の意味はF4で学ぶ）。
+
+```sh
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+```
+
+このコマンドは、ネットワークもAIも使わない。入れるのは今日だけで、あとはオフラインでも動く。
+
 ## 3. GitHubにつなぐ
 
 1. <https://github.com> でアカウントを作る（既にあれば不要）
@@ -126,7 +146,13 @@ cd offgrid-log
 - `--private` は非公開。公開して続ける励みにしたいなら `--public` にする。どちらの場合も、「いつか公開されるかもしれない」前提で書く（仕事の内容、実在のホスト名、認証情報は書かない）
 - 学習は、このリポジトリの `main` ブランチでそのまま進める。ブランチの使い方はF7で学ぶ
 
-`site/` と `.github/` は、テンプレートのドキュメントサイト用。自分のリポジトリでは使わないので、消してよい（残しても害はない）。
+`site/` と `.github/` は、テンプレート側の道具（ドキュメントサイトと、その検査）。自分のリポジトリでは使わないので、消してよい。
+
+```sh
+rm -rf site .github
+```
+
+消さなくても、中の設定は「テンプレートのリポジトリでだけ動く」ようにしてあるので、自分のpushで無駄に動くことはない。
 
 ## 5. エディタを用意する
 
@@ -161,7 +187,7 @@ F6からは、ターミナルの中のエディタ（`vim` か `nano`）も使�
 - Stage 0のオフライン教材を用意する（[ステージ開始時のオフライン教材セットアップ](20-resources.md)）
 - [学習ロードマップ](03-roadmap.md)と[AIなしデーの運用](04-ai-free-day.md)を読む
 - 最初のAIなしデーの日付を決め、カレンダーに入れる。最初の3回は午前だけ（3時間）。週に何回やるかは自由（[ペースを決める](04-ai-free-day.md)）
-- テンプレートの改訂を知りたければ、GitHubの <https://github.com/kom3da/offgrid> で「Watch」→「Custom」→「Releases」を選ぶ
+- テンプレートの改訂を知りたければ、GitHubの <https://github.com/kom3da/offgrid> で「Watch」→「Custom」→「Releases」を選ぶ（新しい版の `offgrid` も、そのリリースに付く）
 
 ## AIなしデーの始め方と終わり方
 
@@ -169,19 +195,19 @@ F6からは、ターミナルの中のエディタ（`vim` か `nano`）も使�
 
 ```sh
 cd ~/offgrid-log
-./scripts/offgrid
+offgrid
 ```
 
 今日が何回目で、何をやるかを表示し、振り返りのファイルを用意する。AIもネットワークも使わない。表示された課題シート（`TASKS.md`）を開いて始める。
 
-メニューの「1. セッションを始める（案内つき）」を選ぶと、ウォームアップから終わりの手続きまで、課題を1問ずつ案内する。まず覚えるのは `./scripts/offgrid` の1つだけでよい。ほかのサブコマンドは[学習用コマンド](04-ai-free-day.md#学習用コマンド)にある。
+メニューの「1. セッションを始める（案内つき）」を選ぶと、ウォームアップから終わりの手続きまで、課題を1問ずつ案内する。まず覚えるのは `offgrid` の1つだけでよい。ほかのサブコマンドは[学習用コマンド](04-ai-free-day.md#学習用コマンド)にある。
 
 コマンドを試す場所は `~/sandbox/`、メモや `explain.md` を書く場所は、課題シートと同じディレクトリ。`TASKS.md` は書き換えない。
 
 終わるときは、次を実行する。振り返りの書き忘れ、残すものの不足、コミットの漏れを教えてくれる。
 
 ```sh
-./scripts/offgrid end
+offgrid end
 ```
 
 そのあと、表示されたコマンドをそのまま打つ。F6でGitを学ぶまでは、意味が分からなくてよい。毎回同じものを手で打つこと自体が練習になるので、コピーせずに打つ（`F1: ...` の部分は、その日にやったことに変える）。
@@ -192,9 +218,9 @@ git commit -m "[no-ai] F1: xxdでUTF-8のバイト列を確認"
 git push origin main
 ```
 
-ユニットの完了条件を満たしたら、`./scripts/offgrid done F1` で `PROGRESS.md` に記録する。
+ユニットの完了条件を満たしたら、`offgrid done F1` で `PROGRESS.md` に記録する。
 
-初回のウォームアップは、再現する内容がまだないので、「Ubuntuのシェルを開き、`cd ~/offgrid-log` で移動し、`ls` で中身を見る」を何も見ずにやる（`./scripts/offgrid` も、そう表示する）。
+初回のウォームアップは、再現する内容がまだないので、「Ubuntuのシェルを開き、`cd ~/offgrid-log` で移動し、`ls` で中身を見る」を何も見ずにやる（`offgrid` も、そう表示する）。
 
 このカリキュラムは[ブラウザでも読める](https://kom3da.github.io/offgrid/)が、セッション中に開くのは、自分のリポジトリの中のMarkdownでよい。ネットワークを切るStage 4〜5では、それが唯一の読み方になる。
 

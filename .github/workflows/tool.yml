@@ -1,0 +1,46 @@
+# 学習用コマンド（tools/offgrid）の検査。
+# 課題シートの書式を変えてツールを直し忘れると、ここで落ちる。
+name: tool
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/offgrid/**"
+      - "drills/**/TASKS.md"
+      - "templates/retrospective.md"
+      - "PROGRESS.md"
+      - ".github/workflows/tool.yml"
+  pull_request:
+    paths:
+      - "tools/offgrid/**"
+      - "drills/**/TASKS.md"
+      - "templates/retrospective.md"
+      - "PROGRESS.md"
+  workflow_dispatch:
+
+jobs:
+  test:
+    # テンプレートのリポジトリでだけ動かす。学習者のコピーでは、毎セッションの push で
+    # 走ってしまうので、ここで止める（.github/ は消してもよい）
+    if: github.repository == 'kom3da/offgrid'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          # 外部の依存が無いので、キャッシュするものもない
+          cache: false
+      - name: gofmt
+        working-directory: tools/offgrid
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; echo '::error::gofmt をかけてください'; exit 1; }
+      - name: go vet
+        working-directory: tools/offgrid
+        run: go vet ./...
+      - name: go test
+        working-directory: tools/offgrid
+        run: go test ./...
+      - name: selftest（本物のカリキュラムを読めるか）
+        working-directory: tools/offgrid
+        run: go run . selftest

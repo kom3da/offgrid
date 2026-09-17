@@ -10,7 +10,7 @@
 
 - 学習者の前提：コンピュータの仕組み、Linux、Git、ネットワーク、Go、PostgreSQL、TypeScript のいずれも「ほぼ知らない」前提で進めている。専門用語には短い説明を付ける
 - 期限なし。6 つのステージ（Stage 0〜5）とユニット（F / G / T / D / O / C）で進む。構成は `docs/03-roadmap.md`
-- 現在地は `PROGRESS.md` を見る。`scripts/offgrid status` が、進捗と作業漏れをまとめて出す（AIを使わないコマンド）
+- 現在地は `PROGRESS.md` を見る。`offgrid status` が、進捗と作業漏れをまとめて出す（AIを使わないコマンド）
 - 学習の環境は、全員がUbuntu（WSL2、Lima、Linux）。コマンドの説明はUbuntu（GNU、bash 5）を前提にする
 - `drills/` の各ユニットの `TASKS.md` は課題シート（カリキュラムの一部）。それ以外のファイルが、オーナーの書いたもの。オーナーが `prompts/unit-drill.md` で作るつなぎのシートは `TASKS.local.md`
 - カリキュラム（`docs/`、`prompts/`、`templates/`、`scripts/`、課題シート）の変更は、テンプレート側で行う。学習者のリポジトリでは `scripts/update-curriculum.sh` で取り込むだけにし、直接書き換えない

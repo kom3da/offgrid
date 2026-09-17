@@ -34,7 +34,7 @@ gh repo create offgrid-log --template kom3da/offgrid --private --clone
 - [O：運用と閉域](docs/14-track-o-ops.md)（Stage 4、O1〜O9）
 - [C：卒業制作 watchdeck](docs/15-track-c-capstone.md)（Stage 5、C1〜C8）
 
-資料は[教材とツール](docs/20-resources.md)、AIに頼むときの文面は [prompts/](prompts/) にある。
+資料は[教材とツール](docs/20-resources.md)、AIに頼むときの文面は [prompts/](prompts/) にある。セッションを案内する学習用コマンド `offgrid` は、[はじめかた](docs/02-getting-started.md)で入れる。
 
 ## ディレクトリ構成
 
@@ -56,7 +56,8 @@ gh repo create offgrid-log --template kom3da/offgrid --private --clone
 ├── PROGRESS.md        # 自分の進捗
 ├── templates/         # 振り返りテンプレート
 ├── prompts/           # AIに頼むときの文面
-├── scripts/           # offgrid（学習用コマンド）、ダミーのログ生成、カリキュラムの取り込み
+├── tools/offgrid/     # 学習用コマンド offgrid のソース（Go）
+├── scripts/           # 補助スクリプト（ダミーのログ生成、カリキュラムの取り込み）
 ├── site/              # ドキュメントサイト（Astro Starlight）。テンプレート側でだけ使う
 ├── CLAUDE.md          # Claude Code 向けのコンテキストとレビュー方針
 └── CHANGELOG.md       # 版ごとの変更履歴
@@ -67,12 +68,12 @@ gh repo create offgrid-log --template kom3da/offgrid --private --clone
 ## 1回の回し方
 
 1. エディタのAI機能をオフにする
-2. 学習用コマンドを起動する（AIもネットワークも使わない。Python 3 だけで動く）
+2. 学習用コマンドを起動する（AIもネットワークも使わない）
    ```sh
-   ./scripts/offgrid
+   offgrid
    ```
 3. メニューの「1. セッションを始める（案内つき）」を選ぶ。ウォームアップから終わりの手続きまで、課題を1問ずつ案内する
-4. 中断しても続きから再開できる。進捗と作業漏れは `./scripts/offgrid status` で分かる
+4. 中断しても続きから再開できる。進捗と作業漏れは `offgrid status` で分かる
 
 ペースは週1回でも、週2〜3回でもよい（[AIなしデーの進め方](docs/04-ai-free-day.md)）。
 

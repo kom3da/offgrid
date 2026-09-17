@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # テンプレート（kom3da/offgrid）の指定した版から、カリキュラム部分だけを取り込む。
 # 使い方: ./scripts/update-curriculum.sh v2026.10.2
-# 置き換えるのは docs/ prompts/ templates/ scripts/ CLAUDE.md README.md CHANGELOG.md と、
+# 置き換えるのは docs/ prompts/ templates/ scripts/ tools/ CLAUDE.md README.md CHANGELOG.md と、
 # drills/ の中の TASKS.md（課題シート）だけ。それ以外の自分のファイルには触れない。
 set -euo pipefail
 
@@ -9,7 +9,7 @@ set -euo pipefail
 main() {
   TEMPLATE="${TEMPLATE:-kom3da/offgrid}"
   tag="${1:?usage: update-curriculum.sh <tag>  (e.g. v2026.10.2)}"
-  dirs=(docs prompts templates scripts)
+  dirs=(docs prompts templates scripts tools)
   files=(CLAUDE.md README.md CHANGELOG.md)
 
   cd "$(dirname "$0")/.."
@@ -58,7 +58,7 @@ main() {
   echo "Updated to ${tag}. Review the changes, then commit:"
   echo "  git diff --stat"
   echo "  git add -A && git commit -m \"[docs] Update curriculum to ${tag}\""
-  echo "To undo instead: git restore . && git clean -fd docs prompts templates scripts"
+  echo "To undo instead: git restore . && git clean -fd docs prompts templates scripts tools"
 }
 
 main "$@"
