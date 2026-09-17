@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""カリキュラムの文書を検査する（管理者用。学習者のリポジトリには配らない）。
+
+止めたいのは、今までに実際に起きた次の失敗。
+
+1. リンク切れ・アンカー切れ
+2. 引退させたルールの言い回しが、別のファイルに残る（課題シート11本の「Web検索は0回」）
+3. 数が合わない（ステージの目安回数が、課題シートの目安の合計と違う）
+4. ユニット数の食い違い
+
+使い方: python3 .github/check-docs.py
+"""
+
+import os
+import re
+import sys
+import unicodedata
+from collections import defaultdict
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SKIP_DIRS = {".git", "node_modules", "dist", ".astro", "answers", "site"}
+
+# 引退させたルールの言い回し。ルールを変えたら、古い言い方をここに足す。
+# 「どのファイルにも出てこない」ことを確かめる（例外は allow に書く）。
+RETIRED = [
+    ("Web検索は0回", "検索の回数制限は撤回した（docs/04 のルール）"),
+    ("検索が0回", "同上"),
+    ("Web検索の上限", "同上"),
+    ("オフライン教材セットアップ", "ステージの前提条件から外した（docs/20）"),
+    ("オーナー", "「学習者」または「管理する人」と書く（CLAUDE.md の役割）"),
+    ("GNUコマンド", "Ubuntu 26.04 の coreutils は uutils（CLAUDE.md を参照）"),
+    ("週1回前提", "ペースは学習者が決める（docs/04）"),
+    ("週次レビュー", "セッションを暦に結び付けない（docs/04）"),
+]
+# 引退語を書いてよい場所（その言い回し自体を説明しているファイル）
+ALLOW = {
+    "Web検索は0回": {
+        "drills/infra/O08-offline-day/TASKS.md",
+        "drills/capstone/C07-offline-rebuild/TASKS.md",
+        "docs/30-revision.md",  # この仕組みの説明として引用している
+    },
+    "検索が0回": {"drills/infra/O08-offline-day/TASKS.md", "drills/capstone/C07-offline-rebuild/TASKS.md"},
+    "週次レビュー": {"prompts/weekly-review.md"},  # ファイル名の都合で本文から参照する
+}
+
+problems = []
+notes = []
+
+
+def add(msg):
+    problems.append(msg)
+
+
+def md_files():
+    for dirpath, dirnames, filenames in os.walk(ROOT):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for fn in sorted(filenames):
+            if fn.endswith(".md") and not fn.startswith("._"):
+                yield os.path.join(dirpath, fn)
+
+
+def rel(path):
+    return os.path.relpath(path, ROOT)
+
+
+def read(path):
+    with open(path, encoding="utf-8", errors="replace") as f:
+        return f.read()
+
+
+# ---------------------------------------------------------------- 1. リンク
+
+LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)")
+HEAD = re.compile(r"^#{1,6}\s+(.*)$", re.M)
+_anchors = {}
+
+
+def slug(text):
+    """見出しからアンカー名を作る。記号は落とし、日本語は残す。"""
+    t = re.sub(r"`([^`]+)`", r"\1", text).strip()
+    out = []
+    for ch in t:
+        if unicodedata.category(ch)[0] in ("L", "N") or ch in "ー・":
+            out.append(ch)
+        else:
+            out.append("-")
+    return re.sub(r"-+", "-", "".join(out)).strip("-").lower()
+
+
+def anchors(path):
+    if path not in _anchors:
+        _anchors[path] = {slug(m) for m in HEAD.findall(read(path))} if os.path.isfile(path) else set()
+    return _anchors[path]
+
+
+def check_links():
+    for path in md_files():
+        text = read(path)
+        for i, line in enumerate(text.splitlines(), 1):
+            for target in LINK.findall(line):
+                if target.startswith(("http", "mailto:", "#/")):
+                    continue
+                if target.startswith("#"):
+                    fpath, anc = path, target[1:]
+                elif "#" in target:
+                    p, anc = target.split("#", 1)
+                    fpath = os.path.normpath(os.path.join(os.path.dirname(path), p))
+                else:
+                    fpath, anc = os.path.normpath(os.path.join(os.path.dirname(path), target)), None
+                if not os.path.exists(fpath):
+                    add(f"リンク切れ  {rel(path)}:{i} -> {target}")
+                elif anc and fpath.endswith(".md") and anc not in anchors(fpath):
+                    add(f"アンカー切れ  {rel(path)}:{i} -> {target}")
+    notes.append("リンクとアンカー：検査した")
+
+
+# ---------------------------------------------------------------- 2. 引退した言い回し
+
+
+def check_retired():
+    for path in md_files():
+        r = rel(path)
+        if r.startswith(".github/"):
+            continue  # この検査スクリプト自身
+        for i, line in enumerate(read(path).splitlines(), 1):
+            for phrase, why in RETIRED:
+                if phrase in line and r not in ALLOW.get(phrase, set()):
+                    add(f"引退した言い回し  {r}:{i}  「{phrase}」  → {why}")
+    notes.append(f"引退した言い回し（{len(RETIRED)}件）：検査した")
+
+
+# ---------------------------------------------------------------- 3〜4. 数の整合
+
+UNIT_RE = re.compile(r"^([FGTDOC])(\d{2})-")
+
+
+def sheet_estimates():
+    """課題シートのヘッダから、ステージごとの目安回数を集める。"""
+    per_stage = defaultdict(lambda: [0, 0])  # stage -> [下限, 上限]（メイン枠のみ）
+    units = set()
+    for track in sorted(os.listdir(os.path.join(ROOT, "drills"))):
+        d = os.path.join(ROOT, "drills", track)
+        if not os.path.isdir(d):
+            continue
+        for name in sorted(os.listdir(d)):
+            m = UNIT_RE.match(name)
+            if not m:
+                continue
+            sheet = None
+            for cand in ("TASKS.md", "TASKS.local.md"):
+                p = os.path.join(d, name, cand)
+                if os.path.isfile(p):
+                    sheet = p
+                    break
+            if not sheet:
+                continue
+            units.add(m.group(1) + str(int(m.group(2))))
+            head = re.search(r"^> (.+)$", read(sheet), re.M)
+            if not head:
+                add(f"ヘッダ行がない  {rel(sheet)}")
+                continue
+            st = re.search(r"Stage (\d)", head.group(1))
+            me = re.search(r"目安：([^／]+)", head.group(1))
+            if not st or not me:
+                add(f"ヘッダに Stage か目安がない  {rel(sheet)}")
+                continue
+            text = me.group(1)
+            nums = [int(x) for x in re.findall(r"\d+", text)]
+            if not nums:
+                continue
+            lo, hi = (nums[-2], nums[-1]) if len(nums) >= 2 and "〜" in text else (nums[-1], nums[-1])
+            if "1時間枠" in text:
+                continue  # メイン枠と並行して進むので、回数には足さない
+            per_stage[st.group(1)][0] += lo
+            per_stage[st.group(1)][1] += hi
+    return per_stage, units
+
+
+def check_numbers():
+    per_stage, units = sheet_estimates()
+
+    if len(units) != 73:
+        add(f"ユニット数が {len(units)} 本（73 のはず）")
+    for path in ("README.md", "docs/30-revision.md", "CLAUDE.md"):
+        text = read(os.path.join(ROOT, path))
+        for m in re.finditer(r"全?(\d+)ユニット", text):
+            if m.group(1) != str(len(units)):
+                add(f"ユニット数の記述が違う  {path}  「{m.group(0)}」 → 実際は {len(units)}")
+
+    # PROGRESS.md のチェックボックス
+    boxes = re.findall(r"^- \[[ x]\] ([FGTDOC]\d+)\b", read(os.path.join(ROOT, "PROGRESS.md")), re.M)
+    if len(boxes) != len(units):
+        add(f"PROGRESS.md のユニット欄が {len(boxes)} 個（課題シートは {len(units)} 本）")
+    missing = units - set(boxes)
+    if missing:
+        add(f"PROGRESS.md に欄が無いユニット: {sorted(missing)}")
+
+    # docs/03 のステージごとの目安が、課題シートの合計＋実技1回と合うか
+    roadmap = read(os.path.join(ROOT, "docs", "03-roadmap.md"))
+    stated = re.findall(r"### Stage (\d)[^\n]*\n\n- 目安：AIなしデー ([^\n]+)", roadmap)
+    if len(stated) != 6:
+        add(f"docs/03 のステージの目安が {len(stated)} 個しか読めない（6 のはず）")
+    for stage, text in stated:
+        nums = [int(x) for x in re.findall(r"(\d+)", text)]
+        if not nums:
+            add(f"docs/03 の Stage {stage} の目安から数を読めない: {text!r}")
+            continue
+        lo, hi = (nums[0], nums[1]) if len(nums) >= 2 and "〜" in text else (nums[0], nums[0])
+        s_lo, s_hi = per_stage.get(stage, [0, 0])
+        exam = 0 if stage == "5" else 1  # Stage 5 は卒業制作そのものが実技
+        want_lo, want_hi = s_lo + exam, s_hi + exam
+        if (lo, hi) != (want_lo, want_hi):
+            add(
+                f"docs/03 の Stage {stage} の目安が合わない  書いてある: {lo}〜{hi}回 / "
+                f"課題シートの合計＋実技{exam}回: {want_lo}〜{want_hi}回"
+            )
+    notes.append(f"数の整合：ユニット {len(units)} 本、ステージ {len(stated)} 個を検査した")
+
+
+# ----------------------------------------------------------------
+
+
+def main():
+    check_links()
+    check_retired()
+    check_numbers()
+    for n in notes:
+        print(f"  {n}")
+    if problems:
+        print(f"\n問題 {len(problems)} 件:", file=sys.stderr)
+        for p in problems:
+            print(f"  - {p}", file=sys.stderr)
+        return 1
+    print("\ncheck-docs: 問題ありません")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

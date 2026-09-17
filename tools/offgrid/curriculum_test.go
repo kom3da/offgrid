@@ -461,3 +461,54 @@ func TestWrapKeepsWordsWhole(t *testing.T) {
 		t.Errorf("パスが分断されている:\n%s", strings.Join(got, "\n"))
 	}
 }
+
+// 1セッションの時間割が、その日に収まることを確かめる。
+// 「3時間の日に3.5時間のメイン」を出していたことがあるので、数で止める。
+func TestSessionFitsInTheDay(t *testing.T) {
+	hours := func(s string) float64 {
+		switch s {
+		case "":
+			return 0
+		case "30分":
+			return 0.5
+		case "1時間":
+			return 1
+		case "1.5時間":
+			return 1.5
+		case "2時間":
+			return 2
+		case "2.5時間":
+			return 2.5
+		case "3時間":
+			return 3
+		case "3.5時間":
+			return 3.5
+		}
+		t.Fatalf("知らない時間の書き方: %q（hours に足す）", s)
+		return 0
+	}
+	for _, stage := range []string{"0", "1", "2", "3", "4", "5"} {
+		p := &Progress{Stage: stage, Unit: "F3", DBUnit: "D1"}
+		// フルの回（7回目以降）は、ちょうど6時間
+		total := 0.0
+		for _, st := range sessionSteps(p, &Session{Number: 7}) {
+			total += hours(st.Minutes)
+		}
+		if total != 6 {
+			t.Errorf("Stage %s のフルの回 = %.1f時間（6時間のはず）", stage, total)
+		}
+		// 短縮の回は、その日の長さに収まる（1〜3回目は3時間、4〜6回目は4時間）
+		for _, tc := range []struct {
+			number int
+			limit  float64
+		}{{1, 3}, {3, 3}, {4, 4}, {6, 4}} {
+			sum := 0.0
+			for _, st := range sessionSteps(p, &Session{Number: tc.number}) {
+				sum += hours(st.Minutes)
+			}
+			if sum > tc.limit {
+				t.Errorf("Stage %s の第%d回 = %.1f時間（%.0f時間に収まらない）", stage, tc.number, sum, tc.limit)
+			}
+		}
+	}
+}

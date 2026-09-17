@@ -16,6 +16,33 @@ title: "改訂の運用"
 
 タグを push すると、リリースにバイナリが付く（`.github/workflows/release.yml`）。**カリキュラムとツールの版は、いつも同じ番号**になる。変更点は `CHANGELOG.md` に残す。学習の進み具合（ステージの通過やセッションの回数）には、タグを付けない。
 
+## 変更の進めかた
+
+このテンプレートの開発は、ほとんど Claude Code が書いている。**書いた本人には自分の穴が見えない**（`offgrid serve` に外部から操作できる穴を作り、それを見落とした実例がある）。そのため、人の目と機械の検査を、`main` に入る前に通す。
+
+1. **ブランチで作業し、Pull Request を出す。** `main` へ直接 push しない。Claude Code はマージしない（マージは管理者の操作）
+2. **機械の検査を通す。** PR で自動的に走る
+   - `docs` … `.github/check-docs.py`（リンク、引退した言い回し、数の整合）と `shellcheck`
+   - `tool` … `gofmt`、`go vet`、`go test -race`、`offgrid selftest`
+3. **PRの本文を埋める。** 走らせたコマンドと結果をそのまま貼る（テンプレートがある）。「通ると思う」は書かない
+4. **手を動かして確かめたことは、そのまま書く。** 実機・VM・ブラウザで見た結果を貼る
+
+### ルールを引退させたとき
+
+古い言い回しを `.github/check-docs.py` の `RETIRED` に足す。**これをやらないと、別のファイルに古いルールが残る**（課題シート11本に「Web検索は0回」が残っていた）。機械で止める。
+
+### 環境の前提が変わったとき
+
+`env-facts` のワークフローが月1回、カリキュラムが前提にしている事実を確かめる（coreutils が GNU か uutils か、`man` が引けるか、postgres:18 のデータのパス、`apt` に道具があるか）。落ちたら、記述を直すか Issue を立てる。
+
+## 版を出す前に通すこと
+
+1. `python3 .github/check-docs.py`
+2. `cd tools/offgrid && gofmt -l . && go vet ./... && go test -race ./... && go run . selftest`
+3. **別のセッションに3本のレビューを頼む**（`prompts/review-tool.md`、`prompts/review-consistency.md`、`prompts/review-coherence.md`）。指摘を潰すか、Issue に積む
+4. `CHANGELOG.md` に、その版の節を書く（リリースのノートは、ここから作られる）
+5. タグを push し、リリースの資産が揃ったことを確かめる（件数はワークフローが検証する）
+
 ## 改訂のきっかけ
 
 | 種類 | きっかけ | 範囲 |

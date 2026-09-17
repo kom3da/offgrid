@@ -106,6 +106,9 @@ cd tools/offgrid && go test ./... && go run . selftest
 ## コマンド
 
 ```sh
+# カリキュラムの文書（docs・シート・prompts を触ったら）
+python3 .github/check-docs.py
+
 # 学習用コマンド（tools/offgrid を触ったら）
 cd tools/offgrid && gofmt -l . && go vet ./... && go test -race ./... && go run . selftest
 
@@ -122,6 +125,19 @@ docker exec -i pg-offgrid psql -U postgres -v ON_ERROR_STOP=1 < drills/sql/D03-a
 # TypeScript（各課題ディレクトリで）
 npx tsc --noEmit --strict && npx vitest run
 ```
+
+## 変更の出しかた
+
+**`main` へ直接 push しない。** ブランチで作業し、Pull Request を出す。**マージはしない**（管理者の操作）。手順と、版を出す前に通すことは `docs/30-revision.md` の「変更の進めかた」にある。
+
+PRを出す前に、次を通してから、結果をPRの本文に貼る。
+
+```sh
+python3 .github/check-docs.py
+cd tools/offgrid && gofmt -l . && go vet ./... && go test -race ./... && go run . selftest
+```
+
+ルールを引退させたときは、古い言い回しを `.github/check-docs.py` の `RETIRED` に足す（別のファイルに残るのを、機械で止める）。
 
 ## コミット規約
 
