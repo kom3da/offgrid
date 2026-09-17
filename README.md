@@ -103,7 +103,7 @@ offgridは、AIに頼らずに「書ける・読める・直せる」力と、�
 
 カリキュラムが改訂されたら、`./scripts/update-curriculum.sh <版>` で取り込む（版の一覧と変更点は [CHANGELOG.md](CHANGELOG.md)）。取り込むかどうか、いつ取り込むかは自分で決めてよい。
 
-版は `MAJOR.MINOR.PATCH`。1つの番号で、カリキュラムと学習用コマンドの両方を指す。MAJOR が上がるのは、課題シートの書式などツールとの約束が壊れるときだけ。学習の進み具合には、タグを付けない。変更点は [CHANGELOG.md](CHANGELOG.md)、運用は[改訂の運用](docs/30-revision.md)にある。誤りや、詰まりやすい箇所を見つけたら、Issueで知らせてほしい。
+版は `MAJOR.MINOR.PATCH`。1つの番号で、カリキュラムと学習用コマンドの両方を指す。MAJOR が上がるのは、課題シートの書式などツールとの約束が壊れるときだけ。学習の進み具合には、タグを付けない。変更点は [CHANGELOG.md](CHANGELOG.md)、運用は[改訂の運用](docs/30-revision.md)にある。誤りや、詰まりやすい箇所を見つけたら、[Issue](https://github.com/kom3da/offgrid/issues/new/choose)で知らせてほしい（テンプレートが2つある）。まだ手が付いていないことは、[Issues](https://github.com/kom3da/offgrid/issues) に並んでいる。
 
 ## 注意
 

@@ -1,0 +1,43 @@
+name: 改訂の提案
+description: 内容の追加・改善を提案する
+labels: ["提案"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        カリキュラムの内容についての提案を書いてください。改訂の考え方は [改訂の運用](https://github.com/kom3da/offgrid/blob/main/docs/30-revision.md) にあります。
+
+  - type: input
+    id: target
+    attributes:
+      label: 対象
+      description: どの範囲の話か
+      placeholder: 例）G トラック全体／T6 の課題／学習用コマンドの run
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: いま何が困るか
+      description: 提案の中身より先に、どう困るかを書いてください。困りごとが分かれば、別のやり方も検討できます
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提案
+      description: どう変えるか。課題シートの話なら、**問題だけ**を書いてください（解答は書かない）
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 確認
+      options:
+        - label: 解答・解答例を含めていない
+          required: true
+        - label: 実在のホスト名・IPアドレス・認証情報・仕事の内容を含めていない
+          required: true

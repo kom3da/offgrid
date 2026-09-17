@@ -1,0 +1,56 @@
+name: 誤りの報告
+description: 内容が間違っている、または手順どおりに動かない
+labels: ["誤り"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        学習の途中で見つけた誤りを教えてください。**答えや解答例は書かないでください**（ほかの学習者の学習を奪わないため）。
+
+  - type: input
+    id: where
+    attributes:
+      label: どこ
+      description: ユニットID、ファイル名、コマンドのいずれか
+      placeholder: 例）F3 の課題4／docs/02-getting-started.md／offgrid end
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 何が起きたか
+      description: 書かれているとおりにやったら、どうなったか。エラー文はそのまま貼ってください
+      placeholder: |
+        やったこと：
+        期待したこと：
+        実際に起きたこと：
+    validations:
+      required: true
+
+  - type: dropdown
+    id: env
+    attributes:
+      label: Ubuntu の入れかた
+      options:
+        - WSL2（Windows）
+        - Lima（macOS）
+        - Linux（そのまま）
+        - どれでもない・分からない
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: 版
+      description: 取り込んだカリキュラムの版と、`offgrid version` の結果
+      placeholder: 例）v1.0.0 / offgrid v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: そのほか
+      description: 気づいたこと、試したこと（任意）
