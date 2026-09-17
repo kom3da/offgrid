@@ -1,0 +1,13 @@
+/* Keep the first column (unit / stage names) from wrapping one character per line */
+.sl-markdown-content table th:first-child,
+.sl-markdown-content table td:first-child {
+	white-space: nowrap;
+}
+
+/* On narrow screens, let diagrams scroll sideways instead of shrinking until unreadable */
+.sl-markdown-content pre.mermaid {
+	overflow-x: auto;
+}
+.sl-markdown-content pre.mermaid svg {
+	min-width: 640px;
+}
