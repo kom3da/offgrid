@@ -108,7 +108,7 @@ offgrid version
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 ```
 
-このコマンドは、ネットワークもAIも使わない。入れるのは今日だけで、あとはオフラインでも動く。
+このコマンドは、ネットワークもAIも使わない。入れるのは今日だけで、あとはオフラインでも動く。ターミナルが狭いと感じたら、`offgrid serve` で手元にブラウザの画面も立てられる（[学習用コマンド](04-ai-free-day.md#学習用コマンド)）。
 
 ## 3. GitHubにつなぐ
 
@@ -156,30 +156,52 @@ rm -rf site .github
 
 ## 5. エディタを用意する
 
-AIなしデーでは、AI機能を切ったエディタを使う。
+エディタは何でもよい。**満たすべき要件は2つだけ**。
 
-1. 手元のOS（Ubuntuの外）に、Visual Studio Codeを入れる
-2. VS Codeから、Ubuntuの中のファイルを開けるようにする
-   - Windows：拡張機能「WSL」を入れる。Ubuntuの画面を一度閉じて開き直し、`cd ~/offgrid-log` のあと `code .` を実行する
-   - macOS：拡張機能「Remote - SSH」を入れる。Macのターミナル（Ubuntuの外）で次を実行し、開いたファイルの**先頭**に `Include ~/.lima/*/ssh.config` と1行書いて保存する。VS Codeの左下の「><」→「ホストに接続する」に `lima-offgrid` が出るので、接続して `offgrid-log` フォルダを開く
+1. Ubuntuの中のファイルを編集できる
+2. AIの機能を、確実に切れる（または最初から無い）
 
-     ```sh
-     mkdir -p ~/.ssh && touch ~/.ssh/config && open -e ~/.ssh/config
-     ```
+好きなものを選んでよいが、迷ったら下の「A」がいちばん簡単。
 
-   - Linux：そのまま開く
-3. 左下の歯車 →「プロファイル」→「プロファイルの作成」で、`no-ai` という名前のプロファイルを作る。「コピー元」に既定のプロファイルを選ぶ（空のプロファイルにすると、手順2の拡張機能まで消える）
-4. `no-ai` プロファイルで、AIの拡張機能（Copilot、Claude Codeなど）を無効にする。さらに、設定で `chat.disableAIFeatures` を検索してオンにする（VS Code本体に組み込まれたAI機能を切る）
-5. AIなしデーの朝に `no-ai` プロファイルへ切り替える
+### A. Ubuntuの中のエディタを使う（おすすめ。追加の設定が要らない）
+
+`vim` と `nano` は、最初から入っている。AIの機能は無いので、切る手間もない。閉域の現場で使うのも、たいていこれ。
+
+```sh
+nano ~/offgrid-log/README.md   # 保存は Ctrl+O、終了は Ctrl+X
+```
+
+どちらもF6で練習する。最初は `nano` で足りる。慣れたら `vim` に移ってもよい。
+
+### B. 手元のOSのエディタから、Ubuntuの中を開く
+
+画面の広いエディタで書きたい場合。Ubuntuの中のファイルを開くには、リモート接続の仕組みが要る。
+
+- **Visual Studio Code**（例）
+  - Windows：拡張機能「WSL」を入れる。Ubuntuの画面を一度閉じて開き直し、`cd ~/offgrid-log` のあと `code .` を実行する
+  - macOS：拡張機能「Remote - SSH」を入れる。Macのターミナル（Ubuntuの外）で次を実行し、開いたファイルの**先頭**に `Include ~/.lima/*/ssh.config` と1行書いて保存する。左下の「><」→「ホストに接続する」に `lima-offgrid` が出る
+
+    ```sh
+    mkdir -p ~/.ssh && touch ~/.ssh/config && open -e ~/.ssh/config
+    ```
+
+  - Linux：そのまま開く
+  - AIを切る：歯車 →「プロファイル」→「プロファイルの作成」で `no-ai` を作る（「コピー元」に既定のプロファイルを選ぶ。空にすると上の拡張機能まで消える）。そのプロファイルで、AIの拡張機能（Copilot、Claude Codeなど）を無効にし、設定で `chat.disableAIFeatures` をオンにする。AIなしデーの朝に、このプロファイルへ切り替える
+- **JetBrains の IDE**（GoLand など）：Remote Development で接続する。AI Assistant のプラグインを無効にする
+- **Neovim、Helix、Emacs など**：Ubuntuの中に入れて使う。AIのプラグインを入れなければ、それで満たせる
+
+### どれを選んでも、最初のセッションの前に確かめること
+
+- そのエディタで、`~/offgrid-log` の中のファイルを保存できる
+- **補完の候補が、AIから出てこない**（コメントを書いて、続きが勝手に生えてこないか試す）
+- AIなしデーの朝に、AIを切った状態へ切り替える手順を、自分の言葉で言える
 
 ### 平日に使うAIの置き場所
 
-リポジトリはUbuntuの中にあるので、平日にレビューや採点を頼むAIも、Ubuntuの中のファイルを読める必要がある。どちらかを選ぶ。
+リポジトリはUbuntuの中にあるので、セッションの間の日にレビューや採点を頼むAIも、Ubuntuの中のファイルを読める必要がある。どちらかを選ぶ。
 
-- VS Codeの既定のプロファイル（AIあり）でUbuntuに接続し、その中でAIの拡張機能を使う
+- 手元のOSのエディタから、AIを切っていない状態でUbuntuに接続し、そこでAIの拡張機能を使う
 - ターミナルで使うAI（Claude Codeなど）を、Ubuntuの中にインストールする（入れ方は、その道具の公式の手順に従う）
-
-F6からは、ターミナルの中のエディタ（`vim` か `nano`）も使う。
 
 ## 6. 教材と日付
 

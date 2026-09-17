@@ -73,7 +73,7 @@ gh repo create offgrid-log --template kom3da/offgrid --private --clone
    offgrid
    ```
 3. メニューの「1. セッションを始める（案内つき）」を選ぶ。ウォームアップから終わりの手続きまで、課題を1問ずつ案内する
-4. 中断しても続きから再開できる。進捗と作業漏れは `offgrid status` で分かる
+4. 中断しても続きから再開できる。進捗と作業漏れは `offgrid status` で分かる。ブラウザで使いたければ `offgrid serve`
 
 ペースは週1回でも、週2〜3回でもよい（[AIなしデーの進め方](docs/04-ai-free-day.md)）。
 

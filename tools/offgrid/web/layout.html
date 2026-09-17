@@ -1,0 +1,170 @@
+{{define "layout"}}<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{.Title}} | offgrid</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+	<a class="brand" href="/">offgrid</a>
+	<nav>
+		<a href="/"{{if eq .Nav "home"}} aria-current="page"{{end}}>いま</a>
+		<a href="/unit/{{.Unit}}"{{if eq .Nav "unit"}} aria-current="page"{{end}}>課題</a>
+		<a href="/retro"{{if eq .Nav "retro"}} aria-current="page"{{end}}>振り返り</a>
+		<a href="/doc/01-overview"{{if eq .Nav "doc"}} aria-current="page"{{end}}>カリキュラム</a>
+	</nav>
+	<form action="/find" method="get" role="search">
+		<input type="search" name="q" value="{{.Query}}" placeholder="調べる（オフライン）" aria-label="調べる">
+		<button class="btn" type="submit">検索</button>
+	</form>
+</header>
+<main>
+{{template "body" .}}
+<footer class="foot">
+	offgrid {{.Version}} ／ このページは手元の {{.Repo}} を読んでいる。ネットワークもAIも使わない。
+	止めるときは、起動したターミナルで Ctrl+C。
+</footer>
+</main>
+</body>
+</html>{{end}}
+
+{{define "home"}}
+<h1>第{{.Session.Number}}回　Stage {{.Progress.Stage}}</h1>
+<p class="muted">次のユニットは <strong>{{.Progress.Unit}}</strong>{{with .Sheet}}（{{.Title}}）{{end}}。今日の終わりの目安は {{.Session.Finish}}。</p>
+
+<div class="row">
+	<a class="btn primary" href="/unit/{{.Progress.Unit}}">課題を開く</a>
+	<a class="btn" href="/retro">振り返りを書く</a>
+	{{if .Progress.DBUnit}}<a class="btn" href="/unit/{{.Progress.DBUnit}}">PostgreSQL（{{.Progress.DBUnit}}）</a>{{end}}
+</div>
+
+<h2>今日の流れ</h2>
+<ol>{{range .Steps}}<li>{{.}}</li>{{end}}</ol>
+
+<h2>進み具合</h2>
+{{range .Tracks}}
+<div class="track">
+	<div>{{.Name}}</div>
+	<div class="meter{{if lt .Done .Total}} part{{end}}"><span style="width: {{.Percent}}%"></span></div>
+	<div class="count">{{.Done}} / {{.Total}}</div>
+</div>
+{{end}}
+{{with .Sheet}}
+<div class="track">
+	<div><a href="/unit/{{.Unit}}">{{.Unit}} の課題</a></div>
+	<div class="meter{{if lt $.TaskDone $.TaskTotal}} part{{end}}"><span style="width: {{$.TaskPercent}}%"></span></div>
+	<div class="count">{{$.TaskDone}} / {{$.TaskTotal}}</div>
+</div>
+{{end}}
+
+{{if .Gaps}}
+<h2>気になるところ</h2>
+<ul class="gaps">{{range .Gaps}}<li>{{.}}</li>{{end}}</ul>
+{{else}}
+<h2>気になるところ</h2>
+<p class="muted">ありません。</p>
+{{end}}
+
+<h2>詰まったことを書く</h2>
+<form action="/stuck" method="post" class="field">
+	<label for="stuck">何が起きた？（振り返りの「詰まったこと」に、時刻付きで書く）</label>
+	<input id="stuck" type="text" name="text" placeholder="例: sort -n の順番が合わない">
+	<div class="row"><button class="btn" type="submit">書く</button></div>
+</form>
+{{end}}
+
+{{define "unit"}}
+<h1>{{.Sheet.Title}}</h1>
+<p class="muted small">{{.HeaderHTML}}</p>
+<div class="row">
+	<div class="meter{{if lt .TaskDone .TaskTotal}} part{{end}}" style="flex:1; min-width:12rem"><span style="width: {{.TaskPercent}}%"></span></div>
+	<div class="count">課題 {{.TaskDone}} / {{.TaskTotal}}</div>
+	<a class="btn" href="/">いまに戻る</a>
+</div>
+
+<h2>課題</h2>
+<ul class="tasks">
+{{range .Tasks}}
+<li class="task{{if .Done}} done{{end}}">
+	<form action="/tick" method="post">
+		<input type="hidden" name="unit" value="{{$.Sheet.Unit}}">
+		<input type="hidden" name="n" value="{{.N}}">
+		<input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
+		<button class="box{{if .Done}} done{{end}}" type="submit" title="{{if .Done}}できていないに戻す{{else}}できたにする{{end}}">{{if .Done}}✓{{else}}&nbsp;{{end}}</button>
+		<div class="text"><strong>{{.N}}.</strong> {{.HTML}}</div>
+	</form>
+</li>
+{{end}}
+</ul>
+
+{{range .Extra}}
+<h2>{{.Name}}</h2>
+{{.HTML}}
+{{end}}
+
+<h2>残すもの</h2>
+<ul>{{range .Keep}}<li>{{if .Have}}☑{{else}}☐{{end}} <code>{{.Name}}</code>{{if not .Have}} <span class="muted small">まだ無い（または空）</span>{{end}}</li>{{end}}</ul>
+{{if not .Keep}}<p class="muted">課題シートの「残すもの」を見る。</p>{{end}}
+<p class="small muted">シートの全文: <code>{{.SheetPath}}</code>　確認コマンド: <code>offgrid check {{.Sheet.Unit}}</code></p>
+{{end}}
+
+{{define "retro"}}
+<h1>振り返り</h1>
+<p class="muted small">{{.LogPath}}</p>
+{{if .Fields}}
+<form action="/retro" method="post">
+	<input type="hidden" name="file" value="{{.LogPath}}">
+	{{range .Fields}}
+	<div class="field">
+		<label for="f{{.Line}}">{{.Label}}</label>
+		<textarea id="f{{.Line}}" name="line-{{.Line}}" rows="2"></textarea>
+	</div>
+	{{end}}
+	<div class="row"><button class="btn primary" type="submit">書き込む</button></div>
+</form>
+{{else}}
+<p>空いている欄はありません。</p>
+{{end}}
+<h2>いまの中身</h2>
+{{.Body}}
+{{if .Logs}}
+<h2>ほかの振り返り</h2>
+<ul>{{range .Logs}}<li><a href="/retro?file={{.}}">{{.}}</a></li>{{end}}</ul>
+{{end}}
+{{end}}
+
+{{define "doc"}}
+<h1>{{.DocTitle}}</h1>
+<div class="row">
+	{{range .DocNav}}<a class="btn{{if .Current}} primary{{end}}" href="/doc/{{.Slug}}">{{.Label}}</a>{{end}}
+</div>
+{{.Body}}
+<p class="small muted">この文書の全文: <code>{{.DocPath}}</code></p>
+{{end}}
+
+{{define "find"}}
+<h1>検索</h1>
+{{if .Query}}
+<p class="muted">「{{.Query}}」の結果：{{.HitCount}}件</p>
+{{range .Groups}}
+<h2>{{.Label}}（{{len .Hits}}件）</h2>
+{{range .Hits}}
+<div class="hit">
+	<div class="where"><a href="{{.Link}}">{{.Path}}</a>:{{.Line}}</div>
+	<div class="line">{{.HTML}}</div>
+</div>
+{{end}}
+{{end}}
+{{if eq .HitCount 0}}<p>見つかりませんでした。</p>{{end}}
+{{else}}
+<p class="muted">上の欄に言葉を入れて検索する。カリキュラム、課題シート、AIへの頼み方、自分のメモと振り返りを探す。</p>
+{{end}}
+{{end}}
+
+{{define "message"}}
+<h1>{{.Heading}}</h1>
+<p>{{.Message}}</p>
+<div class="row">{{range .Links}}<a class="btn" href="{{.URL}}">{{.Label}}</a>{{end}}</div>
+{{end}}

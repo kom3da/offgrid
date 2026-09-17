@@ -25,6 +25,7 @@ var menu = []menuItem{
 	{"6", "詰まりメモを書く", "stuck"},
 	{"7", "振り返りを書く", "retro"},
 	{"8", "終わりの手続き", "end"},
+	{"9", "ブラウザで開く（serve）", "serve"},
 	{"q", "やめる", ""},
 }
 
@@ -48,6 +49,7 @@ func usage() {
 		{"retro [ファイル]", "振り返りの空欄を、1つずつ聞いて埋める"},
 		{"done [ID]", "完了条件を確かめて、PROGRESS.md に記録する"},
 		{"end", "終わりの手続き（記入漏れ、残すもの、コミット）"},
+		{"serve [--port N]", "ブラウザで開く画面を、手元に立てる（ネットワークには出さない）"},
 		{"selftest", "カリキュラムの課題シートが、この版のツールで読めるかを検査する"},
 		{"version", "版を表示する"},
 	}
@@ -114,6 +116,8 @@ func showMenu(root string, p *Progress, s *Session) error {
 			runErr = cmdRetro(root, s, nil)
 		case "end":
 			runErr = cmdEnd(root, p, s)
+		case "serve":
+			runErr = cmdServe(root, nil)
 		}
 		if runErr != nil {
 			if errors.As(runErr, &errAbort{}) {
@@ -196,6 +200,8 @@ func run() error {
 		return cmdDone(root, p, args)
 	case "end":
 		return cmdEnd(root, p, s)
+	case "serve":
+		return cmdServe(root, args)
 	default:
 		fmt.Fprintln(os.Stderr, red("error: 知らないサブコマンド: "+sub))
 		fmt.Fprintln(os.Stderr)

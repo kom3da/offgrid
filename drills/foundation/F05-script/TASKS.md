@@ -78,7 +78,7 @@ cd ~/offgrid-log/drills/foundation/F05-script
 ## 詰まりやすいところ
 
 - `./xxx.sh` で `Permission denied` → F2の課題を思い出し、`ls -l` で確かめる
-- `bad interpreter` と出る、または行末に `^M` や `\r` が見える → `xxd` で行末のバイトを見る（F1）。VS Codeの右下に出ている改行コードの表示を確かめる
+- `bad interpreter` と出る、または行末に `^M` や `\r` が見える → `xxd` で行末のバイトを見る（F1）。エディタが行末をどう扱っているかを確かめる（`file` コマンドでも分かる）
 - `[: missing ]` や `[-f: command not found` → `type [` を実行し、`[` が何者かを確かめる
 - `set -e` を書いたのに、失敗しても止まらない場面がある → `help set` の `-e` の説明で、例外にあたる場面を探す
 - 空白を含むディレクトリで、`cp` が「そんなファイルはない」と言う → `shellcheck` の指摘と、`quote.sh` の結果を見直す
@@ -96,7 +96,7 @@ cd ~/offgrid-log/drills/foundation/F05-script
 - `notes.md`（課題8の表、課題10を試した結果を含む）
 - `~/sandbox/f05/backup/` の中身は、コミットしない
 
-試しに動かす場所は `~/sandbox/f05`。スクリプトとメモは、リポジトリの中のこのディレクトリに、AI機能を切ったVS Codeで書く。この `TASKS.md` はカリキュラムの一部なので、書き換えない。
+試しに動かす場所は `~/sandbox/f05`。スクリプトとメモは、リポジトリの中のこのディレクトリに、AI機能を切ったエディタで書く。この `TASKS.md` はカリキュラムの一部なので、書き換えない。
 
 ## 次につながるユニット
 

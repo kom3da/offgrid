@@ -82,7 +82,7 @@ title: "教材とツール"
 - **仮想マシン（macOS）**：[Lima](https://lima-vm.io/)
 - **Docker Engine**：[Ubuntuへの導入手順](https://docs.docker.com/engine/install/ubuntu/)（F10では `apt` の `docker.io` で足りる）
 - **構成管理**：[Ansible](https://docs.ansible.com/)。発展で [OpenTofu](https://opentofu.org/docs/)
-- **エディタ**：[Visual Studio Code](https://code.visualstudio.com/)
+- **エディタ**：Ubuntuの中の `vim` / `nano`（最初から入っている）。手元のOSから開くなら [Visual Studio Code](https://code.visualstudio.com/) や JetBrains の Remote Development など。要件は[はじめかた](02-getting-started.md)にある
 - **GitHub CLI**：[gh](https://cli.github.com/)
 
 ## ステージ開始時のオフライン教材セットアップ
