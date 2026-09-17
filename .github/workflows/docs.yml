@@ -1,0 +1,41 @@
+# カリキュラムの文書の検査。docs だけ変えたときも、ここが関門になる。
+# 止めたいのは、ルールを変えたときの取り残し、リンク切れ、数の食い違い。
+name: docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "drills/**/TASKS.md"
+      - "prompts/**"
+      - "templates/**"
+      - "README.md"
+      - "CLAUDE.md"
+      - "PROGRESS.md"
+      - ".github/check-docs.py"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "drills/**/TASKS.md"
+      - "prompts/**"
+      - "templates/**"
+      - "README.md"
+      - "CLAUDE.md"
+      - "PROGRESS.md"
+      - ".github/check-docs.py"
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.repository == 'kom3da/offgrid'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: リンク・引退した言い回し・数の整合
+        run: python3 .github/check-docs.py
+      - name: シェルスクリプト
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck scripts/*.sh

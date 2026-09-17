@@ -1,0 +1,77 @@
+# カリキュラムが前提にしている環境の事実を、定期的に確かめる。
+#
+# 課題シートは Ubuntu と postgres:18 の挙動を前提に書いてある。その前提は勝手に変わる
+# （例：Ubuntu 26.04 で coreutils が GNU から uutils になった）。変わったことを、
+# 学習者より先に知るための検査。落ちたら、記述を直すか Issue を立てる。
+name: env-facts
+
+on:
+  schedule:
+    - cron: "0 0 1 * *" # 毎月1日
+  workflow_dispatch:
+
+jobs:
+  facts:
+    if: github.repository == 'kom3da/offgrid'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: どの Ubuntu か
+        run: |
+          . /etc/os-release
+          echo "Ubuntu $VERSION_ID / bash $(bash --version | head -1 | grep -o '[0-9.]*' | head -1)"
+
+      - name: coreutils は GNU か uutils か
+        run: |
+          # CLAUDE.md に「Ubuntu 26.04 の ls・sort などは uutils」と書いてある。
+          # どちらであっても落とさないが、変わったら記述を直す合図として残す。
+          for c in ls sort uniq wc cut head tail cat chmod stat cp mv rm; do
+            v="$($c --version 2>/dev/null | head -1)"
+            case "$v" in
+              *uutils*) impl=uutils ;;
+              *"GNU coreutils"*) impl=GNU ;;
+              *) impl=不明 ;;
+            esac
+            printf '%-8s %s\n' "$c" "$impl"
+          done
+
+      - name: カリキュラムが使うオプションが効くか
+        run: |
+          set -x
+          # F2・F3 で使うもの
+          printf '10\n9\n100\n' | sort -n | tr '\n' ' '; echo
+          printf 'b\n10\n2\na\n10\n' | sort | uniq -c | sort -rn | head -3
+          printf 'a:b:c\n' | cut -d: -f2
+          touch /tmp/f && chmod 644 /tmp/f && chmod u+x /tmp/f && chmod go-r /tmp/f
+          test "$(stat -c '%a' /tmp/f)" = "700" || { echo "::error::chmod の結果が 700 でない"; exit 1; }
+          # man が引けること（「man で調べる」がカリキュラムの中心）
+          man ls > /dev/null 2>&1 || { echo "::error::man ls が引けない"; exit 1; }
+          test "$(man ls | wc -c)" -gt 1000 || { echo "::error::man ls の中身が短すぎる"; exit 1; }
+
+      - name: Day 0 で入れる道具が apt にあるか
+        run: |
+          sudo apt-get update -qq
+          for p in git gh shellcheck; do
+            apt-cache policy "$p" | grep -q "Candidate: [0-9]" \
+              || { echo "::error::$p が apt に無い（docs/02 の手順が通らない）"; exit 1; }
+          done
+
+      - name: postgres:18 のデータのパス
+        run: |
+          # 課題シートは /var/lib/postgresql を前提にしている（/data が付かない）
+          docker run --rm postgres:18 sh -c 'echo "PGDATA=$PGDATA"' | tee /tmp/pgdata
+          grep -q "PGDATA=/var/lib/postgresql" /tmp/pgdata \
+            || { echo "::error::postgres:18 の PGDATA が変わった。課題シートの記述を直す"; exit 1; }
+
+      - name: PostgreSQL の挙動
+        run: |
+          docker run -d --name pg -e POSTGRES_PASSWORD=x postgres:18
+          for i in $(seq 30); do docker exec pg pg_isready -U postgres && break; sleep 2; done
+          # D トラックが前提にしているもの
+          docker exec pg psql -U postgres -tAc "select random(1,10) between 1 and 10" | grep -q t \
+            || { echo "::error::random(1,10) が使えない"; exit 1; }
+          docker exec pg psql -U postgres -c "explain analyze select 1" | grep -qi buffers \
+            && echo "EXPLAIN ANALYZE は BUFFERS を付けなくても出す（記述どおり）" \
+            || echo "::warning::EXPLAIN ANALYZE の出力が変わった。D14 の記述を確かめる"
+          docker rm -f pg
