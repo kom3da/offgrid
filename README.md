@@ -6,6 +6,8 @@
 
 ## 最初に読む
 
+ブラウザで読む場合：<https://kom3da.github.io/offgrid/>（`docs/` と同じ内容）
+
 | ドキュメント | 内容 |
 | --- | --- |
 | [docs/00-overview.md](docs/00-overview.md) | 目的、ゴール像、前提 |
@@ -56,7 +58,8 @@
 ├── logs/              # AIなしデーの振り返り（YYYY/MM-DD.md）
 ├── templates/         # 振り返りテンプレート
 ├── prompts/           # デバッグドリル生成・改訂用プロンプト
-└── scripts/           # 補助スクリプト（GitHub への初回 push）
+├── scripts/           # 補助スクリプト（GitHub への初回 push）
+└── site/              # docs/ をブラウザで読むためのサイト（Astro Starlight）
 ```
 
 ユニットのディレクトリ名は `<ユニットID 2桁>-<名前>`（例：`F03-pipeline`、`G11-csvstat`）にそろえる。
@@ -88,7 +91,7 @@ AIなしデーの終わりに `git tag noai-YYYY-MM-DD` を付ける。
 
 ## 版と改訂
 
-版はカレンダー形式（`v2026.09`）。改訂の手順は [docs/12-revision.md](docs/12-revision.md) を参照。
+版はカレンダー形式（`v2026.10`）。改訂の手順は [docs/12-revision.md](docs/12-revision.md) を参照。
 
 ## 注意
 

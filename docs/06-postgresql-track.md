@@ -1,4 +1,6 @@
-# PostgreSQLトラック
+---
+title: "PostgreSQLトラック"
+---
 
 Stage 1〜2のAIなしデーで、毎回1時間ずつ進める。F10で起動したPostgreSQLのコンテナに`psql`で入り、SQLだけで操作する。練習用データは公式チュートリアルの例か、サンプルDBのpagila（DVDレンタル店の架空データ）を事前にダウンロードしておく。課題は `drills/sql/<ユニット>-<名前>/` に `.sql` ファイルで残す。
 

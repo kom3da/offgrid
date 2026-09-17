@@ -1,4 +1,6 @@
-# TypeScriptトラック
+---
+title: "TypeScriptトラック"
+---
 
 Stage 2で、HTMLとJavaScriptの基礎からTypeScript、Reactまで順に進む。Stage 3のT11で、Goと組み合わせたリアルタイム表示を扱う。フレームワークはReact＋Viteを前提にし、課題は `drills/ts/<ユニット>-<名前>/` に置く。T4はG12のAPI、T10はG12〜G14のAPIを呼ぶので、[Goトラック](04-go-track.md)の該当ユニットを先に済ませておく。
 
