@@ -11,6 +11,23 @@ import (
 	"time"
 )
 
+// welcome は、はじめて使う人に、3つだけ伝える。
+func welcome(root string, p *Progress, s *Session) {
+	if !IsFirstTime(root, s) {
+		return
+	}
+	banner([]string{
+		bold("はじめまして。使い方は3つだけ"),
+		"1. この道具が「今やること」を1つずつ出す。上から順に手を動かす",
+		"2. コマンドは、このターミナルで打つ。エディタと本は、必要なときに開く",
+		"3. できたら Enter。分からなければ k（手がかり）、止まったら s（詰まった）",
+	})
+	fmt.Println()
+	say("画面を広く使いたいなら " + bold("offgrid serve") + " で、ブラウザでも同じ案内ができる")
+	say(dim("答えは出さない。自分で気づくのが目的だから"))
+	fmt.Println()
+}
+
 // ---------------------------------------------------------------- 画面
 
 func dashboard(root string, p *Progress, s *Session) {
@@ -149,6 +166,7 @@ func guideUnit(sh *Sheet, s *Session) error {
 }
 
 func cmdRun(root string, p *Progress, s *Session) error {
+	welcome(root, p, s)
 	dashboard(root, p, s)
 	fmt.Println()
 	say(dim("上から順に案内します。q で中断できます（続きから再開できます）"))
@@ -224,6 +242,7 @@ func cmdRun(root string, p *Progress, s *Session) error {
 // ---------------------------------------------------------------- 各サブコマンド
 
 func cmdToday(root string, p *Progress, s *Session) error {
+	welcome(root, p, s)
 	dashboard(root, p, s)
 	plan := StagePlan(p.Stage)
 	sheetPath := p.Unit

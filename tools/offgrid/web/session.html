@@ -9,6 +9,18 @@
 	{{end}}
 </nav>
 
+{{if .FirstTime}}
+<div class="panel welcome">
+	<h2 style="margin-top:0;border:0">はじめまして。使い方は3つだけ</h2>
+	<ol>
+		<li><strong>この画面が「今やること」を1つずつ出す。</strong>上から順に、書かれたとおりに手を動かす</li>
+		<li><strong>コマンドは、自分のターミナルで打つ。</strong>この画面では打てない。エディタと本は、必要なときに開く</li>
+		<li><strong>できたら「できた」を押す。</strong>分からなければ「手がかり」、止まったら「詰まった」。どれを押しても先へ進める</li>
+	</ol>
+	<p class="small muted">迷ったら <a href="/help">使い方</a>。答えは出ない（自分で気づくのが目的）。</p>
+</div>
+{{end}}
+
 {{if .Finished}}
 <div class="panel center">
 	<h1>今日のぶんは、全部終わりました</h1>
@@ -50,6 +62,31 @@
 		<button class="btn" name="action" value="hint">{{if .ShowHint}}手がかりを閉じる{{else}}手がかり{{end}}</button>
 		<button class="btn" name="action" value="finish-step">この枠を終える</button>
 	</form>
+
+	{{if .TermHint}}<p class="small muted place">{{.TermHint}}。コマンドは<strong>クリックでコピー</strong>できる</p>{{end}}
+
+	{{if .Reading}}
+	<details class="aside">
+		<summary>今日の教材（本のどこを読むか）</summary>
+		{{.Reading}}
+	</details>
+	{{end}}
+
+	{{if .NotesPath}}
+	<details class="aside">
+		<summary>メモを書く（{{.NotesPath}}）</summary>
+		<form action="/note" method="post">
+			<input type="hidden" name="unit" value="{{.Sheet.Unit}}">
+			<input type="hidden" name="back" value="/session">
+			<div class="field">
+				<label for="note">気づいたこと、試したコマンドと結果</label>
+				<input id="note" type="text" name="text" placeholder="例: printf は改行を付けない。echo は付ける">
+			</div>
+			<button class="btn" type="submit">メモに足す</button>
+		</form>
+		{{if .NotesBody}}<div class="notes-body">{{.NotesBody}}</div>{{end}}
+	</details>
+	{{end}}
 
 	<details class="stuck" {{if .StuckOpen}}open{{end}}>
 		<summary>詰まった</summary>

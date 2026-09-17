@@ -136,6 +136,7 @@ func (s *server) handleSession(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	st.FirstTime = IsFirstTime(s.root, sess)
 	st.Step, st.StepIDStr = step, string(step.ID)
 	st.Elapsed = state.Elapsed(step.ID)
 	st.ShowHint = r.URL.Query().Get("hint") == "1"
@@ -158,6 +159,14 @@ func (s *server) handleSession(w http.ResponseWriter, r *http.Request) {
 			if advice := taskAdvice(st.TaskMins); advice != "" {
 				st.Advice = template.HTML(renderMarkdown(advice, nil, nil))
 				st.StuckOpen = st.TaskMins >= 45
+			}
+			st.TermHint = "コマンドは、自分のターミナルで打つ。この画面では打てない"
+			st.NotesPath = rel(s.root, filepath.Join(sh.Dir(), "notes.md"))
+			if raw, err := os.ReadFile(filepath.Join(sh.Dir(), "notes.md")); err == nil {
+				st.NotesBody = template.HTML(renderMarkdown(string(raw), link, nil))
+			}
+			if body := sh.Section("平日に読むもの"); body != "" {
+				st.Reading = template.HTML(renderMarkdown(body, link, nil))
 			}
 			if st.ShowHint {
 				for _, name := range []string{"キーワード", "詰まりやすいところ", "平日に読むもの"} {
@@ -372,4 +381,32 @@ func (s *server) handleEndCommit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.Redirect(w, r, "/end", http.StatusSeeOther)
+}
+
+// handleNote は、ブラウザからメモを1行足す（エディタに移らなくても書けるように）。
+func (s *server) handleNote(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/session", http.StatusSeeOther)
+		return
+	}
+	unit := r.FormValue("unit")
+	text := strings.TrimSpace(r.FormValue("text"))
+	if sh, err := LoadSheet(s.root, unit); err == nil && text != "" {
+		_ = sh.AppendNote(text)
+	}
+	back := r.FormValue("back")
+	if back == "" {
+		back = "/session"
+	}
+	http.Redirect(w, r, back, http.StatusSeeOther)
+}
+
+// handleHelp は、この画面の使い方。
+func (s *server) handleHelp(w http.ResponseWriter, r *http.Request) {
+	st, _, _, err := s.base("使い方", "help")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	s.render(w, "help", st)
 }

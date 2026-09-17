@@ -15,6 +15,7 @@
 		<a href="/unit/{{.Unit}}"{{if eq .Nav "unit"}} aria-current="page"{{end}}>課題</a>
 		<a href="/retro"{{if eq .Nav "retro"}} aria-current="page"{{end}}>振り返り</a>
 		<a href="/doc/01-overview"{{if eq .Nav "doc"}} aria-current="page"{{end}}>カリキュラム</a>
+		<a href="/help"{{if eq .Nav "help"}} aria-current="page"{{end}}>使い方</a>
 	</nav>
 	<form action="/find" method="get" role="search">
 		<input type="search" name="q" value="{{.Query}}" placeholder="調べる（オフライン）" aria-label="調べる">
@@ -28,6 +29,34 @@
 	止めるときは、起動したターミナルで Ctrl+C。
 </footer>
 </main>
+<script>
+// コマンドをクリックすると、コピーする。ライブラリは使わない。
+document.addEventListener("click", function (e) {
+	var el = e.target.closest("code");
+	if (!el || el.closest("a")) return;
+	var text = el.innerText;
+	var done = function () {
+		var tip = document.createElement("span");
+		tip.className = "copied";
+		tip.textContent = "コピーしました";
+		el.after(tip);
+		setTimeout(function () { tip.remove(); }, 1200);
+	};
+	if (navigator.clipboard && window.isSecureContext) {
+		navigator.clipboard.writeText(text).then(done, function () {});
+		return;
+	}
+	var ta = document.createElement("textarea");
+	ta.value = text;
+	ta.setAttribute("readonly", "");
+	ta.style.position = "fixed";
+	ta.style.opacity = "0";
+	document.body.appendChild(ta);
+	ta.select();
+	try { document.execCommand("copy"); done(); } catch (err) {}
+	ta.remove();
+});
+</script>
 </body>
 </html>{{end}}
 
@@ -163,6 +192,47 @@
 {{else}}
 <p class="muted">上の欄に言葉を入れて検索する。カリキュラム、課題シート、AIへの頼み方、自分のメモと振り返りを探す。</p>
 {{end}}
+{{end}}
+
+{{define "help"}}
+<h1>使い方</h1>
+
+<h2>何をする道具か</h2>
+<p>今日やることを1つずつ出して、進み具合を覚えておく道具。<strong>答えは出さない。</strong>自分で手を動かして気づくのが目的だから。</p>
+
+<h2>3つだけ覚える</h2>
+<ol>
+	<li><a href="/session">いまやること</a>を開く。上から順に、書かれたとおりに手を動かす</li>
+	<li>コマンドは<strong>自分のターミナル</strong>で打つ（この画面では打てない）。画面のコマンドは、クリックでコピーできる</li>
+	<li>できたら「できた」。分からなければ「手がかり」。止まったら「詰まった」</li>
+</ol>
+
+<h2>ボタンの意味</h2>
+<ul>
+	<li><strong>できた</strong>：その課題を済みにして、次の課題を出す</li>
+	<li><strong>あとで</strong>：飛ばす。その枠の最後に、もう一度出てくる</li>
+	<li><strong>手がかり</strong>：キーワード、詰まりやすいところ、読む本の場所を出す（答えは出ない）</li>
+	<li><strong>詰まった</strong>：何が起きたかを1行書くと、振り返りの「詰まったこと」に時刻付きで入る。次のセッションの前に、AIと一緒に解消する</li>
+	<li><strong>この枠を終える</strong>：残りの課題を次回に回して、次の枠へ進む</li>
+</ul>
+
+<h2>時間の見かた</h2>
+<p>同じ課題に15分たつと、手順を切り替えるよう促す（エラー文を全文読む → <code>man</code> → 最小の再現 → 検索）。45分で打ち切りを促す。<strong>止まったまま座っているのが、いちばん損</strong>だから。</p>
+
+<h2>書いたものは、どこに入るか</h2>
+<ul>
+	<li>課題のチェック：そのユニットの <code>work.md</code></li>
+	<li>メモ：そのユニットの <code>notes.md</code>（この画面からも足せる）</li>
+	<li>振り返りと詰まりメモ：<code>logs/&lt;年&gt;/&lt;月-日&gt;.md</code></li>
+	<li>ユニットの完了：<code>PROGRESS.md</code></li>
+</ul>
+<p class="small muted">全部ふつうのテキストファイル。あとから自分で直してよい。この道具が無くても読める。</p>
+
+<h2>ターミナルだけで使いたいとき</h2>
+<p><code>offgrid run</code> で、同じ案内がターミナルで動く。状態は共有しているので、途中で行き来してよい。</p>
+
+<h2>止めかた</h2>
+<p>この画面を立てたターミナルで <kbd>Ctrl</kbd>+<kbd>C</kbd>。ネットワークにもAIにもつながっていないので、切っても何も壊れない。</p>
 {{end}}
 
 {{define "message"}}

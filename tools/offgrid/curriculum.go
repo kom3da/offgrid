@@ -602,6 +602,33 @@ func AppendStuck(log, text string) error {
 	return os.WriteFile(log, []byte(strings.Join(lines, "\n")), 0o644)
 }
 
+// AppendNote は、そのユニットの notes.md に、時刻付きで1行足す。
+// ブラウザからでも書けるようにして、エディタに移る手間を減らす。
+func (s *Sheet) AppendNote(text string) error {
+	path := filepath.Join(s.Dir(), "notes.md")
+	body := ""
+	if raw, err := os.ReadFile(path); err == nil {
+		body = string(raw)
+	} else {
+		body = fmt.Sprintf("# %s メモ\n\n課題をやりながら気づいたこと、試したコマンドと結果を書く。\n", s.Title)
+	}
+	if !strings.HasSuffix(body, "\n") {
+		body += "\n"
+	}
+	body += fmt.Sprintf("\n- %s %s\n", time.Now().Format("15:04"), strings.TrimSpace(text))
+	return os.WriteFile(path, []byte(body), 0o644)
+}
+
+// IsFirstTime は「まだ1回もセッションをやっていない」かどうか。
+// はじめての人に、何をすればよいかを出すために使う。
+func IsFirstTime(root string, s *Session) bool {
+	if len(s.Past) > 0 {
+		return false
+	}
+	matches, _ := filepath.Glob(filepath.Join(root, "drills", "*", "*", "work.md"))
+	return len(matches) == 0
+}
+
 // ---------------------------------------------------------------- 作業漏れ
 
 // FindGaps は「どこまでやったか分からない」を防ぐための検査。

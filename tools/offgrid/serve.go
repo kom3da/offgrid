@@ -72,6 +72,11 @@ type serveState struct {
 	Leftover      []int
 	CheckOut      string
 	CheckCmd      string
+	FirstTime     bool
+	NotesPath     string
+	NotesBody     template.HTML
+	Reading       template.HTML
+	TermHint      string
 }
 
 type stepView struct {
@@ -546,6 +551,8 @@ func cmdServe(root string, args []string) error {
 	mux.HandleFunc("/session", s.handleSession)
 	mux.HandleFunc("/session/step", s.handleSessionStep)
 	mux.HandleFunc("/session/task", s.handleSessionTask)
+	mux.HandleFunc("/note", s.handleNote)
+	mux.HandleFunc("/help", s.handleHelp)
 	mux.HandleFunc("/end", s.handleEnd)
 	mux.HandleFunc("/end/check", s.handleEndCheck)
 	mux.HandleFunc("/end/done", s.handleEndDone)
