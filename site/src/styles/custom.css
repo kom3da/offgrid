@@ -11,3 +11,14 @@
 .sl-markdown-content pre.mermaid svg {
 	min-width: 640px;
 }
+
+/* A little more room for Japanese body text, and calmer tables */
+:root {
+	--sl-content-width: 50rem;
+}
+.sl-markdown-content table {
+	font-size: var(--sl-text-sm);
+}
+.sl-markdown-content table th {
+	white-space: nowrap;
+}

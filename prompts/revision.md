@@ -1,7 +1,9 @@
-# 改訂プロンプト（Claude Code 向け）
+---
+title: "改訂プロンプト（Claude Code 向け）"
+---
 
 ```text
-offgrid の改訂作業を手伝ってください。docs/12-revision.md のチェックリストに沿って進めます。
+offgrid の改訂作業を手伝ってください。docs/30-revision.md の「定期点検で確かめること」に沿って進めます。
 
 1. docs/ 配下を読み、次の観点で「古くなっている可能性がある箇所」を一覧にしてください。
    - Go / Node.js / PostgreSQL / Docker のバージョンに依存する記述

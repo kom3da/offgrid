@@ -7,6 +7,8 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "drills/**/TASKS.md"
+      - "prompts/**"
       - "site/**"
       - ".github/workflows/deploy-site.yml"
   workflow_dispatch:
@@ -31,6 +33,8 @@ jobs:
         with:
           path: site
           node-version: 22
+          # The Astro content cache produced stale stylesheet hashes locally; build clean every time.
+          cache: false
 
   deploy:
     needs: build

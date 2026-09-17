@@ -1,0 +1,54 @@
+---
+title: ホーム
+description: AIなし・閉域でも「書ける・読める・直せる」力を、ゼロから付け直すための学習カリキュラム
+template: splash
+hero:
+  title: offgrid
+  tagline: ネットワークもAIも切った状態で、書ける・読める・直せる。コンピュータの仕組みから、Go・PostgreSQL・TypeScript、閉域での運用までを、週1回の「AIなしデー」でゼロから学び直すカリキュラム。
+  actions:
+    - text: はじめかた（Day 0）
+      link: /offgrid/getting-started/
+      icon: right-arrow
+    - text: offgrid とは
+      link: /offgrid/overview/
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## どんなカリキュラムか
+
+<CardGrid>
+	<Card title="週1回、AIを切る" icon="moon">
+		週に1日、6時間。AIの補完もチャットも切り、`man` と公式ドキュメントと書籍だけで手を動かす。平日は、その日のコードをAIにレビューしてもらう。
+	</Card>
+	<Card title="ゼロから、順番に" icon="list-format">
+		2進数とシェルから始めて、Git、ネットワーク、Go、SQL、TypeScript、運用まで。6つのステージと約80のユニットを、完了条件を確かめながら進む。
+	</Card>
+	<Card title="問題だけの課題シート" icon="pencil">
+		すべてのユニットに、答えのない課題シートがある。観察して、予想して、確かめる。「分かったつもり」を、実行できる完了条件で防ぐ。
+	</Card>
+	<Card title="最後に、閉域で動くものを作る" icon="rocket">
+		卒業制作は、監視ダッシュボード「watchdeck」。ネットワークを切った状態で、ビルドから起動までをやり切る。
+	</Card>
+</CardGrid>
+
+## 進み方
+
+<CardGrid>
+	<LinkCard title="1. 準備する" description="まっさらなマシンから、Ubuntuと自分の学習用リポジトリを用意する" href="/offgrid/getting-started/" />
+	<LinkCard title="2. 全体をつかむ" description="6つのステージと、1回のAIなしデーの時間割" href="/offgrid/roadmap/" />
+	<LinkCard title="3. 最初のユニットを開く" description="F1 コンピュータの仕組み" href="/offgrid/units/f01-binary/" />
+	<LinkCard title="教材とツール" description="書籍、オフラインで使えるドキュメント、道具の一覧" href="/offgrid/resources/" />
+</CardGrid>
+
+## トラック
+
+<CardGrid>
+	<LinkCard title="F：基礎" description="Stage 0　コンピュータ・Linux・Git・ネットワーク・HTTP・Docker" href="/offgrid/track-f-foundation/" />
+	<LinkCard title="G：Go" description="Stage 1〜3　文法からWeb API、並行処理、DB連携まで" href="/offgrid/track-g-go/" />
+	<LinkCard title="T：Webフロントエンド" description="Stage 2〜3　HTML・JavaScript・TypeScript・React" href="/offgrid/track-t-web/" />
+	<LinkCard title="D：PostgreSQL" description="Stage 1〜3　SQLの基礎から実行計画、時系列データまで" href="/offgrid/track-d-postgresql/" />
+	<LinkCard title="O：運用と閉域" description="Stage 4　systemd・Docker・構成管理・オフライン開発" href="/offgrid/track-o-ops/" />
+	<LinkCard title="C：卒業制作" description="Stage 5　監視ダッシュボード watchdeck" href="/offgrid/track-c-capstone/" />
+</CardGrid>

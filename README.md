@@ -1,8 +1,8 @@
 # offgrid
 
-コンピュータの仕組み・Linux・Git・ネットワークから、Go・TypeScript・PostgreSQLまでをゼロから学び直すための、学習カリキュラムのテンプレート。ネットワークもAIも切った状態で「書ける・読める・直せる」力をつけ、閉域環境でも開発を回せるようになることを目指す。
+ネットワークもAIも切った状態で「書ける・読める・直せる」力を、ゼロから付け直すための学習カリキュラム。コンピュータの仕組み・Linux・Git・ネットワークから、Go・PostgreSQL・TypeScript、閉域での運用までを、週1回の「AIなしデー」で進める。最後に、閉域でも動く監視ダッシュボード「watchdeck」を自力で完成させる。
 
-期限は設けず、6つのステージをチェックリストで区切って進む。最後に、閉域でも動く監視ダッシュボード「watchdeck」（Go＋PostgreSQL＋TypeScript/React）を自力で完成させる。
+**ブラウザで読む：<https://kom3da.github.io/offgrid/>**（このリポジトリの `docs/`、課題シート、`prompts/` と同じ内容）
 
 ## 使い方
 
@@ -12,98 +12,85 @@
 gh repo create offgrid-log --template kom3da/offgrid --private --clone
 ```
 
-まっさらなマシンからの手順（Windows・macOS・Linux共通。学習はすべてUbuntuの中で行う）は、[はじめかた](docs/00a-getting-started.md)にある。カリキュラムが改訂されたら、`./scripts/update-curriculum.sh <版>` で取り込む。
+まっさらなマシンからの手順（Windows・macOS・Linux共通。学習はすべてUbuntuの中で行う）は、[はじめかた](docs/02-getting-started.md)にある。カリキュラムが改訂されたら、`./scripts/update-curriculum.sh <版>` で取り込む。
 
-## 最初に読む
+## 読む順番
 
-ブラウザで読む場合：<https://kom3da.github.io/offgrid/>（`docs/` と同じ内容）
+1. [offgrid とは](docs/01-overview.md)：目的、ゴール像、前提
+2. [はじめかた（Day 0）](docs/02-getting-started.md)：環境の準備、毎回の始め方と終わり方
+3. [学習ロードマップ](docs/03-roadmap.md)：6つのステージと目安
+4. [AIなしデーの進め方](docs/04-ai-free-day.md)：ルール、1日の時間割、平日のメニュー
+5. [デバッグドリルとコードリーディング](docs/05-debug-and-reading.md)
+6. [評価とステージ通過](docs/06-evaluation.md)：「説明できる」の確かめ方、確認項目、実技
 
-| ドキュメント | 内容 |
-| --- | --- |
-| [docs/00-overview.md](docs/00-overview.md) | 目的、ゴール像、前提 |
-| [docs/00a-getting-started.md](docs/00a-getting-started.md) | はじめかた（Day 0の環境準備、毎回の始め方と終わり方） |
-| [docs/01-roadmap.md](docs/01-roadmap.md) | 6ステージの構成と配分 |
-| [docs/02-ai-free-day.md](docs/02-ai-free-day.md) | 週1回の「AIなしデー」のルールと1日のテンプレート |
-| [docs/03-foundation.md](docs/03-foundation.md) | Stage 0：コンピュータ・Linux・Git・ネットワーク・HTTP（F1〜F10） |
-| [docs/04-go-track.md](docs/04-go-track.md) | Go（G1〜G20） |
-| [docs/05-typescript-track.md](docs/05-typescript-track.md) | HTML・JavaScript・TypeScript・React（T1〜T11） |
-| [docs/06-postgresql-track.md](docs/06-postgresql-track.md) | PostgreSQL（D1〜D15） |
-| [docs/07-ops-offline-track.md](docs/07-ops-offline-track.md) | Stage 4：運用と閉域（O1〜O9） |
-| [docs/08-capstone-watchdeck.md](docs/08-capstone-watchdeck.md) | Stage 5：卒業制作 watchdeck（C1〜C8） |
-| [docs/09-debug-and-reading.md](docs/09-debug-and-reading.md) | デバッグドリルとコードリーディング |
-| [docs/10-evaluation.md](docs/10-evaluation.md) | 到達レベルとステージ別チェックリスト |
-| [docs/11-resources.md](docs/11-resources.md) | 書籍・教材・ツール、オフライン化の方法 |
-| [docs/12-revision.md](docs/12-revision.md) | 改訂の運用（版の付け方、チェックリスト） |
-| [PROGRESS.md](PROGRESS.md) | 現在のステージと通過記録 |
-| [CHANGELOG.md](CHANGELOG.md) | 版ごとの変更履歴 |
+## トラックとユニット
 
-## ステージとユニット
+ユニットのIDの頭文字が、トラックを表す。各ユニットに、答えのない課題シート（`drills/<トラック>/<ユニット>/TASKS.md`）がある。
 
-| ステージ | ユニット | 目安（AIなしデー） |
-| --- | --- | --- |
-| Stage 0：基礎 | F1〜F10 | 13〜17回 |
-| Stage 1：Go入門 | G1〜G11、D1〜D5 | 18〜24回 |
-| Stage 2：Webの基礎 | T1〜T10、G12〜G14、D6〜D12 | 20〜26回 |
-| Stage 3：並行処理とDB連携 | G15〜G20、T11、D13〜D15 | 16〜22回 |
-| Stage 4：運用と閉域 | O1〜O9 | 12〜16回 |
-| Stage 5：卒業制作 | C1〜C8 | 25〜35回（必須版） |
+- [F：基礎](docs/10-track-f-foundation.md)（Stage 0、F1〜F10）
+- [G：Go](docs/11-track-g-go.md)（Stage 1〜3、G1〜G20）
+- [T：Webフロントエンド](docs/12-track-t-web.md)（Stage 2〜3、T1〜T11）
+- [D：PostgreSQL](docs/13-track-d-postgresql.md)（Stage 1〜3、D1〜D15）
+- [O：運用と閉域](docs/14-track-o-ops.md)（Stage 4、O1〜O9）
+- [C：卒業制作 watchdeck](docs/15-track-c-capstone.md)（Stage 5、C1〜C8）
+
+資料は[教材とツール](docs/20-resources.md)、AIに頼むときの文面は [prompts/](prompts/) にある。
 
 ## ディレクトリ構成
 
 ```text
 .
-├── CLAUDE.md          # Claude Code 向けのコンテキストとレビュー方針
-├── PROGRESS.md        # 進捗
-├── CHANGELOG.md       # 改訂履歴
-├── docs/              # カリキュラム本体
+├── docs/              # カリキュラム本体（サイトの各ページ）
 ├── drills/
-│   ├── foundation/    # Stage 0（F01-binary/ など。TASKS.md が課題シート）
-│   ├── go/            # Go（G02-fizzbuzz/ など）
-│   ├── ts/            # HTML・JS・TS（T03-todo/ など）
-│   ├── sql/           # PostgreSQL（D03-aggregate/ など）
-│   ├── infra/         # 運用・閉域（O04-dockerfile/ など）
+│   ├── foundation/    # F：基礎          （F01-binary/TASKS.md など）
+│   ├── go/            # G：Go            （G02-control-flow/ など）
+│   ├── ts/            # T：Webフロントエンド（T03-dom-events/ など）
+│   ├── sql/           # D：PostgreSQL    （D03-aggregate/ など）
+│   ├── infra/         # O：運用と閉域      （O04-dockerfile/ など）
+│   ├── capstone/      # C：卒業制作の各ステップの課題シート
 │   ├── debug/         # デバッグドリルの問題（YYYY-MM-DD-<テーマ>/）
 │   └── reading/       # コードリーディングのメモ
 ├── answers/           # デバッグドリルの答え（答え合わせまで開かない）
-├── capstone/          # 卒業制作 watchdeck
+├── capstone/          # 卒業制作 watchdeck の実装
 ├── logs/              # AIなしデーの振り返り（YYYY/MM-DD.md）
+├── PROGRESS.md        # 自分の進捗
 ├── templates/         # 振り返りテンプレート
-├── prompts/           # AIに頼むときの文面（デバッグドリル、課題シート、週次レビュー、採点、実技、改訂）
+├── prompts/           # AIに頼むときの文面
 ├── scripts/           # 補助スクリプト（ダミーのログ生成、カリキュラムの取り込み）
-└── site/              # docs/ をブラウザで読むためのサイト（Astro Starlight）
+├── site/              # ドキュメントサイト（Astro Starlight）。テンプレート側でだけ使う
+├── CLAUDE.md          # Claude Code 向けのコンテキストとレビュー方針
+└── CHANGELOG.md       # 版ごとの変更履歴
 ```
 
-ユニットのディレクトリ名は `<ユニットID 2桁>-<名前>`（例：`F03-pipeline`、`G11-csvstat`）にそろえる。
+**自分のもの**として自由に書いてよいのは、`PROGRESS.md`、`logs/`、`answers/`、`capstone/` と、`drills/` の中の `TASKS.md` 以外のファイル。それ以外はカリキュラムの一部で、取り込みのたびに置き換わる。
 
 ## 1回の回し方
 
-1. `PROGRESS.md` で次のユニットを確認する
+1. `PROGRESS.md` で、次のユニットを確認する
 2. 振り返りテンプレートをコピーする
    ```sh
    mkdir -p logs/$(date +%Y) && cp -n templates/retrospective.md logs/$(date +%Y)/$(date +%m-%d).md
    ```
-3. エディタのAI機能をオフにして、テンプレートの時間割どおりに進める
-4. 夕方に振り返りを書き、`PROGRESS.md` を更新してコミットする
+3. エディタのAI機能をオフにして、そのユニットの `TASKS.md` を開き、時間割どおりに進める
+4. 夕方に振り返りを書き、`PROGRESS.md` を更新して、コミットする
 
 ## コミット規約
 
 AIの関与度をあとから区別できるよう、コミットメッセージの先頭にタグを付ける。
 
-| タグ | 意味 |
-| --- | --- |
-| `[no-ai]` | AIなしで書いたもの（AIなしデー） |
-| `[ai]` | AIが生成・大きく補助したもの |
-| `[mixed]` | 自分で書き、AIにレビューや部分修正をさせた |
-| `[docs]` | ドキュメント・振り返りのみ |
+- `[no-ai]`：AIなしで書いたもの（AIなしデー）
+- `[ai]`：AIが生成した、または大きく補助したもの
+- `[mixed]`：自分で書き、AIにレビューや部分的な修正をさせたもの
+- `[docs]`：ドキュメントと振り返りのみ
 
 例：`[no-ai] G11: csvstat の平均計算を実装`
 
 ## 版と改訂
 
-版は、学習テキストとしての内容に付ける（カレンダー形式。`v2026.10`、同じ月の2回目以降は `v2026.10.1`）。学習の進み具合には、タグを付けない。改訂の運用は [docs/12-revision.md](docs/12-revision.md) を参照。
+版は、学習テキストとしての内容に付ける（カレンダー形式。`v2026.10`、同じ月の2回目以降は `v2026.10.1`）。学習の進み具合には、タグを付けない。変更点は [CHANGELOG.md](CHANGELOG.md)、運用は[改訂の運用](docs/30-revision.md)にある。誤りや、詰まりやすい箇所を見つけたら、Issueで知らせてほしい。
 
 ## 注意
 
 - テンプレートは公開されている。自分の学習用リポジトリも、公開・非公開にかかわらず「いつか公開されるかもしれない」前提で書く。一度pushした内容は、消しても残る
-- 題材は公開情報とダミーデータのみ。業務上の機密、実在システムの非公開情報、実在のホスト名・IPアドレス・認証情報は置かない。`logs/` の振り返りにも、仕事の内容は書かない
+- 題材は、公開情報とダミーデータのみ。業務上の機密、実在システムの非公開情報、実在のホスト名・IPアドレス・認証情報は置かない。`logs/` の振り返りにも、仕事の内容は書かない
 - 書籍の問題文や本文は転載しない（自分の解答と、出典のページ番号だけを残す）
