@@ -13,7 +13,7 @@
 - 現在地は `PROGRESS.md` を見る。`offgrid status` が、進捗と作業漏れをまとめて出す（AIを使わないコマンド）
 - 学習の環境は、全員がUbuntu（WSL2、Lima、Linux）。コマンドの説明はUbuntu（GNU、bash 5）を前提にする
 - `drills/` の各ユニットの `TASKS.md` は課題シート（カリキュラムの一部）。それ以外のファイルが、オーナーの書いたもの。オーナーが `prompts/unit-drill.md` で作るつなぎのシートは `TASKS.local.md`
-- カリキュラム（`docs/`、`prompts/`、`templates/`、`scripts/`、課題シート）の変更は、テンプレート側で行う。学習者のリポジトリでは `scripts/update-curriculum.sh` で取り込むだけにし、直接書き換えない
+- カリキュラム（`docs/`、`prompts/`、`templates/`、`scripts/`、`tools/`、課題シート）の変更は、テンプレート側で行う。学習者のリポジトリでは `scripts/update-curriculum.sh` で取り込むだけにし、直接書き換えない
 - 「AIなしデー」（1セッション）に書いたものが中心。週に何回やるかは学習者が決める。ルールは `docs/04-ai-free-day.md`
 - 最終目標：`capstone/` に閉域でも動く監視ダッシュボード「watchdeck」を作る（`docs/15-track-c-capstone.md`）
 
@@ -27,6 +27,7 @@
 4. ヒントは弱いものから出す（観点 → 該当箇所の範囲 → 具体的な原因）。一段ずつ、オーナーの反応を待つ
 5. **今のステージより先の知識を前提にしない。** 例：Stage 1 のコードに goroutine や context を使った改善案を出さない。どうしても触れるときは「Stage N で学ぶ内容」と明記する
 6. Go の課題は標準ライブラリで書く。外部ライブラリを提案してよいのは G17 の `pgx` だけ
+7. **答えのコードが載っているページを勧めない。** セッション中の学習者が見てよいのは `man`、`--help`、`go doc`、公式ドキュメント、書籍、自分のメモだけ（Stack Overflow やブログは、AIと同じ扱いで禁止）。調べ方を示すときは、一次情報のどこを引くかで示す（`docs/04-ai-free-day.md` のルール）
 
 ## 課題シート（`TASKS.md`）を書くとき
 
@@ -41,6 +42,14 @@
 - 確信のないコマンドやオプションは書かない。「`man xxx` で、〜するオプションを探す」という問いの形にする
 - 環境はUbuntu（bash 5、GNUコマンド）。PostgreSQLはコンテナ `pg-offgrid`（postgres:18）
 - 実在のホスト名・IP・認証情報は書かない。IPはRFC 5737の範囲、ドメインは `example.com` か `.test`
+
+**課題シートの書式を変えたら、必ず学習用コマンドが読めるかを確かめる。** 見出しの名前や課題の番号の付け方は、`tools/offgrid` が解析している。片方だけ直すと、画面から節が消えたり、進捗が記録できなくなる。
+
+```sh
+cd tools/offgrid && go test ./... && go run . selftest
+```
+
+`selftest` が検査するのは、frontmatter の title、先頭の「> トラック：…」の行、必須の節、課題の数、`**本題**`（番号なしが2つ以上ないか）、「残すもの」からファイル名が読めるか、`PROGRESS.md` の欄の数。検査を増やしたいときは `tools/offgrid/selftest.go` に足す。CIは `drills/**/TASKS.md`・`PROGRESS.md`・`templates/`・`tools/` の変更で、これを回す。
 
 ## レビューの方針
 
@@ -70,7 +79,7 @@
 
 ## ステージ通過の実技で課題を選ぶとき
 
-`docs/06-evaluation.md` の実技では、そのステージの `drills/` から1本を選んで伝える。再現率が低かったもの、詰まりメモに出てきたテーマを優先する。選んだ理由は、実技が終わるまで言わない。
+`docs/06-evaluation.md` の実技では、そのステージの `drills/` から1本を選んで伝える。**その場で合否が出る課題に限る**（実行して確かめられるもの。`explain.md` の採点待ちになる課題は選ばない）。再現率が低かったもの、詰まりメモに出てきたテーマを優先する。選んだ理由は、実技が終わるまで言わない。
 
 ## 進捗の確認を頼まれたとき
 
@@ -96,7 +105,7 @@ go test -race -cover ./...
 staticcheck ./...        # 入っていれば
 
 # PostgreSQL（課題 .sql の実行）
-docker exec -i pg-offgrid psql -U postgres -v ON_ERROR_STOP=1 < drills/sql/DNN-xxx/work.sql
+docker exec -i pg-offgrid psql -U postgres -v ON_ERROR_STOP=1 < drills/sql/D03-aggregate/monthly-sales.sql
 
 # TypeScript（各課題ディレクトリで）
 npx tsc --noEmit --strict
@@ -105,7 +114,7 @@ npx vitest run
 
 ## コミット規約
 
-`README.md` の表のとおり、`[no-ai]` / `[ai]` / `[mixed]` / `[docs]` を先頭に付ける。Claude Code が書いた変更は必ず `[ai]` か `[mixed]` にする。
+`README.md` のとおり、`[no-ai]` / `[ai]` / `[mixed]` / `[docs]` を先頭に付ける。Claude Code が書いた変更は必ず `[ai]` か `[mixed]` にする。
 
 ## 題材と安全性
 

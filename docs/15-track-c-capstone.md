@@ -82,7 +82,7 @@ capstone/
 - **[C2 agent](../drills/capstone/C02-agent/TASKS.md)**：CPU・メモリ・ディスクを集め、リトライ付きで送信する。CPUとメモリは `/proc` から読む。ディスクの使用率は `/proc` にはないので、`df` が内部で使っている仕組み（`statfs`）を、Goの標準ライブラリから呼ぶ方法を調べる。使うユニット：G5〜G8、G19、O1
 - **[C3 受信と保存](../drills/capstone/C03-ingest-store/TASKS.md)**：入力の検証、マイグレーション、インデックス、古いデータの削除。使うユニット：G12〜G14、G17、D13〜D15
 - **[C4 配信](../drills/capstone/C04-api-sse/TASKS.md)**：REST、SSE、トークン認証（SSEの認証は、C1で決めた方式）。使うユニット：G14、G16、G20
-- **[C5 web](../drills/capstone/C05-web/TASKS.md)**：一覧、グラフ、リアルタイム更新。使うユニット：T6〜T11
+- **[C5 web](../drills/capstone/C05-web/TASKS.md)**：一覧、グラフ、リアルタイム更新。使うユニット：T1（SVG）、T6（値→座標）、T7〜T11
 - **[C6 配布の形にする](../drills/capstone/C06-packaging/TASKS.md)**：Dockerfile、compose、agentのsystemd化。使うユニット：O2、O4、O5
 - **[C7 閉域での再構築と障害試験](../drills/capstone/C07-offline-rebuild/TASKS.md)**：ネットワークを切っての完全な再構築、障害試験、運用手順書（runbook）、振り返り。使うユニット：O7、O8
 - **[C8 発展](../drills/capstone/C08-extensions/TASKS.md)**：任意。発展から選んで実装する。負荷試験とチューニングは、どれを選んでも行うことを勧める。使うユニット：G15、O3、O6、O9

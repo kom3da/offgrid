@@ -15,16 +15,16 @@ HTMLとJavaScriptの基礎から、TypeScript、Reactまでを順に進むトラ
 
 ## ユニット
 
-各ユニットのページが、課題シート（答えのない問題集）になっている。
+各ユニットのページが、課題シート（答えのない問題集）になっている。下に添えた1行は、そのユニットで何ができるようになるかの**代表的な目安**。実際に満たすべき条件は、課題シートの「完了条件の確かめ方」が正本で、もっと細かい（テストの終了コードや、数値の基準まで含む）。
 
 ### Stage 2：WebフロントエンドとTypeScript
 
-- **[T1 HTMLとCSS](../drills/ts/T01-html-css/TASKS.md)**：開発者ツールで、要素とスタイルを確認できる
+- **[T1 HTMLとCSS](../drills/ts/T01-html-css/TASKS.md)**：開発者ツールで、要素とスタイルを確認できる。SVGの座標系で、通信なしに図を描ける
 - **[T2 JavaScriptの基本](../drills/ts/T02-javascript-basics/TASKS.md)**：G2・G3と同じ問題がNode.jsで動き、Goとの違いを3点以上書ける
 - **[T3 DOMとイベント](../drills/ts/T03-dom-events/TASKS.md)**：ライブラリなしのToDoリストが動き、わざと入れたエラーの場所をConsoleから特定できる
 - **[T4 非同期処理](../drills/ts/T04-async-fetch/TASKS.md)**：エラー時に画面へメッセージを出せる。CORSエラーが起きる条件を説明できる
 - **[T5 npmとTypeScript導入](../drills/ts/T05-typescript-setup/TASKS.md)**：T3をTypeScriptに書き換え、`--strict` で型エラーが出ない
-- **[T6 型で設計する](../drills/ts/T06-type-design/TASKS.md)**：イベントの種類を型で表し、漏れをコンパイラに検出させられる
+- **[T6 型で設計する](../drills/ts/T06-type-design/TASKS.md)**：イベントの種類を型で表し、漏れをコンパイラに検出させられる。値を座標に変える関数を、境界の場合まで決めて書ける
 - **[T7 ビルド環境を手で組む](../drills/ts/T07-build-tooling/TASKS.md)**：テンプレート生成を使わずに起動し、テストが動く
 - **[T8 型ガードと実行時検証](../drills/ts/T08-type-guards/TASKS.md)**：不正なデータを拒否することを、テストで確認している
 - **[T9 Reactの基本](../drills/ts/T09-react-basics/TASKS.md)**：T3のToDoを、Reactで作り直せる
@@ -57,8 +57,8 @@ HTMLとJavaScriptの基礎から、TypeScript、Reactまでを順に進むトラ
 ## Stage 5で使う応用
 
 - リアルタイム表示：T11の方法で、メトリクスを受信して表示する
-- グラフ表示：SVGかCanvasで、時系列グラフを描く。ライブラリを使う場合は、CDNではなくローカルに同梱する
-- テスト：VitestとTesting Libraryで、主要なコンポーネントをテストする
+- グラフ表示：T1（SVGの座標系）とT6（値→座標の関数）で基礎を扱う。それを組み合わせて時系列グラフにするのが、C5の課題。ライブラリを使う場合は、CDNではなくローカルに同梱する
+- テスト：Testing Libraryでのコンポーネントのテストは、T10で扱う。C5では、それを画面全体に広げる
 
 ## 使う教材
 

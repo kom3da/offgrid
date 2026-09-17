@@ -58,15 +58,6 @@ func (s *server) stepSheet(p *Progress, step Step) *Sheet {
 	switch step.ID {
 	case StepMain:
 		unit = p.Unit
-		// このステージはDBがメイン枠に合流する（docs/03-roadmap.md）。
-		// メインの課題が終わったら、同じ枠で続けてDBのユニットを出す。
-		if StagePlan(p.Stage).DBInMain && p.DBUnit != "" {
-			if main, err := LoadSheet(s.root, p.Unit); err == nil {
-				if done, total := main.Counts(); total > 0 && done == total {
-					unit = p.DBUnit
-				}
-			}
-		}
 	case StepDB:
 		unit = p.DBUnit
 	default:

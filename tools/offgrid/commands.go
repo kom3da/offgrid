@@ -237,19 +237,7 @@ func runStep(root string, p *Progress, s *Session, state *SessionState, step Ste
 			return err
 		}
 		say(dim("シート: " + rel(root, sh.Path)))
-		if err := guideUnit(sh, s, state); err != nil {
-			return err
-		}
-		// Stage 3 は、DBがこの枠に合流する（docs/03-roadmap.md）
-		if step.ID == StepMain && StagePlan(p.Stage).DBInMain && p.DBUnit != "" {
-			if db, err := LoadSheet(root, p.DBUnit); err == nil {
-				fmt.Println()
-				rule("同じ枠で PostgreSQL（" + db.Unit + "）")
-				say(dim("このステージは、DBがメイン枠に合流する。残りの時間で進める"))
-				return guideUnit(db, s, state)
-			}
-		}
-		return nil
+		return guideUnit(sh, s, state)
 	case StepWarmup:
 		say(s.Warmup())
 		say("＋ 前回のレビューで指摘された箇所の直しを1件")

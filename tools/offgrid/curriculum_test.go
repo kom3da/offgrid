@@ -329,9 +329,9 @@ func TestStagePlanAndSessionShape(t *testing.T) {
 	if StagePlan("0").DB != "" || StagePlan("1").DB == "" || StagePlan("4").DB != "" {
 		t.Error("ステージごとの時間割が違う")
 	}
-	// Stage 3 はDBがメイン枠に合流する（別枠を立てない）
-	if p3 := StagePlan("3"); p3.DB != "" || !p3.DBInMain {
-		t.Errorf("Stage 3 の扱いが違う: %+v", p3)
+	// PostgreSQL の枠は Stage 1〜3（docs/03-roadmap.md）
+	if StagePlan("3").DB == "" {
+		t.Error("Stage 3 に PostgreSQL の枠がない")
 	}
 	// 短縮の回は、時間割が1日に収まること
 	short := sessionSteps(&Progress{Stage: "0", Unit: "F3"}, &Session{Number: 1})

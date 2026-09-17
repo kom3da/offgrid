@@ -95,10 +95,6 @@ func sessionFlow(root string, p *Progress, s *Session) []string {
 			if sh, err := LoadSheet(root, p.Unit); err == nil {
 				head += "：" + rel(root, sh.Path)
 			}
-			// このステージはDBがメイン枠に合流する。書いておかないと、Dのユニットを忘れる
-			if StagePlan(p.Stage).DBInMain && p.DBUnit != "" {
-				head += "　＋ PostgreSQL（" + p.DBUnit + "）"
-			}
 		case StepDB:
 			if p.DBUnit == "" {
 				head += "：（PROGRESS.md の「次のPostgreSQLユニット」を D1 に書き換える）"

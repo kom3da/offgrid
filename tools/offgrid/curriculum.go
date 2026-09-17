@@ -584,19 +584,14 @@ func (s *Session) Finish() string {
 	}
 }
 
-type Plan struct {
-	Main, DB string
-	// DBInMain は「PostgreSQLがメイン枠に合流する」ステージ（docs/03-roadmap.md の
-	// 「Stage 3〜5：メイン（DBを含む）3.5時間」）。別枠を立てず、メインの中で案内する。
-	DBInMain bool
-}
+type Plan struct{ Main, DB string }
 
+// StagePlan は、そのステージの1セッションの時間の配分（docs/03-roadmap.md）。
+// PostgreSQL は Stage 1〜3 のあいだ、毎回1時間の枠で進める。
 func StagePlan(stage string) Plan {
 	switch stage {
-	case "1", "2":
+	case "1", "2", "3":
 		return Plan{Main: "2.5時間", DB: "1時間"}
-	case "3":
-		return Plan{Main: "3.5時間", DBInMain: true}
 	default:
 		return Plan{Main: "3.5時間"}
 	}
