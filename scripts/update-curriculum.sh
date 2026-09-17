@@ -59,6 +59,19 @@ main() {
   echo "  git diff --stat"
   echo "  git add -A && git commit -m \"[docs] Update curriculum to ${tag}\""
   echo "To undo instead: git restore . && git clean -fd docs prompts templates scripts tools"
+
+  # The binary is installed once on Day 0, so a MAJOR bump needs an explicit swap:
+  # the sheet format changes and the old tool cannot read it.
+  new_major="$(printf '%s' "${tag#v}" | cut -d. -f1)"
+  old_major="$(offgrid version 2>/dev/null | awk '{print $2}' | cut -d. -f1 || true)"
+  if [ -n "$old_major" ] && [ "$old_major" != "dev" ] && [ "$new_major" != "$old_major" ]; then
+    echo
+    echo "The major version changed (${old_major} -> ${new_major}): replace the tool as well."
+    echo "  case \"\$(uname -m)\" in aarch64|arm64) arch=arm64 ;; x86_64|amd64) arch=amd64 ;; esac"
+    echo "  curl -fsSL -o ~/.local/bin/offgrid \\"
+    echo "    \"https://github.com/${TEMPLATE}/releases/download/${tag}/offgrid-linux-\$arch\""
+    echo "  chmod +x ~/.local/bin/offgrid && offgrid selftest"
+  fi
 }
 
 main "$@"

@@ -22,8 +22,25 @@ var (
 	mdCode     = regexp.MustCompile("`([^`]+)`")
 	mdStrong   = regexp.MustCompile(`\*\*([^*]+)\*\*`)
 	mdLink     = regexp.MustCompile(`\[([^\]]+)\]\(([^)\s]+)\)`)
-	mdBareURL  = regexp.MustCompile(`<(https?://[^>]+)>`)
+	// html.EscapeString を通したあとに探すので、山かっこは &lt; &gt; になっている
+	mdBareURL = regexp.MustCompile(`&lt;(https?://[^&\s]+)&gt;`)
 )
+
+// safeHref は、開いてよい行き先だけを通す。
+// 学習者自身の notes.md も表示するので、javascript: のような仕組みは弾く。
+func safeHref(h string) string {
+	l := strings.ToLower(strings.TrimSpace(h))
+	switch {
+	case strings.HasPrefix(l, "http://"), strings.HasPrefix(l, "https://"),
+		strings.HasPrefix(l, "/"), strings.HasPrefix(l, "#"):
+		return h
+	}
+	// 「:」より前が仕組みの名前。知らないものは開かせない
+	if i := strings.IndexAny(l, ":/"); i >= 0 && l[i] == ':' {
+		return ""
+	}
+	return h
+}
 
 // inlineHTML は、行の中の記法（コード、強調、リンク）をHTMLにする。
 func inlineHTML(s string, link func(string) string) string {
@@ -31,13 +48,17 @@ func inlineHTML(s string, link func(string) string) string {
 	// リンクを先に処理する（中のテキストは、あとで装飾される）
 	out = mdBareURL.ReplaceAllStringFunc(out, func(m string) string {
 		url := mdBareURL.FindStringSubmatch(m)[1]
-		return fmt.Sprintf(`<a href="%s" rel="noreferrer">%s</a>`, url, url)
+		return fmt.Sprintf(`<a href="%s" rel="noreferrer" target="_blank">%s</a>`, url, url)
 	})
 	out = mdLink.ReplaceAllStringFunc(out, func(m string) string {
 		g := mdLink.FindStringSubmatch(m)
 		href := g[2]
 		if link != nil {
 			href = link(href)
+		}
+		href = safeHref(href)
+		if href == "" {
+			return g[1] // 行き先が怪しいときは、文字だけ出す
 		}
 		rel := ""
 		if strings.HasPrefix(href, "http") {

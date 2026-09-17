@@ -14,7 +14,7 @@
 - 学習の環境は、全員がUbuntu（WSL2、Lima、Linux）。コマンドの説明はUbuntu（GNU、bash 5）を前提にする
 - `drills/` の各ユニットの `TASKS.md` は課題シート（カリキュラムの一部）。それ以外のファイルが、オーナーの書いたもの。オーナーが `prompts/unit-drill.md` で作るつなぎのシートは `TASKS.local.md`
 - カリキュラム（`docs/`、`prompts/`、`templates/`、`scripts/`、課題シート）の変更は、テンプレート側で行う。学習者のリポジトリでは `scripts/update-curriculum.sh` で取り込むだけにし、直接書き換えない
-- 週1回の「AIなしデー」に書いたものが中心。ルールは `docs/04-ai-free-day.md`
+- 「AIなしデー」（1セッション）に書いたものが中心。週に何回やるかは学習者が決める。ルールは `docs/04-ai-free-day.md`
 - 最終目標：`capstone/` に閉域でも動く監視ダッシュボード「watchdeck」を作る（`docs/15-track-c-capstone.md`）
 
 ## 最重要ルール：学習を奪わない

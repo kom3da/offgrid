@@ -90,17 +90,22 @@ sudo apt install -y git gh shellcheck
 
 `sudo` で聞かれるパスワードは、手順1で決めたUbuntuのもの（Limaでは聞かれない）。`man`、`xxd`、`grep`、`curl`、`vim`、`nano` などは、最初から入っている。Dockerは、F10で入れる。
 
-**学習用コマンド `offgrid` を入れる。** セッションを案内してくれる道具で、今日いちばん大事な準備。`uname -m` の結果が `aarch64` なら `arm64`、`x86_64` なら `amd64` を選ぶ。
+**学習用コマンド `offgrid` を入れる。** セッションを案内してくれる道具で、今日いちばん大事な準備。下はそのまま貼ればよい（CPUの種類は、`uname -m` の結果から自動で選ぶ）。
 
 ```sh
 mkdir -p ~/.local/bin
-uname -m
-# aarch64 なら arm64、x86_64 なら amd64 に読み替える
+case "$(uname -m)" in
+  aarch64|arm64) arch=arm64 ;;
+  x86_64|amd64)  arch=amd64 ;;
+  *) echo "分からないCPUです: $(uname -m)"; arch= ;;
+esac
 curl -fsSL -o ~/.local/bin/offgrid \
-  https://github.com/kom3da/offgrid/releases/latest/download/offgrid-linux-arm64
+  "https://github.com/kom3da/offgrid/releases/latest/download/offgrid-linux-$arch"
 chmod +x ~/.local/bin/offgrid
 offgrid version
 ```
+
+`offgrid version` が版を表示すれば成功。`Exec format error` と出たら、CPUの種類が合っていない（`uname -m` の結果を見て、`arch=` を手で書き直す）。
 
 `offgrid: command not found` と出たら、`~/.local/bin` が `PATH` に入っていない。次を実行して、シェルを開き直す（`PATH` の意味はF4で学ぶ）。
 
@@ -258,8 +263,8 @@ git add -A && git commit -m "[docs] Update curriculum to v1.0.0"
 
 版の最初の数字（`1`）が上がったときは、**学習用コマンドも入れ替える**（手順2のダウンロードをもう一度やる）。課題シートの書き方が変わり、古いツールでは読めなくなるため。
 
-途中で失敗したら、`git restore . && git clean -fd docs prompts templates scripts` で、取り込む前の状態に戻せる。
+途中で失敗したら、`git restore . && git clean -fd docs prompts templates scripts tools` で、取り込む前の状態に戻せる。
 
-置き換わるのは、`docs/`、`prompts/`、`templates/`、`scripts/`、`CLAUDE.md`、`README.md`、`CHANGELOG.md` と、`drills/` の中の `TASKS.md`（課題シート）だけ。これらは自分では書き換えない（書き換えても、次の取り込みで消える）。
+置き換わるのは、`docs/`、`prompts/`、`templates/`、`scripts/`、`tools/`、`CLAUDE.md`、`README.md`、`CHANGELOG.md` と、`drills/` の中の `TASKS.md`（課題シート）だけ。これらは自分では書き換えない（書き換えても、次の取り込みで消える）。
 
 自分のものとして自由に書いてよいのは、`PROGRESS.md`、`logs/`、`answers/`、`capstone/` と、`drills/` の中の `TASKS.md` 以外のファイル。取り込みでは触れられない。

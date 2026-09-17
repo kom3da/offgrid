@@ -100,6 +100,7 @@ document.addEventListener("click", function (e) {
 
 <h2>詰まったことを書く</h2>
 <form action="/stuck" method="post" class="field">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 	<label for="stuck">何が起きた？（振り返りの「詰まったこと」に、時刻付きで書く）</label>
 	<input id="stuck" type="text" name="text" placeholder="例: sort -n の順番が合わない">
 	<div class="row"><button class="btn" type="submit">書く</button></div>
@@ -120,6 +121,7 @@ document.addEventListener("click", function (e) {
 {{range .Tasks}}
 <li class="task{{if .Done}} done{{end}}">
 	<form action="/tick" method="post">
+		<input type="hidden" name="csrf" value="{{$.CSRF}}">
 		<input type="hidden" name="unit" value="{{$.Sheet.Unit}}">
 		<input type="hidden" name="n" value="{{.N}}">
 		<input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
@@ -146,11 +148,12 @@ document.addEventListener("click", function (e) {
 <p class="muted small">{{.LogPath}}</p>
 {{if .Fields}}
 <form action="/retro" method="post">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 	<input type="hidden" name="file" value="{{.LogPath}}">
 	{{range .Fields}}
 	<div class="field">
 		<label for="f{{.Line}}">{{.Label}}</label>
-		<textarea id="f{{.Line}}" name="line-{{.Line}}" rows="2"></textarea>
+		<textarea id="f{{.Line}}" name="field-{{.Key}}" rows="2"></textarea>
 	</div>
 	{{end}}
 	<div class="row"><button class="btn primary" type="submit">書き込む</button></div>

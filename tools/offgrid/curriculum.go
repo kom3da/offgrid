@@ -60,7 +60,9 @@ func (s *Sheet) TaskNums() []int  { return s.nums }
 
 func (s *Sheet) Section(name string) string { return strings.TrimSpace(s.Sections[name]) }
 
-var keepFileRe = regexp.MustCompile("`([A-Za-z0-9._-]+\\.(?:md|sh|sql|go|ts|tsx|js|txt|csv|log))`")
+// 「残すもの」の書き方は `notes.md`、`lab/main.go`、`capstone/cmd/agent/` の3通り。
+// ディレクトリは末尾の / で見分ける。
+var keepFileRe = regexp.MustCompile("`([A-Za-z0-9._/-]+(?:\\.(?:md|sh|sql|go|ts|tsx|js|json|ya?ml|txt|csv|log)|/))`")
 
 // KeepFiles は「残すもの」に書かれたファイル名を返す。
 // 「コミットしない」と書かれている行（作り直せるもの）は数えない。
@@ -83,12 +85,39 @@ func (s *Sheet) KeepFiles() []string {
 	return out
 }
 
+// keepPath は「残すもの」の名前を、実際のパスに直す。
+// 課題ディレクトリの中を先に見て、無ければリポジトリの根から見る（`capstone/` などのため）。
+func (s *Sheet) keepPath(name string) string {
+	inDir := filepath.Join(s.Dir(), name)
+	if _, err := os.Stat(inDir); err == nil {
+		return inDir
+	}
+	if atRoot := filepath.Join(s.root, name); !strings.HasPrefix(name, "/") {
+		if _, err := os.Stat(atRoot); err == nil {
+			return atRoot
+		}
+	}
+	return inDir
+}
+
+// HaveKeep は、その「残すもの」が揃っているか。ディレクトリは、中身があるかを見る。
+func (s *Sheet) HaveKeep(name string) bool {
+	st, err := os.Stat(s.keepPath(name))
+	if err != nil {
+		return false
+	}
+	if st.IsDir() {
+		entries, err := os.ReadDir(s.keepPath(name))
+		return err == nil && len(entries) > 0
+	}
+	return st.Size() > 0
+}
+
 // MissingFiles は、まだ無い（または空の）「残すもの」を返す。
 func (s *Sheet) MissingFiles() []string {
 	var out []string
 	for _, f := range s.KeepFiles() {
-		st, err := os.Stat(filepath.Join(s.Dir(), f))
-		if err != nil || st.Size() == 0 {
+		if !s.HaveKeep(f) {
 			out = append(out, f)
 		}
 	}
@@ -165,18 +194,32 @@ func LoadSheet(root, unit string) (*Sheet, error) {
 		return nil, fmt.Errorf("%s のトラックがありません", letter)
 	}
 	prefix := fmt.Sprintf("%s%02d-", letter, num)
+	var found []string // 同じ番号のディレクトリ（改名されると、古いものが残る）
 	for _, e := range entries {
 		if !e.IsDir() || !strings.HasPrefix(strings.ToUpper(e.Name()), prefix) {
 			continue
 		}
 		for _, name := range []string{"TASKS.md", "TASKS.local.md"} {
-			p := filepath.Join(base, e.Name(), name)
-			if _, err := os.Stat(p); err == nil {
-				return parseSheet(p, fmt.Sprintf("%s%d", letter, num), root)
+			if _, err := os.Stat(filepath.Join(base, e.Name(), name)); err == nil {
+				found = append(found, filepath.Join(base, e.Name(), name))
+				break
 			}
 		}
 	}
-	return nil, fmt.Errorf("%s%d の課題シートが見つかりません", letter, num)
+	if len(found) == 0 {
+		return nil, fmt.Errorf("%s%d の課題シートが見つかりません", letter, num)
+	}
+	// 黙ってどちらかを選ぶと、work.md やメモが片方に取り残される
+	if len(found) > 1 {
+		var dirs []string
+		for _, f := range found {
+			dirs = append(dirs, rel(root, filepath.Dir(f)))
+		}
+		sort.Strings(dirs)
+		return nil, fmt.Errorf("%s%d のディレクトリが%d個あります（%s）。中身を1つにまとめて、古いほうを消してください",
+			letter, num, len(found), strings.Join(dirs, "、"))
+	}
+	return parseSheet(found[0], fmt.Sprintf("%s%d", letter, num), root)
 }
 
 // AllSheets は、あるトラックのすべての課題シートを読む。
@@ -208,20 +251,55 @@ func AllSheets(root string) ([]*Sheet, error) {
 
 // ---------------------------------------------------------------- 作業記録（work.md）
 
-// EnsureWork は、課題シートからチェックリストを作る（すでにあれば触らない）。
-func (s *Sheet) EnsureWork() (created bool, err error) {
-	if _, err := os.Stat(s.WorkPath()); err == nil {
-		return false, nil
+// workLine は、チェックリストの1行を作る。
+func (s *Sheet) workLine(n int) string {
+	first := strings.SplitN(s.Tasks[n], "\n", 2)[0]
+	return fmt.Sprintf("- [ ] %d. %s", n, first)
+}
+
+// EnsureWork は、課題シートからチェックリストを作る。
+// すでにあるときは、シートに増えた課題の行だけを足す。カリキュラムを取り込んで課題が増えても、
+// 番号がそろっていないと「できた」を記録できなくなるため。
+func (s *Sheet) EnsureWork() (created bool, added []int, err error) {
+	raw, readErr := os.ReadFile(s.WorkPath())
+	if readErr != nil {
+		var b strings.Builder
+		fmt.Fprintf(&b, "# %s 作業記録\n\n", s.Title)
+		b.WriteString("課題の進み具合。`offgrid run` が、ここを見て次の課題を出す。\n")
+		b.WriteString("自分で書き換えてもよい。メモは `notes.md` に書く。\n\n")
+		for _, n := range s.nums {
+			b.WriteString(s.workLine(n) + "\n")
+		}
+		return true, nil, writeFile(s.WorkPath(), []byte(b.String()))
 	}
-	var b strings.Builder
-	fmt.Fprintf(&b, "# %s 作業記録\n\n", s.Title)
-	b.WriteString("課題の進み具合。`offgrid run` が、ここを見て次の課題を出す。\n")
-	b.WriteString("自分で書き換えてもよい。メモは `notes.md` に書く。\n\n")
+	lines := strings.Split(string(raw), "\n")
+	have := map[int]bool{}
+	last := -1
+	for i, line := range lines {
+		if m := workLineRe.FindStringSubmatch(line); m != nil {
+			n, _ := strconv.Atoi(m[2])
+			have[n] = true
+			last = i
+		}
+	}
 	for _, n := range s.nums {
-		first := strings.SplitN(s.Tasks[n], "\n", 2)[0]
-		fmt.Fprintf(&b, "- [ ] %d. %s\n", n, first)
+		if !have[n] {
+			added = append(added, n)
+		}
 	}
-	return true, os.WriteFile(s.WorkPath(), []byte(b.String()), 0o644)
+	if len(added) == 0 {
+		return false, nil, nil
+	}
+	var fresh []string
+	for _, n := range added {
+		fresh = append(fresh, s.workLine(n))
+	}
+	if last < 0 {
+		lines = append(lines, fresh...)
+	} else {
+		lines = append(lines[:last+1], append(fresh, lines[last+1:]...)...)
+	}
+	return false, added, writeFile(s.WorkPath(), []byte(strings.Join(lines, "\n")))
 }
 
 var workLineRe = regexp.MustCompile(`^- \[([ x])\] (\d+)\.`)
@@ -243,7 +321,7 @@ func (s *Sheet) WorkState() map[int]bool {
 }
 
 func (s *Sheet) Tick(n int, done bool) error {
-	if _, err := s.EnsureWork(); err != nil {
+	if _, _, err := s.EnsureWork(); err != nil {
 		return err
 	}
 	raw, err := os.ReadFile(s.WorkPath())
@@ -255,29 +333,33 @@ func (s *Sheet) Tick(n int, done bool) error {
 	if !done {
 		mark = "- [ ]"
 	}
+	found := false
 	for i, line := range lines {
 		if m := workLineRe.FindStringSubmatch(line); m != nil {
 			if num, _ := strconv.Atoi(m[2]); num == n {
 				lines[i] = mark + line[len("- [ ]"):]
+				found = true
 			}
 		}
 	}
-	return os.WriteFile(s.WorkPath(), []byte(strings.Join(lines, "\n")), 0o644)
+	// 黙って書けないままにすると、同じ課題が何度も出てくる。
+	if !found {
+		return fmt.Errorf("%s に「- [ ] %d.」の行がありません（消したか、書き換えた可能性があります）", rel(s.root, s.WorkPath()), n)
+	}
+	return writeFile(s.WorkPath(), []byte(strings.Join(lines, "\n")))
 }
 
 // Counts は「できた数 / 全体」を返す。
+// 全体は、いつも課題シートの数を正とする（work.md の行が消えていても、数がずれないように）。
 func (s *Sheet) Counts() (int, int) {
 	st := s.WorkState()
-	if len(st) == 0 {
-		return 0, len(s.nums)
-	}
 	done := 0
-	for _, ok := range st {
-		if ok {
+	for _, n := range s.nums {
+		if st[n] {
 			done++
 		}
 	}
-	return done, len(st)
+	return done, len(s.nums)
 }
 
 // Todo は、まだできていない課題の番号を小さい順に返す。
@@ -382,7 +464,7 @@ func (p *Progress) MarkDone(unit string) (bool, error) {
 	for i, line := range lines {
 		if strings.HasPrefix(line, prefix) {
 			lines[i] = "- [x]" + line[len("- [ ]"):] + fmt.Sprintf(" — %s", time.Now().Format("2006-01-02"))
-			return true, os.WriteFile(p.Path, []byte(strings.Join(lines, "\n")), 0o644)
+			return true, writeFile(p.Path, []byte(strings.Join(lines, "\n")))
 		}
 	}
 	return false, nil
@@ -401,14 +483,14 @@ func (p *Progress) SetNext(unit string, db bool) error {
 	for i, line := range lines {
 		if strings.HasPrefix(line, "- "+label+"：") {
 			lines[i] = "- " + label + "：" + unit
-			return os.WriteFile(p.Path, []byte(strings.Join(lines, "\n")), 0o644)
+			return writeFile(p.Path, []byte(strings.Join(lines, "\n")))
 		}
 	}
 	// 行が無ければ「次のユニット」の下に足す
 	for i, line := range lines {
 		if strings.HasPrefix(line, "- 次のユニット：") {
 			lines = append(lines[:i+1], append([]string{"- " + label + "：" + unit}, lines[i+1:]...)...)
-			return os.WriteFile(p.Path, []byte(strings.Join(lines, "\n")), 0o644)
+			return writeFile(p.Path, []byte(strings.Join(lines, "\n")))
 		}
 	}
 	return fmt.Errorf("PROGRESS.md に「現在」の欄がありません")
@@ -440,19 +522,24 @@ func LoadSession(root string) (*Session, error) {
 		return nil
 	})
 	sort.Strings(past)
-	if err := os.MkdirAll(logDir, 0o755); err != nil {
-		return nil, err
-	}
-	if _, err := os.Stat(log); os.IsNotExist(err) {
-		tmpl, err := os.ReadFile(filepath.Join(root, "templates", "retrospective.md"))
-		if err != nil {
-			return nil, fmt.Errorf("templates/retrospective.md がありません: %w", err)
-		}
-		if err := os.WriteFile(log, tmpl, 0o644); err != nil {
-			return nil, err
-		}
-	}
 	return &Session{Number: len(past) + 1, Log: log, Past: past, root: root}, nil
+}
+
+// EnsureLog は、その日の振り返りファイルを用意する。
+// 読むだけのコマンド（find、status など）からは呼ばない。読んだだけでファイルができると、
+// 以後それが「済んだセッション」として数えられて、回数や時間割がずれてしまうため。
+func (s *Session) EnsureLog() error {
+	if _, err := os.Stat(s.Log); err == nil {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(s.Log), 0o755); err != nil {
+		return err
+	}
+	tmpl, err := os.ReadFile(filepath.Join(s.root, "templates", "retrospective.md"))
+	if err != nil {
+		return fmt.Errorf("templates/retrospective.md がありません: %w", err)
+	}
+	return writeFile(s.Log, tmpl)
 }
 
 func (s *Session) Afternoon() string {
@@ -497,25 +584,26 @@ func (s *Session) Finish() string {
 	}
 }
 
-type Plan struct{ Main, DB, Search string }
+type Plan struct{ Main, DB string }
 
 func StagePlan(stage string) Plan {
 	switch stage {
-	case "0":
-		return Plan{Main: "3.5時間", Search: "5回"}
 	case "1", "2":
-		return Plan{Main: "2.5時間", DB: "1時間", Search: "5回"}
+		return Plan{Main: "2.5時間", DB: "1時間"}
 	case "3":
-		return Plan{Main: "3.5時間（DBを含む）", Search: "3回"}
+		// Stage 3 も D13〜D15 がある（docs/03-roadmap.md）。
+		// 別枠にはせず、メイン枠の中で案内する。
+		return Plan{Main: "3.5時間（DBを含む）", DB: "メイン枠の中で"}
 	default:
-		return Plan{Main: "3.5時間", Search: "0回（オフラインのドキュメントだけ）"}
+		return Plan{Main: "3.5時間"}
 	}
 }
 
 // ---------------------------------------------------------------- 振り返り
 
 type RetroField struct {
-	Line  int
+	Line  int    // いま何行目か（画面の id に使うだけ。書き込みには使わない）
+	Key   string // 見出しと項目名で決まる、行がずれても変わらない名前
 	Label string
 }
 
@@ -533,6 +621,12 @@ func RetroFields(log string) []RetroField {
 	}
 	var out []RetroField
 	heading := ""
+	seen := map[string]int{}
+	add := func(i int, label string) {
+		k := heading + "|" + label
+		seen[k]++
+		out = append(out, RetroField{Line: i, Key: fmt.Sprintf("%s|%d", k, seen[k]), Label: label})
+	}
 	for i, line := range strings.Split(string(raw), "\n") {
 		switch {
 		case strings.HasPrefix(line, "#"):
@@ -542,21 +636,34 @@ func RetroFields(log string) []RetroField {
 			if label == "" {
 				label = "（見出しなし）"
 			}
-			out = append(out, RetroField{Line: i, Label: label})
+			add(i, label)
 		case labelRe.MatchString(line):
-			out = append(out, RetroField{Line: i, Label: strings.TrimLeft(strings.TrimSpace(line), "- ")})
+			add(i, strings.TrimLeft(strings.TrimSpace(line), "- "))
 		}
 	}
 	return out
 }
 
-func RetroWrite(log string, index int, text string) error {
+// RetroWrite は、まだ空いている欄に書き込む。
+// 行番号ではなく見出しと項目名で探すので、書いている間にファイルへ1行入っても、別の行を壊さない。
+// すでに埋まっている欄には書かない（二重送信で同じ文が2回入るのを防ぐ）。
+func RetroWrite(log, key, text string) error {
+	index := -1
+	for _, f := range RetroFields(log) {
+		if f.Key == key {
+			index = f.Line
+			break
+		}
+	}
+	if index < 0 {
+		return fmt.Errorf("その欄は、もう埋まっています（画面を読み込み直してください）")
+	}
 	raw, err := os.ReadFile(log)
 	if err != nil {
 		return err
 	}
 	lines := strings.Split(string(raw), "\n")
-	if index < 0 || index >= len(lines) {
+	if index >= len(lines) {
 		return fmt.Errorf("行が見つかりません")
 	}
 	line := lines[index]
@@ -565,10 +672,12 @@ func RetroWrite(log string, index int, text string) error {
 		lines[index] = "- " + text
 	case emptyNumRe.MatchString(line):
 		lines[index] = emptyNumRe.FindStringSubmatch(line)[1] + ". " + text
-	default:
+	case labelRe.MatchString(line):
 		lines[index] = strings.TrimRight(line, " ") + text
+	default:
+		return fmt.Errorf("その欄は、もう埋まっています")
 	}
-	return os.WriteFile(log, []byte(strings.Join(lines, "\n")), 0o644)
+	return writeFile(log, []byte(strings.Join(lines, "\n")))
 }
 
 // AppendStuck は、詰まりメモを「詰まったこと」の欄に時刻付きで書く。
@@ -596,10 +705,10 @@ func AppendStuck(log, text string) error {
 		} else {
 			lines = append(lines[:k+1], append([]string{entry}, lines[k+1:]...)...)
 		}
-		return os.WriteFile(log, []byte(strings.Join(lines, "\n")), 0o644)
+		return writeFile(log, []byte(strings.Join(lines, "\n")))
 	}
 	lines = append(lines, entry)
-	return os.WriteFile(log, []byte(strings.Join(lines, "\n")), 0o644)
+	return writeFile(log, []byte(strings.Join(lines, "\n")))
 }
 
 // AppendNote は、そのユニットの notes.md に、時刻付きで1行足す。
@@ -616,7 +725,7 @@ func (s *Sheet) AppendNote(text string) error {
 		body += "\n"
 	}
 	body += fmt.Sprintf("\n- %s %s\n", time.Now().Format("15:04"), strings.TrimSpace(text))
-	return os.WriteFile(path, []byte(body), 0o644)
+	return writeFile(path, []byte(body))
 }
 
 // IsFirstTime は「まだ1回もセッションをやっていない」かどうか。
@@ -696,4 +805,28 @@ func rel(root, path string) string {
 		return r
 	}
 	return path
+}
+
+// writeFile は、同じ場所に一時ファイルを作って書き、最後に置き換える。
+// ターミナルとブラウザを行き来しながら使うので、途中で止まっても
+// 書きかけの（中身が切れた）ファイルが残らないようにする。
+func writeFile(path string, data []byte) error {
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".tmp*")
+	if err != nil {
+		return err
+	}
+	name := tmp.Name()
+	defer os.Remove(name) // 置き換えに成功していれば、もう無い
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(name, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(name, path)
 }

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "リリースを作るタグ（例: v2026.10.6）"
+        description: "リリースを作るタグ（例: v1.0.2）"
         required: true
 
 permissions:

@@ -36,3 +36,6 @@ __pycache__/
 
 # offgrid が作る、その日の進行の記録（コミットしなくてよい）
 logs/**/.*.state.json
+
+# go build でできる実行ファイル（配布はリリースの資産で行う）
+/tools/offgrid/offgrid

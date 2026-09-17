@@ -195,12 +195,12 @@ func TestWorkRecord(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	created, err := sh.EnsureWork()
-	if err != nil || !created {
-		t.Fatalf("EnsureWork: created=%v err=%v", created, err)
+	created, added, err := sh.EnsureWork()
+	if err != nil || !created || len(added) != 0 {
+		t.Fatalf("EnsureWork: created=%v added=%v err=%v", created, added, err)
 	}
-	if created, _ := sh.EnsureWork(); created {
-		t.Error("2回目で作り直している")
+	if created, added, _ := sh.EnsureWork(); created || len(added) != 0 {
+		t.Errorf("2回目で作り直している（created=%v added=%v）", created, added)
 	}
 	if done, total := sh.Counts(); done != 0 || total != 5 {
 		t.Fatalf("Counts = %d/%d, want 0/5", done, total)
@@ -277,8 +277,15 @@ func TestSessionAndRetro(t *testing.T) {
 	if s.Number != 1 {
 		t.Errorf("Number = %d, want 1", s.Number)
 	}
+	// 読むだけでは、振り返りファイルを作らない（作ると、回数が1つずれる）
+	if _, err := os.Stat(s.Log); err == nil {
+		t.Fatal("LoadSession が振り返りファイルを作っている")
+	}
+	if err := s.EnsureLog(); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := os.Stat(s.Log); err != nil {
-		t.Fatalf("振り返りが用意されていない: %v", err)
+		t.Fatalf("EnsureLog で用意されていない: %v", err)
 	}
 	// 2回目に呼んでも、同じ日なら番号は増えない
 	again, err := LoadSession(root)
@@ -289,7 +296,7 @@ func TestSessionAndRetro(t *testing.T) {
 	if len(fields) != 4 {
 		t.Fatalf("空欄の数 = %d（%+v）", len(fields), fields)
 	}
-	if err := RetroWrite(s.Log, fields[0].Line, "F3をやった"); err != nil {
+	if err := RetroWrite(s.Log, fields[0].Key, "F3をやった"); err != nil {
 		t.Fatal(err)
 	}
 	raw, _ := os.ReadFile(s.Log)
@@ -319,7 +326,7 @@ func TestSessionAndRetro(t *testing.T) {
 }
 
 func TestStagePlanAndSessionShape(t *testing.T) {
-	if StagePlan("0").DB != "" || StagePlan("1").DB == "" || StagePlan("4").Search != "0回（オフラインのドキュメントだけ）" {
+	if StagePlan("0").DB != "" || StagePlan("1").DB == "" || StagePlan("3").DB == "" || StagePlan("4").DB != "" {
 		t.Error("ステージごとの時間割が違う")
 	}
 	s := &Session{Number: 1}
@@ -340,7 +347,7 @@ func TestFindGaps(t *testing.T) {
 	p, _ := LoadProgress(root)
 	s, _ := LoadSession(root)
 	sh, _ := LoadSheet(root, "F3")
-	if _, err := sh.EnsureWork(); err != nil {
+	if _, _, err := sh.EnsureWork(); err != nil {
 		t.Fatal(err)
 	}
 	for _, n := range sh.TaskNums() {

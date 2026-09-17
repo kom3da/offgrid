@@ -46,7 +46,7 @@ func taskAdvice(mins int) string {
 	case mins >= 45:
 		return "この課題に45分。ここで打ち切って、「詰まった」に書いてから次へ進む。残した課題は、この枠の最後に戻ってくる。"
 	case mins >= 15:
-		return "この課題に15分。手を止めて、順番に切り替える。エラー文を最後まで読む → `man` や `go doc` で単語を調べる → 問題が起きる最小のコードに切り出す → それでも進まなければ検索（上限内で）。"
+		return "この課題に15分。手を止めて、順番に切り替える。エラー文を最後まで読む → `man` や `go doc` で単語を調べる → 問題が起きる最小のコードに切り出す → それでも進まなければ公式ドキュメントを目次から引く。"
 	default:
 		return ""
 	}
@@ -120,13 +120,21 @@ func (s *server) handleSession(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, nil, "読めません", err.Error())
 		return
 	}
+	// 案内を始めるので、ここで振り返りファイルを用意する（読むだけの画面では作らない）
+	if err := sess.EnsureLog(); err != nil {
+		s.fail(w, st, "書けません", err.Error())
+		return
+	}
 	step, ok := state.Current(steps)
 	if !ok {
 		st.Finished = true
 		s.render(w, "session", st)
 		return
 	}
-	_ = state.Start(step.ID)
+	if err := state.Start(step.ID); err != nil {
+		s.fail(w, st, "書けません", err.Error())
+		return
+	}
 	for i := range st.StepViews {
 		if st.StepViews[i].Label == step.Label {
 			st.StepViews[i].Current = true
@@ -144,7 +152,7 @@ func (s *server) handleSession(w http.ResponseWriter, r *http.Request) {
 
 	if sh := s.stepSheet(p, step); sh != nil {
 		st.Sheet = sh
-		if _, err := sh.EnsureWork(); err != nil {
+		if _, _, err := sh.EnsureWork(); err != nil {
 			s.fail(w, st, "書けません", err.Error())
 			return
 		}
@@ -197,18 +205,23 @@ func (s *server) handleSessionStep(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/session", http.StatusSeeOther)
 		return
 	}
-	_, _, sess, err := s.base("", "session")
+	st, _, sess, err := s.base("", "session")
 	if err != nil {
 		s.fail(w, nil, "読めません", err.Error())
 		return
 	}
 	state := LoadState(s.root, sess)
 	id := StepID(r.FormValue("step"))
+	var serr error
 	switch r.FormValue("action") {
 	case "finish":
-		_ = state.Finish(id)
+		serr = state.Finish(id)
 	case "reopen":
-		_ = state.Reopen(id)
+		serr = state.Reopen(id)
+	}
+	if serr != nil {
+		s.fail(w, st, "書けません", serr.Error())
+		return
 	}
 	http.Redirect(w, r, "/session", http.StatusSeeOther)
 }
@@ -218,7 +231,7 @@ func (s *server) handleSessionTask(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/session", http.StatusSeeOther)
 		return
 	}
-	_, p, sess, err := s.base("", "session")
+	st, p, sess, err := s.base("", "session")
 	if err != nil {
 		s.fail(w, nil, "読めません", err.Error())
 		return
@@ -231,16 +244,23 @@ func (s *server) handleSessionTask(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/session", http.StatusSeeOther)
 		return
 	}
+	// 書き込みの失敗は、そのまま見せる。黙って消えると、
+	// 学習者は「記録できた」と思ったまま先へ進んでしまう。
+	var serr error
 	switch r.FormValue("action") {
 	case "done":
-		_ = sh.Tick(n, true)
+		serr = sh.Tick(n, true)
 	case "later":
-		_ = state.Skip(unit, n)
+		serr = state.Skip(unit, n)
 	case "stuck":
 		if memo := strings.TrimSpace(r.FormValue("memo")); memo != "" {
-			_ = AppendStuck(sess.Log, fmt.Sprintf("%s 課題%d: %s", unit, n, memo))
+			if serr = sess.EnsureLog(); serr == nil {
+				serr = AppendStuck(sess.Log, fmt.Sprintf("%s 課題%d: %s", unit, n, memo))
+			}
 		}
-		_ = state.Skip(unit, n)
+		if serr == nil {
+			serr = state.Skip(unit, n)
+		}
 	case "hint":
 		http.Redirect(w, r, "/session?hint=1", http.StatusSeeOther)
 		return
@@ -249,7 +269,11 @@ func (s *server) handleSessionTask(w http.ResponseWriter, r *http.Request) {
 		if unit == p.DBUnit && unit != p.Unit {
 			id = StepDB
 		}
-		_ = state.Finish(id)
+		serr = state.Finish(id)
+	}
+	if serr != nil {
+		s.fail(w, st, "記録できません", serr.Error())
+		return
 	}
 	http.Redirect(w, r, "/session", http.StatusSeeOther)
 }
@@ -262,6 +286,10 @@ func (s *server) handleEnd(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, nil, "読めません", err.Error())
 		return
 	}
+	if err := sess.EnsureLog(); err != nil {
+		s.fail(w, st, "書けません", err.Error())
+		return
+	}
 	st.Fields = RetroFields(sess.Log)
 	st.LogPath = rel(s.root, sess.Log)
 	state := LoadState(s.root, sess)
@@ -271,8 +299,7 @@ func (s *server) handleEnd(w http.ResponseWriter, r *http.Request) {
 		st.TaskDone, st.TaskTotal = sh.Counts()
 		st.TaskPercent = percent(st.TaskDone, st.TaskTotal)
 		for _, f := range sh.KeepFiles() {
-			info, err := os.Stat(filepath.Join(sh.Dir(), f))
-			st.Keep = append(st.Keep, keepView{Name: f, Have: err == nil && info.Size() > 0})
+			st.Keep = append(st.Keep, keepView{Name: f, Have: sh.HaveKeep(f)})
 		}
 		st.CanFinishUnit = st.TaskTotal > 0 && st.TaskDone == st.TaskTotal &&
 			len(sh.MissingFiles()) == 0 && !p.IsDone(p.Unit)
@@ -324,8 +351,7 @@ func (s *server) handleEndCheck(w http.ResponseWriter, r *http.Request) {
 	st.TaskDone, st.TaskTotal = sh.Counts()
 	st.TaskPercent = percent(st.TaskDone, st.TaskTotal)
 	for _, f := range sh.KeepFiles() {
-		info, statErr := os.Stat(filepath.Join(sh.Dir(), f))
-		st.Keep = append(st.Keep, keepView{Name: f, Have: statErr == nil && info.Size() > 0})
+		st.Keep = append(st.Keep, keepView{Name: f, Have: sh.HaveKeep(f)})
 	}
 	st.CanFinishUnit = st.TaskTotal > 0 && st.TaskDone == st.TaskTotal &&
 		len(sh.MissingFiles()) == 0 && !p.IsDone(p.Unit)
@@ -389,16 +415,20 @@ func (s *server) handleNote(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/session", http.StatusSeeOther)
 		return
 	}
+	st, _, _, err := s.base("", "session")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
 	unit := r.FormValue("unit")
 	text := strings.TrimSpace(r.FormValue("text"))
 	if sh, err := LoadSheet(s.root, unit); err == nil && text != "" {
-		_ = sh.AppendNote(text)
+		if err := sh.AppendNote(text); err != nil {
+			s.fail(w, st, "書けません", err.Error())
+			return
+		}
 	}
-	back := r.FormValue("back")
-	if back == "" {
-		back = "/session"
-	}
-	http.Redirect(w, r, back, http.StatusSeeOther)
+	http.Redirect(w, r, backPath(r.FormValue("back"), "/session"), http.StatusSeeOther)
 }
 
 // handleHelp は、この画面の使い方。

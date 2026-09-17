@@ -55,6 +55,7 @@
 	{{if .Advice}}<div class="advice"><strong>{{.TaskMins}}分たちました</strong>{{.Advice}}</div>{{end}}
 
 	<form class="actions" action="/session/task" method="post">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 		<input type="hidden" name="unit" value="{{.Sheet.Unit}}">
 		<input type="hidden" name="n" value="{{.Task.N}}">
 		<button class="btn primary big" name="action" value="done">できた</button>
@@ -76,6 +77,7 @@
 	<details class="aside">
 		<summary>メモを書く（{{.NotesPath}}）</summary>
 		<form action="/note" method="post">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 			<input type="hidden" name="unit" value="{{.Sheet.Unit}}">
 			<input type="hidden" name="back" value="/session">
 			<div class="field">
@@ -92,6 +94,7 @@
 		<summary>詰まった</summary>
 		<p class="small muted">15分たったら、エラー文を全文読む → <code>man</code> → 最小の再現 → 検索、の順に切り替える。45分で打ち切って、次の課題へ。</p>
 		<form action="/session/task" method="post">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 			<input type="hidden" name="unit" value="{{.Sheet.Unit}}">
 			<input type="hidden" name="n" value="{{.Task.N}}">
 			<input type="hidden" name="action" value="stuck">
@@ -123,6 +126,7 @@
 	</div>
 	{{end}}
 	<form class="actions" action="/session/step" method="post">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 		<input type="hidden" name="step" value="{{.Step.ID}}">
 		{{if eq .StepIDStr "retro"}}
 		<a class="btn primary big" href="/retro">振り返りを書く</a>
@@ -142,6 +146,7 @@
 	<a class="btn" href="/">いまの状態</a>
 	{{if gt .StepIndex 1}}
 	<form action="/session/step" method="post" style="display:inline">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 		<input type="hidden" name="step" value="{{.PrevStepID}}">
 		<input type="hidden" name="action" value="reopen">
 		<button class="btn" type="submit">前の枠に戻る</button>
@@ -179,6 +184,7 @@
 <ul>{{range .Keep}}<li>{{if .Have}}☑{{else}}☐{{end}} <code>{{.Name}}</code>{{if not .Have}} <span class="muted small">まだ無い（または空）</span>{{end}}</li>{{end}}</ul>
 <div class="row">
 	<form action="/end/check" method="post" style="display:inline">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 		<button class="btn" type="submit">確認コマンドを走らせる</button>
 	</form>
 	<span class="small muted">shellcheck、go vet、go test など。結果はそのまま出す</span>
@@ -187,6 +193,7 @@
 
 {{if .CanFinishUnit}}
 <form action="/end/done" method="post" class="row">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 	<input type="hidden" name="unit" value="{{.Progress.Unit}}">
 	<div class="field" style="flex:1; min-width:12rem">
 		<label for="next">完了として記録する（次のユニットのID。空なら変えない）</label>
@@ -203,6 +210,7 @@
 {{if .Dirty}}
 <pre><code>{{.Dirty}}</code></pre>
 <form action="/end/commit" method="post">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 	<div class="field">
 		<label for="msg">コミットメッセージ（「[no-ai] {{.Progress.Unit}}: 」に続ける）</label>
 		<input id="msg" type="text" name="message" placeholder="例: xxdでUTF-8のバイト列を確認">
@@ -215,10 +223,12 @@
 {{else}}
 <p>変更はありません（すべてコミット済み）。</p>
 {{end}}
-{{if .Ahead}}<p class="warn-line">push していないコミットが{{.Ahead}}件あります。<form action="/end/commit" method="post" style="display:inline"><button class="btn" name="action" value="push">push する</button></form></p>{{end}}
+{{if .Ahead}}<p class="warn-line">push していないコミットが{{.Ahead}}件あります。<form action="/end/commit" method="post" style="display:inline">
+	<input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn" name="action" value="push">push する</button></form></p>{{end}}
 
 <div class="row">
 	<form action="/session/step" method="post" style="display:inline">
+	<input type="hidden" name="csrf" value="{{.CSRF}}">
 		<input type="hidden" name="step" value="end">
 		<input type="hidden" name="action" value="finish">
 		<button class="btn primary big" type="submit">今日を終える</button>

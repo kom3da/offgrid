@@ -100,21 +100,20 @@ func showSections(sh *Sheet, names ...string) {
 
 // ---------------------------------------------------------------- 案内
 
-func guideUnit(sh *Sheet, s *Session) error {
-	if created, err := sh.EnsureWork(); err != nil {
+// guideUnit は、課題を1問ずつ出す。「あとで」の印は state に残すので、
+// ブラウザ（offgrid serve）に移っても、同じところから続けられる。
+func guideUnit(sh *Sheet, s *Session, state *SessionState) error {
+	created, added, err := sh.EnsureWork()
+	if err != nil {
 		return err
-	} else if created {
-		fmt.Println(dim("  作業記録を作りました: " + rel(sh.root, sh.WorkPath())))
 	}
-	skip := map[int]bool{}
+	if created {
+		fmt.Println(dim("  作業記録を作りました: " + rel(sh.root, sh.WorkPath())))
+	} else if len(added) > 0 {
+		fmt.Println(dim(fmt.Sprintf("  課題が増えていたので、作業記録に%d行足しました", len(added))))
+	}
 	for {
-		var next int
-		for _, n := range sh.Todo() {
-			if !skip[n] {
-				next = n
-				break
-			}
-		}
+		next, onlyLater := state.NextTask(sh)
 		done, total := sh.Counts()
 		if next == 0 {
 			if total > 0 && done == total {
@@ -126,7 +125,14 @@ func guideUnit(sh *Sheet, s *Session) error {
 			return nil
 		}
 		fmt.Println()
+		if onlyLater {
+			say(dim("あとで回した課題に戻ってきました"))
+		}
 		showTask(sh, next)
+		state.OpenTask(sh.Unit, next)
+		if advice := taskAdvice(state.TaskMinutes(sh.Unit, next)); advice != "" {
+			say(yellow(advice))
+		}
 		got, err := ask("  [Enter]できた  [s]詰まった  [l]あとで  [k]手がかり  [d]枠を終える  [q]中断: ",
 			"", "y", "s", "l", "k", "d", "q")
 		if err != nil {
@@ -150,10 +156,14 @@ func guideUnit(sh *Sheet, s *Session) error {
 				}
 				fmt.Println(green("  → 詰まりメモに書きました"))
 			}
-			say(dim("15分たったら、エラー文を全文読む→man→最小の再現→検索、の順に切り替える。45分で打ち切る"))
-			skip[next] = true
+			say(dim("15分たったら、エラー文を全文読む→man→最小の再現→公式ドキュメント、の順に切り替える。45分で打ち切る"))
+			if err := state.Skip(sh.Unit, next); err != nil {
+				return err
+			}
 		case "l":
-			skip[next] = true
+			if err := state.Skip(sh.Unit, next); err != nil {
+				return err
+			}
 		case "k":
 			fmt.Println()
 			showSections(sh, "キーワード", "詰まりやすいところ", "平日に読むもの")
@@ -165,78 +175,99 @@ func guideUnit(sh *Sheet, s *Session) error {
 	}
 }
 
+// cmdRun は、その回を上から順に案内する。
+// どこまで進んだかは state（logs/<年>/.<月-日>.state.json）に残すので、
+// ブラウザ（offgrid serve）と行き来しても、続きから進められる。
 func cmdRun(root string, p *Progress, s *Session) error {
+	if err := s.EnsureLog(); err != nil {
+		return err
+	}
 	welcome(root, p, s)
 	dashboard(root, p, s)
 	fmt.Println()
 	say(dim("上から順に案内します。q で中断できます（続きから再開できます）"))
-	plan := StagePlan(p.Stage)
-	step := 0
-
-	step++
-	fmt.Println()
-	rule(fmt.Sprintf("%d. ウォームアップ（30分）", step))
-	say(s.Warmup())
-	say("＋ 前回のレビューで指摘された箇所の直しを1件")
-	if lg := s.ReviewLog(); lg != "" {
-		say(dim("見返すログ: " + rel(root, lg)))
-	}
-	if _, err := ask("\n  終わったら Enter（q=中断）: ", "", "q"); err != nil {
-		return err
-	}
-
-	sh, err := LoadSheet(root, p.Unit)
-	if err != nil {
-		return err
-	}
-	step++
-	fmt.Println()
-	rule(fmt.Sprintf("%d. メイン（%s）／ %s %s", step, plan.Main, p.Unit, sh.Title))
-	say(dim(fmt.Sprintf("シート: %s　Web検索は%sまで", rel(root, sh.Path), plan.Search)))
-	if err := guideUnit(sh, s); err != nil {
-		return err
-	}
-
-	if plan.DB != "" {
-		step++
-		fmt.Println()
-		if db, err := LoadSheet(root, p.DBUnit); err == nil {
-			rule(fmt.Sprintf("%d. PostgreSQL（%s）／ %s", step, plan.DB, db.Unit))
-			if err := guideUnit(db, s); err != nil {
-				return err
-			}
-		} else {
-			rule(fmt.Sprintf("%d. PostgreSQL（%s）", step, plan.DB))
-			say("PROGRESS.md の「現在」に「- 次のPostgreSQLユニット：D1」の行を足すと、ここでも案内します")
-			if _, err := ask("\n  終わったら Enter（q=中断）: ", "", "q"); err != nil {
-				return err
+	state := LoadState(root, s)
+	steps := sessionSteps(p, s)
+	for {
+		step, ok := state.Current(steps)
+		if !ok {
+			fmt.Println()
+			fmt.Println(green("  今日のぶんは、全部終わりました。お疲れさま"))
+			return nil
+		}
+		index := 1
+		for i, v := range steps {
+			if v.ID == step.ID {
+				index = i + 1
 			}
 		}
+		if err := state.Start(step.ID); err != nil {
+			return err
+		}
+		fmt.Println()
+		head := fmt.Sprintf("%d/%d. %s", index, len(steps), step.Label)
+		if step.Minutes != "" {
+			head += "（" + step.Minutes + "）"
+		}
+		rule(head)
+		if err := runStep(root, p, s, state, step); err != nil {
+			return err
+		}
+		if err := state.Finish(step.ID); err != nil {
+			return err
+		}
 	}
+}
 
-	step++
-	fmt.Println()
-	rule(fmt.Sprintf("%d. %s（1.5時間）", step, s.Afternoon()))
-	if s.Afternoon() == "コードリーディング" {
-		say("読解課題は docs/05-debug-and-reading.md の一覧から、今のステージのものを選ぶ。メモは drills/reading/ に置く")
-	} else {
-		say("問題は drills/debug/ の中。答え（answers/）は、3つ直し終わるまで開かない。直したら、そのバグを見つけるテストを1本足す")
-	}
-	if _, err := ask("\n  終わったら Enter（q=中断）: ", "", "q"); err != nil {
+// runStep は、1つの枠を案内する。
+func runStep(root string, p *Progress, s *Session, state *SessionState, step Step) error {
+	switch step.ID {
+	case StepMain, StepDB:
+		unit := p.Unit
+		if step.ID == StepDB {
+			unit = p.DBUnit
+		}
+		sh, err := LoadSheet(root, unit)
+		if err != nil {
+			if step.ID == StepDB {
+				say("PROGRESS.md の「現在」に「- 次のPostgreSQLユニット：D1」の行を足すと、ここでも案内します")
+				_, err := ask("\n  終わったら Enter（q=中断）: ", "", "q")
+				return err
+			}
+			return err
+		}
+		say(dim("シート: " + rel(root, sh.Path)))
+		return guideUnit(sh, s, state)
+	case StepWarmup:
+		say(s.Warmup())
+		say("＋ 前回のレビューで指摘された箇所の直しを1件")
+		if lg := s.ReviewLog(); lg != "" {
+			say(dim("見返すログ: " + rel(root, lg)))
+		}
+		if notes := lastStuckNotes(s); len(notes) > 0 {
+			fmt.Println()
+			say(yellow("前回、ここで止まっています："))
+			for _, n := range notes {
+				say("  - " + n)
+			}
+			say(dim("同じところで止まるなら、それが今の弱点。ウォームアップの題材にしてよい"))
+		}
+		_, err := ask("\n  終わったら Enter（q=中断）: ", "", "q")
 		return err
-	}
-
-	step++
-	fmt.Println()
-	rule(fmt.Sprintf("%d. 振り返り（30分）", step))
-	if err := cmdRetro(root, s, nil); err != nil {
+	case StepAfternoon:
+		if s.Afternoon() == "コードリーディング" {
+			say("読解課題は docs/05-debug-and-reading.md の一覧から、今のステージのものを選ぶ。メモは drills/reading/ に置く")
+		} else {
+			say("問題は drills/debug/ の中。答え（answers/）は、3つ直し終わるまで開かない。直したら、そのバグを見つけるテストを1本足す")
+		}
+		_, err := ask("\n  終わったら Enter（q=中断）: ", "", "q")
 		return err
+	case StepRetro:
+		return cmdRetro(root, s, nil)
+	case StepEnd:
+		return cmdEnd(root, p, s)
 	}
-
-	step++
-	fmt.Println()
-	rule(fmt.Sprintf("%d. 終わりの手続き", step))
-	return cmdEnd(root, p, s)
+	return nil
 }
 
 // ---------------------------------------------------------------- 各サブコマンド
@@ -282,10 +313,14 @@ func cmdNext(root string, p *Progress, args []string) error {
 	if err != nil {
 		return err
 	}
-	if created, err := sh.EnsureWork(); err != nil {
+	created, added, err := sh.EnsureWork()
+	if err != nil {
 		return err
-	} else if created {
+	}
+	if created {
 		fmt.Println(dim("  作業記録を作りました: " + rel(root, sh.WorkPath())))
+	} else if len(added) > 0 {
+		fmt.Println(dim(fmt.Sprintf("  課題が増えていたので、作業記録に%d行足しました", len(added))))
 	}
 	todo := sh.Todo()
 	if len(todo) == 0 {
@@ -329,7 +364,11 @@ func cmdStatus(root string, p *Progress, s *Session) error {
 	rule("セッション")
 	if len(s.Past) > 0 {
 		say(fmt.Sprintf("済んだ回数: %d回（最後: %s）", len(s.Past), rel(root, s.Past[len(s.Past)-1])))
-		say(fmt.Sprintf("4回ごとの見直しまで: あと %d回", 4-len(s.Past)%4))
+		if n := len(s.Past) % 4; n == 0 {
+			say("4回ごとの見直し: 今回がその回")
+		} else {
+			say(fmt.Sprintf("4回ごとの見直しまで: あと %d回", 4-n))
+		}
 	} else {
 		say("済んだ回数: 0回")
 	}
@@ -511,8 +550,7 @@ func cmdCheck(root string, p *Progress, args []string) error {
 		say("課題シートの「残すもの」を見る")
 	}
 	for _, f := range keep {
-		st, err := os.Stat(filepath.Join(sh.Dir(), f))
-		if err == nil && st.Size() > 0 {
+		if sh.HaveKeep(f) {
 			fmt.Println("  " + green("[済]") + " " + f)
 		} else {
 			fmt.Println("  " + yellow("[未]") + " " + f)
@@ -535,6 +573,9 @@ func cmdStuck(root string, s *Session, args []string) error {
 	}
 	if text == "" {
 		return nil
+	}
+	if err := s.EnsureLog(); err != nil {
+		return err
 	}
 	if err := AppendStuck(s.Log, text); err != nil {
 		return err
@@ -564,7 +605,7 @@ func cmdTimer(args []string) error {
 	}
 	fmt.Print("\a\n")
 	fmt.Println(yellow("  時間です。"))
-	say("詰まっているなら、エラー文を全文読む→man→最小の再現→検索、の順に切り替える")
+	say("詰まっているなら、エラー文を全文読む→man→最小の再現→公式ドキュメント、の順に切り替える")
 	return nil
 }
 
@@ -572,6 +613,8 @@ func cmdRetro(root string, s *Session, args []string) error {
 	log := s.Log
 	if len(args) > 0 {
 		log = filepath.Join(root, args[0])
+	} else if err := s.EnsureLog(); err != nil {
+		return err
 	}
 	if _, err := os.Stat(log); err != nil {
 		return fmt.Errorf("%s がありません", rel(root, log))
@@ -583,11 +626,11 @@ func cmdRetro(root string, s *Session, args []string) error {
 	}
 	say(dim("1つずつ聞きます。Enterだけで飛ばせます。q でやめます"))
 	fmt.Println()
-	seen := map[int]bool{}
+	seen := map[string]bool{}
 	for {
 		var target *RetroField
 		for _, f := range RetroFields(log) {
-			if !seen[f.Line] {
+			if !seen[f.Key] {
 				ff := f
 				target = &ff
 				break
@@ -596,7 +639,7 @@ func cmdRetro(root string, s *Session, args []string) error {
 		if target == nil {
 			break
 		}
-		seen[target.Line] = true
+		seen[target.Key] = true
 		got, err := ask(fmt.Sprintf("  %s\n  > ", target.Label))
 		if err != nil {
 			return err
@@ -605,7 +648,7 @@ func cmdRetro(root string, s *Session, args []string) error {
 			break
 		}
 		if got != "" {
-			if err := RetroWrite(log, target.Line, got); err != nil {
+			if err := RetroWrite(log, target.Key, got); err != nil {
 				return err
 			}
 		}
@@ -665,6 +708,9 @@ func cmdDone(root string, p *Progress, args []string) error {
 }
 
 func cmdEnd(root string, p *Progress, s *Session) error {
+	if err := s.EnsureLog(); err != nil {
+		return err
+	}
 	rule("今日の振り返り")
 	holes := RetroFields(s.Log)
 	if len(holes) > 0 {

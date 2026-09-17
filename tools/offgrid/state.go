@@ -106,7 +106,10 @@ func (st *SessionState) save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(st.path, append(raw, '\n'), 0o644)
+	if err := os.MkdirAll(filepath.Dir(st.path), 0o755); err != nil {
+		return err
+	}
+	return writeFile(st.path, append(raw, '\n'))
 }
 
 func (st *SessionState) IsDone(id StepID) bool { return st.Steps[id].Done }

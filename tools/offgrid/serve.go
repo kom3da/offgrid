@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,6 +25,7 @@ var tmpl = template.Must(template.ParseFS(webFS, "web/layout.html", "web/session
 // serveState は、1つの画面に渡すもの。テンプレートから読む。
 type serveState struct {
 	Title, Nav, Query, Version, Repo string
+	CSRF                             string
 	Unit                             string
 	Progress                         *Progress
 	Session                          *Session
@@ -125,7 +127,8 @@ type hitView struct {
 }
 
 type server struct {
-	root string
+	root  string
+	token string // 画面が出す合い言葉。書き込みのときに確かめる（CSRF対策）
 }
 
 func percent(done, total int) int {
@@ -147,7 +150,7 @@ func (s *server) base(title, nav string) (*serveState, *Progress, *Session, erro
 	}
 	st := &serveState{
 		Title: title, Nav: nav, Version: version, Repo: s.root,
-		Unit: p.Unit, Progress: p, Session: sess,
+		Unit: p.Unit, Progress: p, Session: sess, CSRF: s.token,
 	}
 	return st, p, sess, nil
 }
@@ -277,7 +280,7 @@ func (s *server) handleUnit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, st, "見つかりません", err.Error())
 		return
 	}
-	if _, err := sh.EnsureWork(); err != nil {
+	if _, _, err := sh.EnsureWork(); err != nil {
 		s.fail(w, st, "書けません", err.Error())
 		return
 	}
@@ -302,8 +305,7 @@ func (s *server) handleUnit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	for _, f := range sh.KeepFiles() {
-		info, err := os.Stat(filepath.Join(sh.Dir(), f))
-		st.Keep = append(st.Keep, keepView{Name: f, Have: err == nil && info.Size() > 0})
+		st.Keep = append(st.Keep, keepView{Name: f, Have: sh.HaveKeep(f)})
 	}
 	s.render(w, "unit", st)
 }
@@ -313,12 +315,22 @@ func (s *server) handleTick(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+	st, _, _, err := s.base("課題", "unit")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
 	unit := r.FormValue("unit")
 	n, _ := strconv.Atoi(r.FormValue("n"))
 	done := r.FormValue("done") == "1"
 	sh, err := LoadSheet(s.root, unit)
-	if err == nil && n > 0 {
-		_ = sh.Tick(n, done)
+	if err != nil || n <= 0 {
+		s.fail(w, st, "記録できません", "ユニットか課題の番号が違います")
+		return
+	}
+	if err := sh.Tick(n, done); err != nil {
+		s.fail(w, st, "記録できません", err.Error())
+		return
 	}
 	http.Redirect(w, r, "/unit/"+unit+"#task", http.StatusSeeOther)
 }
@@ -331,31 +343,36 @@ func (s *server) handleRetro(w http.ResponseWriter, r *http.Request) {
 	}
 	log := sess.Log
 	if v := r.FormValue("file"); v != "" {
-		cand := filepath.Join(s.root, filepath.Clean("/"+v))
-		if strings.HasPrefix(cand, filepath.Join(s.root, "logs")) {
+		if cand, ok := s.logPath(v); ok {
 			log = cand
 		}
 	}
-	if r.Method == http.MethodPost {
-		// 行番号がずれないように、うしろの行から書く
-		type entry struct {
-			line int
-			text string
+	if log == sess.Log {
+		// 振り返りは書くために開く画面なので、ここでファイルを用意する
+		if err := sess.EnsureLog(); err != nil {
+			s.fail(w, st, "書けません", err.Error())
+			return
 		}
-		var entries []entry
+	}
+	if r.Method == http.MethodPost {
+		// 見出しと項目名で探して書く。行番号を覚えておくと、
+		// 画面を出したあとにファイルへ1行入るだけで、書き先がずれてしまう。
+		var failed []string
 		for key, vals := range r.Form {
-			if !strings.HasPrefix(key, "line-") || len(vals) == 0 || strings.TrimSpace(vals[0]) == "" {
+			if !strings.HasPrefix(key, "field-") || len(vals) == 0 || strings.TrimSpace(vals[0]) == "" {
 				continue
 			}
-			if n, err := strconv.Atoi(strings.TrimPrefix(key, "line-")); err == nil {
-				entries = append(entries, entry{n, strings.TrimSpace(vals[0])})
+			if err := RetroWrite(log, strings.TrimPrefix(key, "field-"), strings.TrimSpace(vals[0])); err != nil {
+				failed = append(failed, err.Error())
 			}
 		}
-		sort.Slice(entries, func(i, j int) bool { return entries[i].line > entries[j].line })
-		for _, e := range entries {
-			_ = RetroWrite(log, e.line, e.text)
+		if len(failed) > 0 {
+			sort.Strings(failed)
+			st.LogPath = rel(s.root, log)
+			s.fail(w, st, "書けなかった欄があります", strings.Join(failed, " / "))
+			return
 		}
-		http.Redirect(w, r, "/retro?file="+rel(s.root, log), http.StatusSeeOther)
+		http.Redirect(w, r, "/retro?file="+url.QueryEscape(rel(s.root, log)), http.StatusSeeOther)
 		return
 	}
 	st.LogPath = rel(s.root, log)
@@ -372,10 +389,19 @@ func (s *server) handleRetro(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleStuck(w http.ResponseWriter, r *http.Request) {
-	_, _, sess, err := s.base("", "home")
-	if err == nil {
-		if text := strings.TrimSpace(r.FormValue("text")); text != "" {
-			_ = AppendStuck(sess.Log, text)
+	st, _, sess, err := s.base("", "home")
+	if err != nil {
+		s.fail(w, nil, "読めません", err.Error())
+		return
+	}
+	if text := strings.TrimSpace(r.FormValue("text")); text != "" {
+		if err := sess.EnsureLog(); err != nil {
+			s.fail(w, st, "書けません", err.Error())
+			return
+		}
+		if err := AppendStuck(sess.Log, text); err != nil {
+			s.fail(w, st, "書けません", err.Error())
+			return
 		}
 	}
 	http.Redirect(w, r, "/retro", http.StatusSeeOther)
@@ -432,11 +458,14 @@ func (s *server) handleFile(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, nil, "読めません", err.Error())
 		return
 	}
-	relPath := filepath.Clean("/" + strings.TrimPrefix(r.URL.Path, "/file/"))
-	path := filepath.Join(s.root, relPath)
+	path, ok := s.markdownPath(strings.TrimPrefix(r.URL.Path, "/file/"))
+	if !ok {
+		s.fail(w, st, "開けません", "この道具から開けるのは、カリキュラムと自分の書いたMarkdownだけです（答えのファイルは開きません）")
+		return
+	}
 	raw, err := os.ReadFile(path)
-	if err != nil || !strings.HasSuffix(path, ".md") {
-		s.fail(w, st, "開けません", "Markdown のファイルだけを表示します")
+	if err != nil {
+		s.fail(w, st, "開けません", "そのファイルはありません")
 		return
 	}
 	st.Title, st.DocTitle, st.DocPath = filepath.Base(path), filepath.Base(path), rel(s.root, path)
@@ -506,21 +535,6 @@ func (s *server) handleFind(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "find", st)
 }
 
-// onlyLocal は、手元からの接続だけを通す。ファイルを書き換えるので、外には出さない。
-func onlyLocal(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		host, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			host = r.RemoteAddr
-		}
-		if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
-			http.Error(w, "このページは、同じマシンからだけ開けます", http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func cmdServe(root string, args []string) error {
 	port := "7777"
 	open := false
@@ -539,7 +553,7 @@ func cmdServe(root string, args []string) error {
 			}
 		}
 	}
-	s := &server{root: root}
+	s := &server{root: root, token: newToken()}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
@@ -587,7 +601,7 @@ func cmdServe(root string, args []string) error {
 	if open {
 		go openBrowser(url)
 	}
-	srv := &http.Server{Handler: onlyLocal(mux), ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Handler: s.guard(mux), ReadHeaderTimeout: 5 * time.Second}
 	return srv.Serve(ln)
 }
 
