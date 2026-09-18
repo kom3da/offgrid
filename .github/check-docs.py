@@ -31,6 +31,15 @@ RETIRED = [
     ("GNUコマンド", "Ubuntu 26.04 の coreutils は uutils（CLAUDE.md を参照）"),
     ("週1回前提", "ペースは学習者が決める（docs/04）"),
     ("週次レビュー", "セッションを暦に結び付けない（docs/04）"),
+    # 閉域は目的ではなく動機（docs/01）。測るのは「AIなしで自分でできるか」
+    ("ネットワークを切", "ネットワークは切らない。測るのはAIなしで自分でできるか（docs/01・04）"),
+    ("ネットワーク遮断", "同上"),
+    ("閉域シミュレーション", "O8 は「引き継ぎ」になった"),
+    ("閉域の準備", "O7 は「再現できるビルド」になった"),
+    ("閉域での再構築", "C7 は「障害試験と runbook」になった"),
+    ("閉域AIデー", "廃止した（弱いAIを使えるかは目的ではない）"),
+    ("運用と閉域", "トラック名は「運用」"),
+    ("オフライン開発", "同上"),
 ]
 # 引退語を書いてよい場所（その言い回し自体を説明しているファイル）
 ALLOW = {
@@ -120,8 +129,8 @@ def check_links():
 def check_retired():
     for path in md_files():
         r = rel(path)
-        if r.startswith(".github/"):
-            continue  # この検査スクリプト自身
+        if r.startswith(".github/") or r == "CHANGELOG.md":
+            continue  # この検査スクリプト自身と、引退したことを記録する変更履歴
         for i, line in enumerate(read(path).splitlines(), 1):
             for phrase, why in RETIRED:
                 if phrase in line and r not in ALLOW.get(phrase, set()):
@@ -214,7 +223,18 @@ def check_numbers():
                 f"docs/03 の Stage {stage} の目安が合わない  書いてある: {lo}〜{hi}回 / "
                 f"課題シートの合計＋実技{exam}回: {want_lo}〜{want_hi}回"
             )
-    notes.append(f"数の整合：ユニット {len(units)} 本、ステージ {len(stated)} 個を検査した")
+    # 全体の回数（docs/01・03・04 の「約N〜M回／セッション」）が、ステージの合計と合うか
+    t_lo = sum(per_stage.get(s, [0, 0])[0] + (0 if s == "5" else 1) for s in "012345")
+    t_hi = sum(per_stage.get(s, [0, 0])[1] + (0 if s == "5" else 1) for s in "012345")
+    for path in ("docs/01-overview.md", "docs/03-roadmap.md", "docs/04-ai-free-day.md"):
+        text = read(os.path.join(ROOT, path))
+        found = re.findall(r"約(\d+)〜(\d+)(?:回|セッション)", text)
+        if not found:
+            add(f"{path} に全体の目安（約N〜M回）が無い")
+        for lo, hi in found:
+            if (int(lo), int(hi)) != (t_lo, t_hi):
+                add(f"{path} の全体の目安が合わない  書いてある: 約{lo}〜{hi} / ステージの合計: {t_lo}〜{t_hi}")
+    notes.append(f"数の整合：ユニット {len(units)} 本、ステージ {len(stated)} 個、全体 {t_lo}〜{t_hi} 回を検査した")
 
 
 # ----------------------------------------------------------------

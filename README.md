@@ -1,6 +1,6 @@
 # offgrid
 
-offgridは、AIに頼らずに「書ける・読める・直せる」力と、ネットワークが無い環境でも開発を回せる力を、ゼロから付け直すための学習カリキュラム。コンピュータの仕組み・Linux・Git・ネットワークから、Go・PostgreSQL・TypeScript、閉域での運用までを、「AIなしデー」（1セッション）を積み上げて進める。最後に、閉域でも動く監視ダッシュボード「watchdeck」を自力で完成させる。
+offgridは、AIに頼らずに、自分で「書ける・読める・直せる」力を、ゼロから付け直すための学習カリキュラム。コンピュータの仕組み・Linux・Git・ネットワークから、Go・PostgreSQL・TypeScript、運用までを、「AIなしデー」（1セッション）を積み上げて進める。最後に、監視ダッシュボード「watchdeck」を自力で完成させ、他人が書いたコードも引き継げるようになる。
 
 **ブラウザで読む：<https://kom3da.github.io/offgrid/>**（このリポジトリの `docs/`、課題シート、`prompts/` と同じ内容）
 
@@ -29,7 +29,7 @@ offgridは、AIに頼らずに「書ける・読める・直せる」力と、�
 - [G：Go](docs/11-track-g-go.md)（Stage 1〜3、G1〜G20）
 - [T：Webフロントエンド](docs/12-track-t-web.md)（Stage 2〜3、T1〜T11）
 - [D：PostgreSQL](docs/13-track-d-postgresql.md)（Stage 1〜3、D1〜D15）
-- [O：運用と閉域](docs/14-track-o-ops.md)（Stage 4、O1〜O9）
+- [O：運用](docs/14-track-o-ops.md)（Stage 4、O1〜O9）
 - [C：卒業制作 watchdeck](docs/15-track-c-capstone.md)（Stage 5、C1〜C8）
 
 資料は[教材とツール](docs/20-resources.md)、AIに頼むときの文面は [prompts/](prompts/) にある。
@@ -44,7 +44,7 @@ offgridは、AIに頼らずに「書ける・読める・直せる」力と、�
 │   ├── go/            # G：Go            （G02-control-flow/ など）
 │   ├── ts/            # T：Webフロントエンド（T03-dom-events/ など）
 │   ├── sql/           # D：PostgreSQL    （D03-aggregate/ など）
-│   ├── infra/         # O：運用と閉域      （O04-dockerfile/ など）
+│   ├── infra/         # O：運用            （O04-dockerfile/ など）
 │   ├── capstone/      # C：卒業制作の各ステップの課題シート
 │   ├── debug/         # デバッグドリルの問題（YYYY-MM-DD-<テーマ>/）
 │   └── reading/       # コードリーディングのメモ
