@@ -67,6 +67,7 @@ type serveState struct {
 	Guide         template.HTML
 	CanFinishUnit bool
 	Dirty         string
+	Excluded      []string // コミットから外した実行ファイル
 	Ahead         int
 	Advice        template.HTML
 	TaskMins      int
@@ -487,7 +488,7 @@ func (s *server) handleFind(w http.ResponseWriter, r *http.Request) {
 			sort.Strings(paths)
 			for _, path := range paths {
 				name := filepath.Base(path)
-				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) {
+				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) || underAnswers(rel(s.root, path)) {
 					continue
 				}
 				raw, err := os.ReadFile(path)
@@ -498,8 +499,16 @@ func (s *server) handleFind(w http.ResponseWriter, r *http.Request) {
 					if !strings.Contains(line, q) {
 						continue
 					}
-					text := template.HTMLEscapeString(strings.TrimSpace(line))
-					text = strings.ReplaceAll(text, template.HTMLEscapeString(q), "<mark>"+template.HTMLEscapeString(q)+"</mark>")
+					// 生の行を検索語で切ってから各断片をエスケープする。
+					// エスケープ後に置き換えると、&amp; の途中に <mark> が入る
+					var b strings.Builder
+					for j, part := range strings.Split(strings.TrimSpace(line), q) {
+						if j > 0 {
+							b.WriteString("<mark>" + template.HTMLEscapeString(q) + "</mark>")
+						}
+						b.WriteString(template.HTMLEscapeString(part))
+					}
+					text := b.String()
 					hits = append(hits, hitView{
 						Path: rel(s.root, path),
 						Link: s.linkRewriter(filepath.Join(s.root, "x"))(rel(s.root, path)),

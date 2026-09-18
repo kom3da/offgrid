@@ -207,10 +207,12 @@
 {{end}}
 
 <h2>3. コミット</h2>
+{{if .Excluded}}<p class="warn-line">実行ファイルらしいので、コミットから外した：{{range .Excluded}}<code>{{.}}</code> {{end}}（課題シートの「残すもの」を見る）</p>{{end}}
 {{if .Dirty}}
 <pre><code>{{.Dirty}}</code></pre>
 <form action="/end/commit" method="post">
 	<input type="hidden" name="csrf" value="{{.CSRF}}">
+	<input type="hidden" name="unit" value="{{.Progress.Unit}}">
 	<div class="field">
 		<label for="msg">コミットメッセージ（「[no-ai] {{.Progress.Unit}}: 」に続ける）</label>
 		<input id="msg" type="text" name="message" placeholder="例: xxdでUTF-8のバイト列を確認">

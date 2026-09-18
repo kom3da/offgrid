@@ -116,7 +116,10 @@ func statePath(root string, s *Session) string {
 }
 
 func LoadState(root string, s *Session) *SessionState {
-	path := statePath(root, s)
+	return loadStateFile(statePath(root, s))
+}
+
+func loadStateFile(path string) *SessionState {
 	st := &SessionState{
 		Date:    time.Now().Format("2006-01-02"),
 		Steps:   map[StepID]StepState{},
@@ -145,6 +148,26 @@ func LoadState(root string, s *Session) *SessionState {
 	return &got
 }
 
+// Reload は、ファイルの今の中身を取り込む。ターミナルの run は state を持ち続けるので、
+// 課題を出すたびにこれを呼び、ブラウザ側で「あとで」にした課題を見落とさないようにする。
+func (st *SessionState) Reload() {
+	fresh := loadStateFile(st.path)
+	st.Date, st.Steps, st.Skipped, st.TaskAt = fresh.Date, fresh.Steps, fresh.Skipped, fresh.TaskAt
+}
+
+// mutate は、ファイルから読み直したものに変更を当てて書き、その結果をメモリにも取り込む。
+// ターミナル（run）とブラウザ（serve）は同じファイルを共有していて、片方が持っている
+// 古い state を丸ごと書くと、もう片方が記録した「あとで」「詰まった」「枠の済み」が消える（実際に起きた）。
+func (st *SessionState) mutate(fn func(*SessionState)) error {
+	fresh := loadStateFile(st.path)
+	fn(fresh)
+	if err := fresh.save(); err != nil {
+		return err
+	}
+	st.Date, st.Steps, st.Skipped, st.TaskAt = fresh.Date, fresh.Steps, fresh.Skipped, fresh.TaskAt
+	return nil
+}
+
 func (st *SessionState) save() error {
 	raw, err := json.MarshalIndent(st, "", " ")
 	if err != nil {
@@ -159,30 +182,33 @@ func (st *SessionState) save() error {
 func (st *SessionState) IsDone(id StepID) bool { return st.Steps[id].Done }
 
 func (st *SessionState) Start(id StepID) error {
-	s := st.Steps[id]
-	if s.Started.IsZero() {
-		s.Started = time.Now()
-	}
-	st.Steps[id] = s
-	return st.save()
+	return st.mutate(func(st *SessionState) {
+		s := st.Steps[id]
+		if s.Started.IsZero() {
+			s.Started = time.Now()
+		}
+		st.Steps[id] = s
+	})
 }
 
 func (st *SessionState) Finish(id StepID) error {
-	s := st.Steps[id]
-	s.Done, s.Ended = true, time.Now()
-	if s.Started.IsZero() {
-		s.Started = s.Ended
-	}
-	st.Steps[id] = s
-	return st.save()
+	return st.mutate(func(st *SessionState) {
+		s := st.Steps[id]
+		s.Done, s.Ended = true, time.Now()
+		if s.Started.IsZero() {
+			s.Started = s.Ended
+		}
+		st.Steps[id] = s
+	})
 }
 
 func (st *SessionState) Reopen(id StepID) error {
-	s := st.Steps[id]
-	s.Done = false
-	s.Ended = time.Time{}
-	st.Steps[id] = s
-	return st.save()
+	return st.mutate(func(st *SessionState) {
+		s := st.Steps[id]
+		s.Done = false
+		s.Ended = time.Time{}
+		st.Steps[id] = s
+	})
 }
 
 // Current は、まだ終わっていない最初の枠を返す。全部終わっていれば false。
@@ -196,13 +222,12 @@ func (st *SessionState) Current(steps []Step) (Step, bool) {
 }
 
 func (st *SessionState) Skip(unit string, n int) error {
-	for _, v := range st.Skipped[unit] {
-		if v == n {
-			return nil
+	return st.mutate(func(st *SessionState) {
+		if st.isSkipped(unit, n) {
+			return
 		}
-	}
-	st.Skipped[unit] = append(st.Skipped[unit], n)
-	return st.save()
+		st.Skipped[unit] = append(st.Skipped[unit], n)
+	})
 }
 
 func (st *SessionState) isSkipped(unit string, n int) bool {
@@ -230,18 +255,20 @@ func (st *SessionState) NextTask(sh *Sheet) (int, bool) {
 }
 
 // OpenTask は、その課題を開いた時刻を覚える（同じ課題なら上書きしない）。
-func (st *SessionState) OpenTask(unit string, n int) {
-	key := fmt.Sprintf("%s:%d", unit, n)
-	if _, ok := st.TaskAt[key]; ok {
-		return
-	}
-	for k := range st.TaskAt {
-		if strings.HasPrefix(k, unit+":") {
-			delete(st.TaskAt, k)
+// 書けなかったら、時間の助言が出ないだけなので、呼ぶ側は知らせるだけでよい。
+func (st *SessionState) OpenTask(unit string, n int) error {
+	return st.mutate(func(st *SessionState) {
+		key := fmt.Sprintf("%s:%d", unit, n)
+		if _, ok := st.TaskAt[key]; ok {
+			return
 		}
-	}
-	st.TaskAt[key] = time.Now()
-	_ = st.save()
+		for k := range st.TaskAt {
+			if strings.HasPrefix(k, unit+":") {
+				delete(st.TaskAt, k)
+			}
+		}
+		st.TaskAt[key] = time.Now()
+	})
 }
 
 // TaskMinutes は、その課題を開いてから経った分数を返す。

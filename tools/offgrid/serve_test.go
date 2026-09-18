@@ -81,8 +81,16 @@ func post(t *testing.T, h http.Handler, path string, form url.Values) *httptest.
 func TestGuardBlocksCrossSiteWrites(t *testing.T) {
 	_, h, _ := newServer(t)
 
-	for _, path := range []string{"/end/commit", "/end/check", "/stuck", "/tick", "/session/task"} {
+	// postOnly に足したパスを、このテストに足し忘れないよう、表そのものを回す
+	paths := []string{"/retro"}
+	for p := range postOnly {
+		paths = append(paths, p)
+	}
+	for _, path := range paths {
 		// GET では通さない（<img src> で起こされるのを防ぐ）
+		if path == "/retro" {
+			continue // /retro は GET で読む画面。書く側は下の POST の検査で見る
+		}
 		if w := get(t, h, path+"?action=commit&message=x&text=x"); w.Code != http.StatusMethodNotAllowed {
 			t.Errorf("GET %s = %d, want 405", path, w.Code)
 		}
