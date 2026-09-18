@@ -126,8 +126,16 @@ def check_links():
 # ---------------------------------------------------------------- 2. 引退した言い回し
 
 
+def site_files():
+    """サイトの文面（docs から生成しないページと設定）。SKIP_DIRS の site の中で、これだけは見る。"""
+    for r in ("site/src/content/index.mdx", "site/astro.config.mjs"):
+        p = os.path.join(ROOT, r)
+        if os.path.exists(p):
+            yield p
+
+
 def check_retired():
-    for path in md_files():
+    for path in list(md_files()) + list(site_files()):
         r = rel(path)
         if r.startswith(".github/") or r == "CHANGELOG.md":
             continue  # この検査スクリプト自身と、引退したことを記録する変更履歴
@@ -190,9 +198,9 @@ def check_numbers():
 
     if len(units) != 73:
         add(f"ユニット数が {len(units)} 本（73 のはず）")
-    for path in ("README.md", "docs/30-revision.md", "CLAUDE.md"):
+    for path in ("README.md", "docs/30-revision.md", "CLAUDE.md", "site/src/content/index.mdx"):
         text = read(os.path.join(ROOT, path))
-        for m in re.finditer(r"全?(\d+)ユニット", text):
+        for m in re.finditer(r"(?:全|約)?(\d+)の?ユニット", text):
             if m.group(1) != str(len(units)):
                 add(f"ユニット数の記述が違う  {path}  「{m.group(0)}」 → 実際は {len(units)}")
 
