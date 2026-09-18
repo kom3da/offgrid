@@ -180,11 +180,12 @@ func TestEndDoneAndCommit(t *testing.T) {
 	if !strings.Contains(w.Body.String(), "コミットできません") {
 		t.Errorf("空のメッセージでコミットしようとしている（%d）", w.Code)
 	}
-	w = post(t, h, "/end/commit", url.Values{"action": {"commit"}, "message": {"パイプラインを試した"}})
+	// 画面のフォームは、やっていたユニット（F3）を持っている。「次」を F4 にしたあとでも F3 で付く
+	w = post(t, h, "/end/commit", url.Values{"action": {"commit"}, "message": {"パイプラインを試した"}, "unit": {"F3"}})
 	if w.Code != 303 {
 		t.Fatalf("/end/commit = %d\n%s", w.Code, w.Body.String())
 	}
-	if !strings.Contains(gitSubjects(t, root), "[no-ai] F4: パイプラインを試した") {
+	if !strings.Contains(gitSubjects(t, root), "[no-ai] F3: パイプラインを試した") {
 		t.Errorf("規約どおりに付いていない:\n%s", gitSubjects(t, root))
 	}
 	if dirty, _ := gitOut(root, "status", "--porcelain"); strings.TrimSpace(dirty) != "" {

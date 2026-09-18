@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -113,6 +114,7 @@ func guideUnit(sh *Sheet, s *Session, state *SessionState) error {
 		fmt.Println(dim(fmt.Sprintf("  課題が増えていたので、作業記録に%d行足しました", len(added))))
 	}
 	for {
+		state.Reload() // ブラウザ側で「あとで」にした課題を拾う
 		next, onlyLater := state.NextTask(sh)
 		done, total := sh.Counts()
 		if next == 0 {
@@ -129,7 +131,9 @@ func guideUnit(sh *Sheet, s *Session, state *SessionState) error {
 			say(dim("あとで回した課題に戻ってきました"))
 		}
 		showTask(sh, next)
-		state.OpenTask(sh.Unit, next)
+		if err := state.OpenTask(sh.Unit, next); err != nil {
+			say(yellow("開いた時刻を記録できません: " + err.Error()))
+		}
 		if advice := taskAdvice(state.TaskMinutes(sh.Unit, next)); advice != "" {
 			say(yellow(advice))
 		}
@@ -418,7 +422,7 @@ func cmdFind(root string, args []string) error {
 			sort.Strings(paths)
 			for _, path := range paths {
 				name := filepath.Base(path)
-				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) {
+				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) || underAnswers(rel(root, path)) {
 					continue
 				}
 				raw, err := os.ReadFile(path)
@@ -506,11 +510,43 @@ func checkPlan(root string, sh *Sheet) ([][]string, string, string) {
 }
 
 // runIn は、確認コマンドを走らせて、出力をそのまま返す（ブラウザにも見せるため）。
+// 学習者の go test が止まったとき、ブラウザからは Ctrl+C できないので、上限を置く。
+const runLimit = 10 * time.Minute
+
 func runIn(dir string, cmd []string) (string, error) {
-	c := exec.Command(cmd[0], cmd[1:]...)
+	ctx, cancel := context.WithTimeout(context.Background(), runLimit)
+	defer cancel()
+	c := exec.CommandContext(ctx, cmd[0], cmd[1:]...)
 	c.Dir = dir
 	out, err := c.CombinedOutput()
+	if ctx.Err() != nil {
+		out = append(out, "\n（10分たったので打ち切りました。止まる原因を、ターミナルで走らせて探す）\n"...)
+		return string(out), ctx.Err()
+	}
 	return string(out), err
+}
+
+// stageAll は git add -A のあと、ビルドした実行ファイル（バイナリ）を外す。
+// 課題シートは「バイナリはコミットしない」と書いているが、add -A は区別しない。
+func stageAll(root string) (excluded []string, err error) {
+	if out, err := gitOut(root, "add", "-A"); err != nil {
+		return nil, fmt.Errorf("git add: %s", strings.TrimSpace(out))
+	}
+	out, err := gitOut(root, "diff", "--cached", "--numstat")
+	if err != nil {
+		return nil, fmt.Errorf("git diff: %s", strings.TrimSpace(out))
+	}
+	for _, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
+		f := strings.SplitN(line, "\t", 3)
+		if len(f) != 3 || f[0] != "-" || f[1] != "-" {
+			continue // 追加・削除の行数が出るのはテキスト
+		}
+		if out, err := gitOut(root, "reset", "-q", "--", f[2]); err != nil {
+			return nil, fmt.Errorf("git reset %s: %s", f[2], strings.TrimSpace(out))
+		}
+		excluded = append(excluded, f[2])
+	}
+	return excluded, nil
 }
 
 func cmdCheck(root string, p *Progress, args []string) error {
@@ -771,8 +807,12 @@ func cmdEnd(root string, p *Progress, s *Session) error {
 			extra = ""
 		}
 		if extra != "" {
-			if _, err := gitOut(root, "add", "-A"); err != nil {
+			excluded, err := stageAll(root)
+			if err != nil {
 				return err
+			}
+			for _, f := range excluded {
+				fmt.Println(yellow("  実行ファイルらしいので、コミットから外しました: " + f))
 			}
 			if out, err := gitOut(root, "commit", "-m", head+extra); err != nil {
 				fmt.Println(red("  失敗: " + out))

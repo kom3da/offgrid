@@ -78,6 +78,24 @@ func sameOrigin(r *http.Request) bool {
 	return true
 }
 
+// createsFiles は、GET で開いただけでファイルを用意する画面。
+// 案内（振り返りと state）、ユニット（作業記録）、振り返り（その日のログ）。
+// 書き込みは軽いが、別のサイトの <img> で今日の振り返りファイルができると、
+// 翌日から「済んだ回」に数えられて回数と時間割がずれる。
+func createsFiles(path string) bool {
+	return path == "/session" || path == "/retro" || strings.HasPrefix(path, "/unit/")
+}
+
+// underAnswers は、パスのどこかに answers/ があるかどうか（デバッグドリルの答え）。
+func underAnswers(rel string) bool {
+	for _, p := range strings.Split(filepath.ToSlash(rel), "/") {
+		if p == "answers" {
+			return true
+		}
+	}
+	return false
+}
+
 // isWrite は、そのリクエストがファイルを書き換える（か、コマンドを走らせる）ものかどうか。
 func isWrite(r *http.Request) bool {
 	if postOnly[r.URL.Path] {
@@ -96,6 +114,10 @@ func (s *server) guard(next http.Handler) http.Handler {
 		}
 		if !localHost(r.Host) {
 			http.Error(w, "http://localhost:<番号>/ で開いてください", http.StatusForbidden)
+			return
+		}
+		if createsFiles(r.URL.Path) && !isWrite(r) && !sameOrigin(r) {
+			http.Error(w, "ほかのページからは開けません。アドレス欄から開いてください", http.StatusForbidden)
 			return
 		}
 		if isWrite(r) {
@@ -132,12 +154,10 @@ func (s *server) markdownPath(name string) (string, bool) {
 	if err != nil || r == ".." || strings.HasPrefix(r, ".."+string(filepath.Separator)) {
 		return "", false
 	}
-	parts := strings.Split(filepath.ToSlash(r), "/")
-	for _, p := range parts {
-		if p == "answers" {
-			return "", false
-		}
+	if underAnswers(r) {
+		return "", false
 	}
+	parts := strings.Split(filepath.ToSlash(r), "/")
 	if len(parts) == 1 {
 		return path, true // README.md や PROGRESS.md
 	}

@@ -39,3 +39,6 @@ logs/**/.*.state.json
 
 # go build でできる実行ファイル（配布はリリースの資産で行う）
 /tools/offgrid/offgrid
+
+# 課題のログや出力（課題シートが「コミットしない」と書くもの）
+*.log

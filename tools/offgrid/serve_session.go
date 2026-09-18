@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -160,7 +161,10 @@ func (s *server) handleSession(w http.ResponseWriter, r *http.Request) {
 		st.TaskPercent = percent(st.TaskDone, st.TaskTotal)
 		link := s.linkRewriter(sh.Path)
 		if n, onlyLater := state.NextTask(sh); n > 0 {
-			state.OpenTask(sh.Unit, n)
+			if err := state.OpenTask(sh.Unit, n); err != nil {
+				s.fail(w, st, "書けません", err.Error())
+				return
+			}
 			st.Task = &taskView{N: n, HTML: template.HTML(renderMarkdown(sh.Tasks[n], link, nil))}
 			st.OnlyLater = onlyLater
 			st.TaskMins = state.TaskMinutes(sh.Unit, n)
@@ -292,6 +296,9 @@ func (s *server) handleEnd(w http.ResponseWriter, r *http.Request) {
 	}
 	st.Fields = RetroFields(sess.Log)
 	st.LogPath = rel(s.root, sess.Log)
+	if v := r.FormValue("excluded"); v != "" {
+		st.Excluded = strings.Split(v, "\n")
+	}
 	state := LoadState(s.root, sess)
 	if sh, err := LoadSheet(s.root, p.Unit); err == nil {
 		st.Sheet = sh
@@ -368,12 +375,31 @@ func (s *server) handleEndDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	unit := strings.ToUpper(strings.TrimSpace(r.FormValue("unit")))
+	// 画面は揃ったときだけボタンを出すが、古いタブや直接の POST でも同じ条件で断る
+	sh, err := LoadSheet(s.root, unit)
+	if err != nil {
+		s.fail(w, st, "記録できません", err.Error())
+		return
+	}
+	done, total := sh.Counts()
+	if missing := sh.MissingFiles(); total == 0 || done != total || len(missing) > 0 {
+		s.fail(w, st, "まだ完了にできません",
+			fmt.Sprintf("%s は課題 %d/%d、足りないファイル: %s", unit, done, total, strings.Join(missing, "、")))
+		return
+	}
+	if p.IsDone(unit) {
+		s.fail(w, st, "記録できません", unit+" はすでに完了になっています")
+		return
+	}
 	if ok, err := p.MarkDone(unit); err != nil || !ok {
 		s.fail(w, st, "記録できません", fmt.Sprintf("PROGRESS.md に「- [ ] %s ...」の行がありません", unit))
 		return
 	}
 	if next := strings.ToUpper(strings.TrimSpace(r.FormValue("next"))); next != "" {
-		_ = p.SetNext(next, strings.HasPrefix(next, "D"))
+		if err := p.SetNext(next, strings.HasPrefix(next, "D")); err != nil {
+			s.fail(w, st, unit+" は完了にしましたが、次のユニットを記録できません", err.Error())
+			return
+		}
 	}
 	http.Redirect(w, r, "/end", http.StatusSeeOther)
 }
@@ -391,12 +417,22 @@ func (s *server) handleEndCommit(w http.ResponseWriter, r *http.Request) {
 			s.fail(w, st, "コミットできません", "何をやったかを、ひとことで書いてください")
 			return
 		}
-		if _, err := gitOut(s.root, "add", "-A"); err != nil {
+		// 完了にして「次」を書き換えたあとでも、コミット文はやっていたユニットの名前にする
+		unit := strings.ToUpper(strings.TrimSpace(r.FormValue("unit")))
+		if !unitIDRe.MatchString(unit) {
+			unit = p.Unit
+		}
+		excluded, err := stageAll(s.root)
+		if err != nil {
 			s.fail(w, st, "git add が失敗しました", err.Error())
 			return
 		}
-		if out, err := gitOut(s.root, "commit", "-m", fmt.Sprintf("[no-ai] %s: %s", p.Unit, msg)); err != nil {
+		if out, err := gitOut(s.root, "commit", "-m", fmt.Sprintf("[no-ai] %s: %s", unit, msg)); err != nil {
 			s.fail(w, st, "コミットが失敗しました", out)
+			return
+		}
+		if len(excluded) > 0 {
+			http.Redirect(w, r, "/end?excluded="+url.QueryEscape(strings.Join(excluded, "\n")), http.StatusSeeOther)
 			return
 		}
 	}
