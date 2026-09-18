@@ -52,7 +52,7 @@ main() {
 
   # Task sheets that no longer exist in the template are reported, not deleted
   find drills -name TASKS.md -print | while IFS= read -r sheet; do
-    [ -e "$tmp/$sheet" ] || echo "note: ${sheet} is no longer part of the template (kept as is)"
+    [ -e "$tmp/$sheet" ] || echo "note: ${sheet} is no longer part of the template (kept as is). If the unit was renamed, move your notes to the new directory and delete this file: offgrid refuses two directories for one unit."
   done
 
   echo "Updated to ${tag}. Review the changes, then commit:"

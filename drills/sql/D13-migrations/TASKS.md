@@ -2,7 +2,7 @@
 title: "D13 マイグレーション"
 ---
 
-> トラック：[D：PostgreSQL](../../../docs/13-track-d-postgresql.md) ／ Stage 3 ／ 目安：1時間枠で3回 ／ 前提：D12、G17
+> トラック：[D：PostgreSQL](../../../docs/13-track-d-postgresql.md) ／ Stage 3 ／ 目安：1時間枠で3回 ／ 前提：D12（課題6 だけ G17 のあと。それまでの課題は Stage 3 の最初の回から進めてよい）
 
 ## ねらい
 

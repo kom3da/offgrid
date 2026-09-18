@@ -40,7 +40,7 @@ HTMLとJavaScriptの基礎から、TypeScript、Reactまでを順に進むトラ
 - T4はG12のAPI、T10はG12〜G14のAPI、T11はG20のSSEを呼ぶ。[G：Go](11-track-g-go.md)の該当ユニットを、先に済ませておく
 - ブラウザは、Ubuntuの外（手元のOS）のものを使う。Ubuntuの中で動かしたサーバーは、`http://localhost:ポート番号` で開ける
 
-## 閉域を意識した決まり
+## 再現できるビルドのための決まり
 
 - 依存は最小限にし、`package-lock.json` を必ずコミットする
 - CDN（Google Fontsなど）に依存しない。フォントやグラフ用のライブラリは、ローカルに置く
@@ -62,4 +62,4 @@ HTMLとJavaScriptの基礎から、TypeScript、Reactまでを順に進むトラ
 
 ## 使う教材
 
-『JavaScript Primer』、『サバイバルTypeScript』、『プロを目指す人のためのTypeScript入門』。MDN、TypeScript Handbook、Reactの公式ドキュメントは、オフラインで読めるようにしておく。入手先と手順は[教材とツール](20-resources.md)にある。
+『JavaScript Primer』、『サバイバルTypeScript』、『プロを目指す人のためのTypeScript入門』。MDN、TypeScript Handbook、Reactの公式ドキュメントは、手元に保存しておくと速い。入手先と手順は[教材とツール](20-resources.md)にある。

@@ -222,27 +222,45 @@ func LoadSheet(root, unit string) (*Sheet, error) {
 	return parseSheet(found[0], fmt.Sprintf("%s%d", letter, num), root)
 }
 
-// AllSheets は、あるトラックのすべての課題シートを読む。
+// AllSheets は、すべての課題シートを読む。
+// 読めないシートや、同じユニットのディレクトリが2つある場合は、黙って抜かずにエラーにする。
+// 抜くと selftest が減った本数で通り、status もそのユニットの作業漏れを出さなくなる（実際に起きた）。
 func AllSheets(root string) ([]*Sheet, error) {
 	var out []*Sheet
+	unitRe := regexp.MustCompile(`^([FGTDOC])(\d+)-`)
 	for letter, dir := range trackDir {
 		entries, err := os.ReadDir(filepath.Join(root, "drills", dir))
 		if err != nil {
 			continue
 		}
+		dirs := map[int][]string{}
 		for _, e := range entries {
 			if !e.IsDir() {
 				continue
 			}
-			m := regexp.MustCompile(`^([FGTDOC])(\d+)-`).FindStringSubmatch(strings.ToUpper(e.Name()))
+			m := unitRe.FindStringSubmatch(strings.ToUpper(e.Name()))
 			if m == nil || m[1] != letter {
 				continue
 			}
 			num, _ := strconv.Atoi(m[2])
-			sh, err := LoadSheet(root, fmt.Sprintf("%s%d", letter, num))
-			if err == nil {
-				out = append(out, sh)
+			dirs[num] = append(dirs[num], filepath.Join("drills", dir, e.Name()))
+		}
+		for num, names := range dirs {
+			id := fmt.Sprintf("%s%d", letter, num)
+			if len(names) > 1 {
+				sort.Strings(names)
+				return nil, fmt.Errorf("%s のディレクトリが%d個あります（%s）。中身を1つにまとめて、古いほうを消してください",
+					id, len(names), strings.Join(names, "、"))
 			}
+			p := filepath.Join(root, names[0], "TASKS.md")
+			if _, err := os.Stat(p); err != nil {
+				continue // シートの無いディレクトリ（学習者のメモ置き場など）
+			}
+			sh, err := parseSheet(p, id, root)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, sh)
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })

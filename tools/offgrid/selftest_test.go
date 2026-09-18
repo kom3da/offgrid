@@ -103,3 +103,34 @@ func TestSelftestCatchesUnitMissingFromProgress(t *testing.T) {
 		t.Errorf("どのユニットの欄が無いかを伝えていない:\n%s", out)
 	}
 }
+
+// 版を取り込んでディレクトリ名が変わると、古い TASKS.md が残って同じユニットが2つになる。
+// 黙って片方を抜くと「70本」で通ってしまうので、両方の名前を出して止める。
+func TestSelftestRefusesTwoDirectoriesForOneUnit(t *testing.T) {
+	root := newRepo(t)
+	old := filepath.Join(root, "drills", "foundation", "F03-old-name")
+	if err := os.MkdirAll(old, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(old, "TASKS.md"), []byte(sampleSheet), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var err error
+	capture(t, func() { err = cmdSelftest(root, []string{"-q"}) })
+	if err == nil {
+		t.Fatal("同じユニットのディレクトリが2つあるのに selftest が通った")
+	}
+	for _, want := range []string{"F3", "F03-old-name", "F03-pipeline", "2個"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("エラーに %q が無い: %v", want, err)
+		}
+	}
+	// シートの無いディレクトリ（学習者のメモ置き場）は、重複に数えない
+	if err := os.Remove(filepath.Join(old, "TASKS.md")); err != nil {
+		t.Fatal(err)
+	}
+	capture(t, func() { err = cmdSelftest(root, []string{"-q"}) })
+	if err == nil {
+		t.Fatal("TASKS.md を消したあとも、同じ番号のディレクトリが2つあるので止まるべき")
+	}
+}

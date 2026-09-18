@@ -46,7 +46,7 @@ touch ../drills/capstone/C03-ingest-store/notes.md
 docker exec -it pg-offgrid psql -U postgres     # ここでデータベースを作る
 ```
 
-DBの接続先は、`capstone/.env` に書く（Gitの管理外）。`pgx` は、平日のうちに `go get` し、`go mod vendor` まで済ませておく。ネットワークなしでもビルドできる状態にしておく（C7で、実際に切って確かめる）。
+DBの接続先は、`capstone/.env` に書く（Gitの管理外）。`pgx` は、平日のうちに `go get` し、`go mod vendor` まで済ませておく。リポジトリだけからビルドできる状態にしておく（課題12で、`ss` に外向きの接続が出ないことで確かめる）。
 
 ## 課題
 
