@@ -2,7 +2,7 @@
 title: "O7 再現できるビルド"
 ---
 
-> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2〜3回 ／ 前提：O1、O4、O5、O6、G18、T10
+> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2〜3回 ／ 前提：O4、O5、O6、G18、T10
 
 ## ねらい
 
@@ -20,7 +20,7 @@ title: "O7 再現できるビルド"
 ## キーワード
 
 - **再現できるビルド**：同じ入力から、いつ・どこでやっても同じ成果物ができること
-- **lockfile**：依存の版を固定するファイル（`go.sum`、`package-lock.json`）
+- **lockfile**：依存の版を固定するファイル（`go.mod` と `go.sum`、`package-lock.json`）
 - **`vendor/`**：Go の依存のソースを、リポジトリの中に置いたもの
 - **ダイジェスト**：イメージの中身から計算した識別子。タグと違い、中身が変わると変わる
 - **`docker save` / `docker load`**：イメージをファイルにする／ファイルから戻す
@@ -31,18 +31,19 @@ title: "O7 再現できるビルド"
 - Go の公式ドキュメント「Go Modules Reference」の Vendoring の節と、`go help mod vendor`
 - npm の公式ドキュメントの `npm ci` と `package-lock.json` のページ
 - Docker の公式ドキュメントの `docker save`、`docker load`、イメージのダイジェストの説明
-- 『［試して理解］Linuxのしくみ』のファイルシステムの章（章番号は、手元の本の目次で確認する）
-- 課題9で使う、まっさらな仮想マシンを O6 の `target-setup.md` の手順で作り直しておく（コンテナの中では `docker build` ができないので、VM にする）
+- 課題9で使う、まっさらな仮想マシンを O6 の `target-setup.md` の手順で作り直し、手元と同じ版の Go・Node.js・npm・Docker を平日のうちに入れておく（`go version`、`node --version`、`npm --version`、`docker --version` が手元と一致すること）。O4 で使ったベースイメージも VM 側で `docker pull` しておく。当日は取りに行かない（コンテナの中では `docker build` ができないので、VM にする）
 
 ## 準備
 
-O4 でコピーした G18 の API と、T10 の web を使う。このユニットで「リポジトリ」と言うのは `~/sandbox/o7`（`git init` した1つのリポジトリ）のこと。課題9では、これだけを別の環境に持ち込む。
+O4 でコピーした API（`~/sandbox/o4/api`）と、T10 の web を使う。このユニットで「リポジトリ」と言うのは `~/sandbox/o7`（`git init` した1つのリポジトリ）のこと。課題9では、これだけを別の環境に持ち込む。
 
 ```sh
 mkdir -p ~/sandbox/o7
 cp -r ~/sandbox/o4/api ~/sandbox/o7/api
 cp -r <T10 のディレクトリ> ~/sandbox/o7/web
 rm -rf ~/sandbox/o7/api/vendor      # O4 で作った vendor/ を一度消す。課題1で「取りに行く」のを見るため
+rm -rf ~/sandbox/o7/web/node_modules ~/sandbox/o7/web/dist ~/sandbox/o7/web/.env
+printf 'node_modules/\ndist/\n.env\n*.tar\n' > ~/sandbox/o7/.gitignore
 cd ~/sandbox/o7 && git init && git add -A && git commit -m "start"
 ```
 
@@ -55,8 +56,8 @@ cd ~/sandbox/o7 && git init && git add -A && git commit -m "start"
 5. `npm ci` が取りに行くものを npm のキャッシュに入れる。`npm config get cache` でキャッシュの場所を見つけ、`npm ci --offline` が通ることを確かめる。通らなければ、何が足りないかをエラーの文から読む
 6. O4 の Dockerfile のベースイメージを、タグではなくダイジェスト（`image@sha256:…`）で指定する。ダイジェストは `docker images --digests` で調べる。タグで指定したときと、何が違うかを書く
 7. **本題（その1）**：ビルドの手順を `build.sh` にする。入力は `~/sandbox/o7` のリポジトリだけ。出力は API のバイナリ、web の `dist/`、Docker イメージの tar（`docker save`）。バイナリと `dist/` の各ファイルの `sha256sum` を `checksums.txt` に書き出す（tar は書かない。理由は課題8で分かる）。最初に `go version`、`node --version`、`npm --version` を出力する。`set -euo pipefail` を付け、`shellcheck` を通す
-8. `build.sh` を2回続けて実行し、2つの `checksums.txt` を比べる。同じにならないものがあれば、何が変わっているのか（時刻、パス、並び順）を突き止める。Go のバイナリは `-trimpath` を付けると変わるか。**2回目でバイナリだけが変わる**なら、`go version -m <バイナリ>` の `build` の行を2回分比べ、何が違うかを `go help build` で調べる。tar の `sha256sum` も2回分取り、なぜ揃わないのかを `docker history` の時刻から考える
-9. **本題（その2）**：まっさらな環境で再現する。平日に用意した仮想マシンに、`~/sandbox/o7` のリポジトリだけを持ち込み、`build.sh` を実行する。最初に出る `go version` などが手元と同じことを見てから、`checksums.txt` が手元と一致することを確かめる。一致しない、または途中で止まるなら、リポジトリに足りないものは何かを書く
+8. `build.sh` を2回続けて実行し、2つの `checksums.txt` を比べる（写しを `checksums-1.txt`、`checksums-2.txt` として取っておく）。同じにならないものがあれば、何が変わっているのか（時刻、パス、並び順）を突き止める。Go のバイナリは `-trimpath` を付けると変わるか。**2回目でバイナリだけが変わる**なら、`go version -m <バイナリ>` の `build` の行を2回分比べ、何が違うかを `go help build` で調べる。tar の `sha256sum` も2回分取り、なぜ揃わないのかを `docker history` の時刻から考える
+9. **本題（その2）**：まっさらな環境で再現する。平日に用意した仮想マシンに、`~/sandbox/o7` のリポジトリだけを持ち込み、`build.sh` を実行する。最初に出る `go version` などが手元と同じことを見てから、`checksums.txt`（写しは `checksums-vm.txt`）が手元と一致することを確かめる。一致しない、または途中で止まるなら、リポジトリに足りないものは何かを書く
 10. `docker load` で tar からイメージを戻し、O5 の compose で起動する。動いたら、イメージを消して（`docker rmi`）もう一度 `load` → 起動をやる。イメージの中のバイナリを取り出し（`docker create` → `docker cp`）、その `sha256sum` が課題7のバイナリと同じかを見る
 11. `build.sh` の各段階に「何を入力にして、何を出力するか」をコメントで書く。人が読む手順書は別に書かない。スクリプトが手順書になっているかを、課題9をもう一度やって確かめる
 
@@ -70,7 +71,9 @@ cd ~/sandbox/o7 && git init && git add -A && git commit -m "start"
 - `-mod=vendor` で「inconsistent vendoring」と出る → `go.mod` と `vendor/modules.txt` の食い違い。`go mod vendor` をやり直す前に、`go mod tidy` で何が変わるかを `git diff` で見る
 - `npm ci --offline` が失敗する → キャッシュに無いパッケージがある。エラーに出た名前を、`npm cache ls` の出力と突き合わせる
 - `checksums.txt` が毎回変わる → どのファイルが変わっているかを `sha256sum -c` で1つずつ絞る。ビルドの時刻を埋め込んでいるものが多い
-- Go のバイナリだけ、2回目で変わる → 1回目の実行で `checksums.txt` ができ、リポジトリに未追跡のファイルが増えている。`go version -m` の `vcs.modified` を見て、`go help build` で `-buildvcs` を読む
+- Go のバイナリだけ、2回目で変わる → 2回分の `go version -m` の出力を `diff` し、違う行の意味を `go help build` で探す。1回目の実行がリポジトリに何を残したかも `git status` で見る
+- イメージの中のバイナリだけ違う → 2つのバイナリの `go version -m` を並べ、`go` の版、`CGO_ENABLED`、`-trimpath`、`-ldflags`、`vcs.*` の行の差を見る
+- `dist/` だけ一致しない → Vite が `.env` から埋め込んだ値（T10 の課題10）がないか。`grep -r` で `dist/` を見る
 - 新しい環境で `go` が別の版を取りに行く → `go.mod` の `go` の行と `GOTOOLCHAIN` の関係を `go help toolchain` で読む。手元と同じ版を入れる
 - 新しい環境でだけ失敗する → 手元にあって新しい環境に無いものを探す。`which`、`env`、`ls ~/.config` の差
 - `docker save` の tar が大きすぎる → `docker history` で層を見る。O4 のマルチステージビルドになっているか
@@ -78,12 +81,12 @@ cd ~/sandbox/o7 && git init && git add -A && git commit -m "start"
 ## 完了条件の確かめ方
 
 1. `~/sandbox/o7/api` で `go clean -modcache && go build -mod=vendor ./... && go test -mod=vendor ./...` が、`ss` に外向きの接続を出さずに通る
-2. `build.sh` を手元で2回実行して `checksums.txt`（バイナリと `dist/` の各ファイル）が同じになり、まっさらな仮想マシンで実行しても同じになる（3つの `checksums.txt` と、それぞれの `go version` の出力を `notes.md` に貼る）。tar の一致は求めない
-3. `docker load` で戻したイメージで、O5 の compose が起動し、イメージから取り出したバイナリの `sha256sum` が課題7のものと同じになる
+2. `build.sh` を手元で2回実行して `checksums.txt`（バイナリと `dist/` の各ファイル）が同じになり、まっさらな仮想マシンで実行しても同じになる（`checksums-1.txt`、`checksums-2.txt`、`checksums-vm.txt` が一致し、それぞれの `go version` の出力が `notes.md` にある）。tar の一致は求めない
+3. `docker load` で戻したイメージで、O5 の compose が起動する。イメージから取り出したバイナリの `sha256sum` を課題7のものと比べ、同じか、違うなら `go version -m` のどの行が違うかが `notes.md` に書いてある
 
 ## 残すもの
 
-- `build.sh` と `checksums.txt`（`~/sandbox/o7` にあるものの写しを、このディレクトリに置く。手元2回分と、まっさらな環境の分）
+- `build.sh` と、`checksums.txt` の写し3つ（`checksums-1.txt`、`checksums-2.txt`、`checksums-vm.txt`。`~/sandbox/o7` から、このディレクトリに写す）
 - `notes.md`（課題1・3・4・8・9・10 の観察）
 - `~/sandbox/o7` の `vendor/` はコミットしてよい。`node_modules` と tar はコミットしない
 

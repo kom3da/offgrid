@@ -223,7 +223,18 @@ def check_numbers():
                 f"docs/03 の Stage {stage} の目安が合わない  書いてある: {lo}〜{hi}回 / "
                 f"課題シートの合計＋実技{exam}回: {want_lo}〜{want_hi}回"
             )
-    notes.append(f"数の整合：ユニット {len(units)} 本、ステージ {len(stated)} 個を検査した")
+    # 全体の回数（docs/01・03・04 の「約N〜M回／セッション」）が、ステージの合計と合うか
+    t_lo = sum(per_stage.get(s, [0, 0])[0] + (0 if s == "5" else 1) for s in "012345")
+    t_hi = sum(per_stage.get(s, [0, 0])[1] + (0 if s == "5" else 1) for s in "012345")
+    for path in ("docs/01-overview.md", "docs/03-roadmap.md", "docs/04-ai-free-day.md"):
+        text = read(os.path.join(ROOT, path))
+        found = re.findall(r"約(\d+)〜(\d+)(?:回|セッション)", text)
+        if not found:
+            add(f"{path} に全体の目安（約N〜M回）が無い")
+        for lo, hi in found:
+            if (int(lo), int(hi)) != (t_lo, t_hi):
+                add(f"{path} の全体の目安が合わない  書いてある: 約{lo}〜{hi} / ステージの合計: {t_lo}〜{t_hi}")
+    notes.append(f"数の整合：ユニット {len(units)} 本、ステージ {len(stated)} 個、全体 {t_lo}〜{t_hi} 回を検査した")
 
 
 # ----------------------------------------------------------------
