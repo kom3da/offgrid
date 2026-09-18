@@ -32,7 +32,7 @@ title: "O4 Dockerfile"
 ## 平日に読むもの
 
 - 『［試して理解］Linuxのしくみ』第11章（コンテナ）、第12章（cgroup）
-- Dockerの公式ドキュメントの「Dockerfile reference」「Multi-stage builds」「Building best practices」を、オフラインで読めるように保存する
+- Dockerの公式ドキュメントの「Dockerfile reference」「Multi-stage builds」「Building best practices」を読む（手元に保存しておくと速い）
 - distroless（GoogleContainerTools/distroless）の `README.md` を保存する。イメージの種類と、タグの種類（root でないユーザーで動くもの、デバッグ用）の説明を読む
 - `go help build`、`go help environment`、`go doc cmd/link`（リンカのフラグ）
 - **平日のうちに、使うイメージを `docker pull` しておく**。AIなしデーには取りに行かない前提で進める

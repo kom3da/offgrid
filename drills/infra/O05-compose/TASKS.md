@@ -32,7 +32,7 @@ API、PostgreSQL、リバースプロキシの3つを、1つのファイルに�
 
 ## 平日に読むもの
 
-- Docker Composeの公式ドキュメントの「Compose file reference」のうち、services、networks、volumes の節と、「Control startup and shutdown order」のページを、オフラインで読めるように保存する
+- Docker Composeの公式ドキュメントの「Compose file reference」のうち、services、networks、volumes の節と、「Control startup and shutdown order」のページを読む（手元に保存しておくと速い）
 - Docker Hubの `postgres` イメージの説明ページを保存する。環境変数と、初期化スクリプト（Initialization scripts）の節を読む
 - リバースプロキシは、nginx か Caddy のどちらかを自分で選ぶ。**平日のうちにイメージを `docker pull` し、ドキュメントを保存する**
   - nginx：公式ドキュメントの「Beginner's Guide」と、`ngx_http_proxy_module` のページ

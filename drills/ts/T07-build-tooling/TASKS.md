@@ -33,7 +33,7 @@ title: "T7 ビルド環境を手で組む"
 
 - 『プロを目指す人のためのTypeScript入門』第7章（TypeScriptのモジュールシステム）
 - 『サバイバルTypeScript』の「作って学ぶTypeScript」のPrettierでコード整形を自動化しよう、ESLintでコーディング規約を自動化しよう、Vitestでテストを書こう
-- Vite、ESLint、Vitestの公式ドキュメント。DevDocsにあればオフライン保存し、なければ必要なページをブラウザで保存しておく。Viteは「Getting Started」「Features」の中のTypeScriptの項、「Config Reference」の中のServer Options。ESLintは「Configuration Files」。Vitestは「Getting Started」とAPIリファレンスの `test`、`expect`
+- Vite、ESLint、Vitestの公式ドキュメント。手元に保存しておくと速い（DevDocs にあればそこから）。Viteは「Getting Started」「Features」の中のTypeScriptの項、「Config Reference」の中のServer Options。ESLintは「Configuration Files」。Vitestは「Getting Started」とAPIリファレンスの `test`、`expect`
 - 入れたパッケージの `node_modules/<パッケージ名>/` にある `README.md` と型定義（`.d.ts`）も、オフラインで読める資料になる
 - パッケージの取得にはネットワークが要る。回線が使えない場合は、`npm install` だけを平日に済ませておく（設定ファイルは、AIなしデーに自分で書く）
 
@@ -64,7 +64,7 @@ touch notes.md
 9. ESLintの設定ファイルを、手で書く（ESLintのドキュメントの「Configuration Files」で、ファイル名と書き方を調べる）。少なくとも、TypeScriptのファイルを検査できる、使っていない変数を検出する、`dist/` を検査の対象から外す、の3つを満たす。わざと違反のあるファイルを作り、`npx eslint .` が指摘することと、そのときの終了コード（`echo $?`）を確かめる。ルールを1つ、自分で選んで足し、選んだ理由を書く
 10. **本題（その2）**：Vitestでテストを書く。T6の「イベントを1行の文字列にする関数」を `src/` に持ち込み、`*.test.ts` を書く。`npx vitest run` で実行する。わざと失敗させ、出力のどこに、期待した値と実際の値が出るかを読む。GoのG7のテーブル駆動テストに当たる書き方を、Vitestのドキュメントの `test.each` で調べて使う。`npx vitest` と `npx vitest run` は、何が違うか
 11. `package.json` の `scripts` に、開発、ビルド、型チェック、リント、テストを登録する。さらに、型チェック・リント・テストを続けて行い、どれか1つでも失敗したら、失敗の終了コードで終わるコマンドを登録する（F5の `&&` の復習）
-12. `node_modules` と `dist/` を消し、`npm ci` のあと、課題11のコマンドと `npm run build` がすべて通ることを確かめる。`package-lock.json` をコミットする。回線を切った状態で `npm ci` を実行すると、どうなるか（完全なオフラインでの再現は、Stage 4で扱う）
+12. `node_modules` と `dist/` を消し、`npm ci` のあと、課題11のコマンドと `npm run build` がすべて通ることを確かめる。`package-lock.json` をコミットする。`npm ci --offline` を実行すると、どうなるか（キャッシュで再現する手順は O7 で扱う）
 
 ### 発展（任意）
 

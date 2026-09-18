@@ -40,15 +40,14 @@ RETIRED = [
     ("閉域AIデー", "廃止した（弱いAIを使えるかは目的ではない）"),
     ("運用と閉域", "トラック名は「運用」"),
     ("オフライン開発", "同上"),
+    ("ネットワークがなくても開発", "同上（docs/14 の旧い目的）"),
+    ("閉域で動く", "同上"),
+    ("閉域での完全再構築", "C7 は「障害試験と runbook」になった"),
+    ("offline-bundle", "旧 O7 の持ち込み用ディレクトリ。もう無い"),
 ]
 # 引退語を書いてよい場所（その言い回し自体を説明しているファイル）
 ALLOW = {
-    "Web検索は0回": {
-        "drills/infra/O08-offline-day/TASKS.md",
-        "drills/capstone/C07-offline-rebuild/TASKS.md",
-        "docs/30-revision.md",  # この仕組みの説明として引用している
-    },
-    "検索が0回": {"drills/infra/O08-offline-day/TASKS.md", "drills/capstone/C07-offline-rebuild/TASKS.md"},
+    "Web検索は0回": {"docs/30-revision.md"},  # この仕組みの説明として引用している
     "週次レビュー": {"prompts/weekly-review.md"},  # ファイル名の都合で本文から参照する
 }
 

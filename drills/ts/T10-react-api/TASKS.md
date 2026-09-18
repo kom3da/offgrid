@@ -36,7 +36,7 @@ T9のReactと、T8の検証を組み合わせ、G12〜G14のAPIにつながる�
 - 『プロを目指す人のためのTypeScript入門』第8章（非同期処理）
 - Viteのドキュメントの「Env Variables and Modes」
 - Vitestのドキュメントの「Mocking」と、`vi` のAPIリファレンス、「Test Environment」
-- Testing Libraryの公式ドキュメント（オフライン保存しておく。T7のViteと同じ扱い）。「Queries」の優先順位、`findBy` と `getBy` と `queryBy` の違い、`user-event` の導入
+- Testing Libraryの公式ドキュメント（手元に保存しておくと速い）。「Queries」の優先順位、`findBy` と `getBy` と `queryBy` の違い、`user-event` の導入
 - G13とG14で自分が書いた `api.md`（エラーレスポンスの形、認証の方法、守る範囲、CORSの設定）
 
 ## 準備

@@ -32,7 +32,7 @@ title: "O6 構成管理入門"
 
 ## 平日に読むもの
 
-- Ansibleの公式ドキュメントの「Getting started」（インベントリ、プレイブックの最初の例）、「YAML Syntax」、「Playbook Keywords」を、オフラインで読めるように保存する
+- Ansibleの公式ドキュメントの「Getting started」（インベントリ、プレイブックの最初の例）、「YAML Syntax」、「Playbook Keywords」を読む（手元に保存しておくと速い）
 - 平日のうちに Ansible を入れ（`sudo apt install -y ansible`）、`ansible --version` と `ansible-doc -l | wc -l` が動くことを確かめる。**モジュールの説明は、`ansible-doc <モジュール名>` でオフラインで引ける。** AIなしデーは、これが主な資料になる
 - `ansible-doc ansible.builtin.copy` を、試しに1つ読んでおく。説明、パラメータの一覧、末尾の例、の順に並んでいる
 - **平日のうちに、検証環境を用意する**（下の「準備」）
@@ -104,5 +104,5 @@ ssh o6-target 'cat /etc/os-release; python3 --version'
 ## 次につながるユニット
 
 - O7（再現できるビルド）：ビルドの手順を `build.sh` にコード化する。同じ考え方
-- C7（閉域での完全再構築テスト）：空の環境から、一式を作り直せることを確かめる
+- C7（障害試験と runbook）：runbook だけから、空の環境に一式を作り直す
 - C8（発展）：Ansibleで、空のサーバーに watchdeck の一式を構築する

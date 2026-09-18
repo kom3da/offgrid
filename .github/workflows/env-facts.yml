@@ -36,6 +36,11 @@ jobs:
             printf '%-8s %s\n' "$c" "$impl"
           done
 
+      - name: /tmp は tmpfs か
+        run: |
+          # CLAUDE.md と C7 に「Ubuntu 26.04 の /tmp は tmpfs」と書いてある
+          findmnt -n -o FSTYPE /tmp || echo "/tmp は独立したマウントではない"
+
       - name: カリキュラムが使うオプションが効くか
         run: |
           set -x

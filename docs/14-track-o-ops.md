@@ -19,7 +19,7 @@ Stage 0の知識と、GoとDBを結びつけ、「作ったものを、自分の
 各ユニットのページが、課題シート（答えのない問題集）になっている。下に添えた1行は、そのユニットで何ができるようになるかの**代表的な目安**。実際に満たすべき条件は、課題シートの「完了条件の確かめ方」が正本で、もっと細かい（テストの終了コードや、数値の基準まで含む）。
 
 - **[O1 Linuxの管理](../drills/infra/O01-linux-admin/TASKS.md)**：OS・ディスク・メモリ・ユーザー・ポート・サービス・ログの場所を集めるスクリプトを書ける
-- **[O2 systemd](../drills/infra/O02-systemd/TASKS.md)**：G12〜G17で作ったAPIが、再起動後も自動で起動する
+- **[O2 systemd](../drills/infra/O02-systemd/TASKS.md)**：G18 の形にしたAPIが、再起動後も自動で起動する
 - **[O3 調査ツール](../drills/infra/O03-investigation/TASKS.md)**：AIに仕込ませた障害の原因を、3問中2問特定できる
 - **[O4 Dockerfile](../drills/infra/O04-dockerfile/TASKS.md)**：イメージのサイズが30MB以下
 - **[O5 docker compose](../drills/infra/O05-compose/TASKS.md)**：`docker compose up` だけで、API・PostgreSQL・リバースプロキシが動く

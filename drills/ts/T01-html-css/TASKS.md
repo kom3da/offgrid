@@ -36,7 +36,7 @@ Webページの骨組み（HTML）と見た目（CSS）を、道具に頼らず�
 - 『Webを支える技術』第10章（HTML）
 - MDN（DevDocsのオフライン版）の、HTMLの入門（文書の構造、テキスト、リンク、表、フォーム）
 - MDNの、CSSの入門（セレクタ、ボックスモデル）と、Flexboxの基本概念のページ
-- 平日のうちに、DevDocsでHTML・CSS・JavaScriptをオフライン保存しておく（`docs/20-resources.md`）
+- DevDocs の HTML・CSS・JavaScript を、平日のうちに手元に保存しておくと速い（`docs/20-resources.md`。必須ではない）
 
 ## 準備
 

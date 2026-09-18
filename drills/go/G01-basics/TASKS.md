@@ -40,7 +40,7 @@ title: "G1 環境・変数・型・関数"
 
 ## 準備
 
-Goのインストールと、A Tour of Goの手元への導入は、ネットワークが要るので**平日に済ませておく**。インストールは公式サイトの「Download and install」の手順に従う（`uname -m` で自分のCPUの種類を確かめ、合うファイルを選ぶ）。Ubuntuの `apt` で入るGoは古いことがあるので、バージョンが1.22以上になる方法を選ぶ。
+Goのインストールと、A Tour of Goの手元への導入は、ネットワークが要るので**平日に済ませておく**。インストールは公式サイトの「Download and install」の手順に従う（`uname -m` で自分のCPUの種類を確かめ、合うファイルを選ぶ）。Ubuntuの `apt` で入るGoは古いことがあるので、バージョンが1.22以上になる方法を選ぶ。G2 以降の確認で使う `go test -race` には C コンパイラが要るので、`sudo apt install -y build-essential` も平日に済ませておく。
 
 ```sh
 cd ~/offgrid-log/drills/go/G01-basics

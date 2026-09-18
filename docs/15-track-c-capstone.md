@@ -78,13 +78,13 @@ capstone/
 
 各ユニットのページが、課題シートになっている。C1〜C7が必須版、C8は任意の発展。
 
-- **[C1 要件定義と設計](../drills/capstone/C01-requirements/TASKS.md)**：要件定義書とADR（技術選定の記録）を書き、時系列データのテーブルを設計する。使うユニット：D6、D7、D15
+- **[C1 要件定義と設計](../drills/capstone/C01-requirements/TASKS.md)**：要件定義書とADR（技術選定の記録）を書き、時系列データのテーブルを設計する。使うユニット：D6、D7、D15、G19、G20、T11、O1
 - **[C2 agent](../drills/capstone/C02-agent/TASKS.md)**：CPU・メモリ・ディスクを集め、リトライ付きで送信する。CPUとメモリは `/proc` から読む。ディスクの使用率は `/proc` にはないので、`df` が内部で使っている仕組み（`statfs`）を、Goの標準ライブラリから呼ぶ方法を調べる。使うユニット：G5〜G8、G19、O1
-- **[C3 受信と保存](../drills/capstone/C03-ingest-store/TASKS.md)**：入力の検証、マイグレーション、インデックス、古いデータの削除。使うユニット：G12〜G14、G17、D13〜D15
+- **[C3 受信と保存](../drills/capstone/C03-ingest-store/TASKS.md)**：入力の検証、マイグレーション、インデックス、古いデータの削除。使うユニット：G12〜G14、G17、G18、D13〜D15
 - **[C4 配信](../drills/capstone/C04-api-sse/TASKS.md)**：REST、SSE、トークン認証（SSEの認証は、C1で決めた方式）。使うユニット：G14、G16、G20
 - **[C5 web](../drills/capstone/C05-web/TASKS.md)**：一覧、直近1時間のグラフ、リアルタイム更新。使うユニット：T1（SVG）、T6（値→座標）、T7〜T11
-- **[C6 配布の形にする](../drills/capstone/C06-packaging/TASKS.md)**：Dockerfile、compose、agentのsystemd化、runbook の書き始め。使うユニット：O2、O4、O5
-- **[C7 障害試験と runbook](../drills/capstone/C07-fault-drill/TASKS.md)**：runbook だけからの再構築（自分以外の人の手で。いなければ1週間あけて自分で）、計画した障害の試験、10台の試験、試験結果のまとめ。卒業制作の採点にあたる回。使うユニット：O3、O7、O8
+- **[C6 配布の形にする](../drills/capstone/C06-packaging/TASKS.md)**：Dockerfile、compose、agentのsystemd化、runbook の書き始め。使うユニット：O2、O4、O5、O7
+- **[C7 障害試験と runbook](../drills/capstone/C07-fault-drill/TASKS.md)**：runbook だけからの再構築（自分以外の人の手で。いなければ1週間あけて自分で）、計画した障害の試験、10台の試験、試験結果のまとめ、AIへの30分の説明（`prompts/capstone-defense.md`）。卒業制作の採点にあたる回。使うユニット：O3、O7、O8
 - **[C8 発展](../drills/capstone/C08-extensions/TASKS.md)**：任意。発展から選んで実装する。負荷試験とチューニングは、どれを選んでも行うことを勧める。使うユニット：G15、O3、O6、O9
 
 ## Stage 5でのAIの使い方

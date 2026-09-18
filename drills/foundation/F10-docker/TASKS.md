@@ -102,4 +102,4 @@ mkdir -p ~/sandbox/f10 && cd ~/sandbox/f10
 
 - D1（データベースとは・psql）：ここで起動した `pg-offgrid` に、毎回 `docker exec -it pg-offgrid psql -U postgres` で入る
 - O1（Linuxの管理）：`sudo`、ユーザーとグループ、ディスクの使用量を、管理者の視点でもう一度扱う
-- O7（再現できるビルド）：ここで入れたものが、別の環境でも同じ手順で同じように入ることを確かめる
+- O7（再現できるビルド）：成果物の `sha256sum` が、別の環境でも同じになることを確かめる

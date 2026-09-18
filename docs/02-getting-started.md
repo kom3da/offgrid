@@ -245,7 +245,7 @@ git commit -m "[no-ai] F1: xxdでUTF-8のバイト列を確認"
 git push origin main
 ```
 
-ユニットの完了条件を満たしたら、`offgrid done F1` で `PROGRESS.md` に記録する。
+ユニットの完了条件を満たしたら、`offgrid done F1` で `PROGRESS.md` に記録する。F1 は「説明できる」が完了条件に入っているので、当日は記録できない（`explain.md` の採点は平日）。`offgrid end` で次のユニットを聞かれたら F2 と答え、`done F1` は採点が通ってから打つ。
 
 初回のウォームアップは、再現する内容がまだないので、「Ubuntuのシェルを開き、`cd ~/offgrid-log` で移動し、`ls` で中身を見る」を何も見ずにやる（`offgrid` も、そう表示する）。
 

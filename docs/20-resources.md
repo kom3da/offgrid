@@ -2,7 +2,7 @@
 title: "教材とツール"
 ---
 
-紙の書籍かPDFを中心に揃え、オンラインの教材は、事前にオフラインで使えるようにしておく。ここに書いた版と入手先は 2026-09 時点のもの（出版社と公式サイトで確認済み）。購入前に、最新の版をもう一度確かめる。
+紙の書籍かPDFを中心に揃える。オンラインの教材は、手元に保存しておくと速いが、必須ではない。ここに書いた版と入手先は 2026-09 時点のもの（出版社と公式サイトで確認済み）。購入前に、最新の版をもう一度確かめる。
 
 書籍は、先にまとめて買わない。最初に買うのは2冊だけにし、残りはそのステージの開始時に、その時点の最新版を確認して買う。
 
@@ -23,7 +23,7 @@ title: "教材とツール"
 
 ### Stage 0（使うユニットに入る前に買う）
 
-- 『プログラムはなぜ動くのか 第3版』（矢沢久雄、日経BP、2021）— [出版社のページ](https://bookplus.nikkei.com/atcl/catalog/21/S00190/)。使うユニット：F1、G1
+- 『プログラムはなぜ動くのか 第3版』（矢沢久雄、日経BP、2021）— [出版社のページ](https://bookplus.nikkei.com/atcl/catalog/21/S00190/)。使うユニット：G1、G4
 - 『［試して理解］Linuxのしくみ 増補改訂版』（武内覚、技術評論社、2022）— [出版社のページ](https://gihyo.jp/book/2022/978-4-297-13148-7)。使うユニット：F4、O1〜O3、C7
 - 『マスタリングTCP/IP 入門編 第6版』（井上直也 ほか、オーム社、2019）— [出版社のページ](https://www.ohmsha.co.jp/book/9784274224478.html)。使うユニット：F8
 - 『Webを支える技術』（山本陽平、技術評論社、2010）— [出版社のページ](https://gihyo.jp/book/2010/978-4-7741-4204-3)。使うユニット：F9、G12
@@ -76,7 +76,6 @@ title: "教材とツール"
 - **Goのデバッガ**：[Delve](https://github.com/go-delve/delve)（`dlv`）
 - **プロファイル**：[pprof](https://github.com/google/pprof)、`go tool trace`
 - **負荷試験**：[k6](https://grafana.com/docs/k6/latest/) または [vegeta](https://github.com/tsenart/vegeta)
-- **ローカルレジストリ**（発展）：[Athens](https://docs.gomods.io/)（Go）、[Verdaccio](https://verdaccio.org/)（npm）
 - **ローカルLLM**：[Ollama](https://ollama.com/)、[llama.cpp](https://github.com/ggml-org/llama.cpp)
 - **グラフ**：[uPlot](https://github.com/leeoniya/uPlot)、[Chart.js](https://www.chartjs.org/)（どちらもローカルに同梱する）
 - **仮想マシン（macOS）**：[Lima](https://lima-vm.io/)
