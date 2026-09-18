@@ -41,7 +41,7 @@ O4 でコピーした API（`~/sandbox/o4/api`）と、T10 の web を使う。�
 mkdir -p ~/sandbox/o7
 cp -r ~/sandbox/o4/api ~/sandbox/o7/api
 cp -r <T10 のディレクトリ> ~/sandbox/o7/web
-rm -rf ~/sandbox/o7/api/vendor      # O4 で作った vendor/ を一度消す。課題1で「取りに行く」のを見るため
+rm -rf ~/sandbox/o7/api/vendor      # G18 で作った vendor/ を一度消す。課題1で「取りに行く」のを見るため
 rm -rf ~/sandbox/o7/web/node_modules ~/sandbox/o7/web/dist ~/sandbox/o7/web/.env
 printf 'node_modules/\ndist/\n.env\n*.tar\n' > ~/sandbox/o7/.gitignore
 cd ~/sandbox/o7 && git init && git add -A && git commit -m "start"

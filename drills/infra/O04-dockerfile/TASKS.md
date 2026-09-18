@@ -42,11 +42,12 @@ title: "O4 Dockerfile"
 
 ## 準備
 
+G18 で `cmd/api`＋`internal/`＋`vendor/` の形にした API を使う（`vendor/` は G18 で作ってある。無ければ `go mod vendor` を平日に済ませる）。バイナリを作るときは `./cmd/api` を指定する。
+
 ```sh
 mkdir -p ~/sandbox/o4
-cp -r <G17のAPIのディレクトリ> ~/sandbox/o4/api
+cp -r <G18のディレクトリ> ~/sandbox/o4/api
 cd ~/sandbox/o4/api
-go mod vendor
 go build -mod=vendor ./... && go test -mod=vendor ./...
 docker images
 ```
