@@ -2,7 +2,7 @@
 title: "O2 systemd"
 ---
 
-> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2回 ／ 前提：O1、G12〜G17
+> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2回 ／ 前提：O1、G12〜G18
 
 ## ねらい
 
@@ -52,7 +52,7 @@ mkdir -p ~/sandbox/o2
 cd ~/sandbox/o2
 ```
 
-G17のAPIを、`go build` でバイナリにしておく。DBは、これまでどおり `pg-offgrid` のコンテナを使う。ユニットファイルの写しとメモは、リポジトリの `drills/infra/O02-systemd/` に置く。
+G18 で移した API（`cmd/api`。`vendor/` 付きの形。G18 の `build-offline.sh` で `bin/` にできるもの）を、バイナリにしておく。DBは、これまでどおり `pg-offgrid` のコンテナを使う。ユニットファイルの写しとメモは、リポジトリの `drills/infra/O02-systemd/` に置く。
 
 ## 課題
 

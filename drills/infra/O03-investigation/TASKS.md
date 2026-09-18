@@ -2,7 +2,7 @@
 title: "O3 調査ツール"
 ---
 
-> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2〜3回 ／ 前提：O2、F4、F8、G15〜G17
+> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2〜3回 ／ 前提：O2、F4、F8、G15〜G18
 
 ## ねらい
 
@@ -47,7 +47,7 @@ cd ~/sandbox/o3
 
 課題9〜11で使う障害は、平日にAIに作らせる。[prompts/debug-drill.md](../../../prompts/debug-drill.md) の配置ルールに従い、問題は `drills/debug/YYYY-MM-DD-o3-faults/`、答えは `answers/YYYY-MM-DD-o3-faults.md` に置かせる。答えは、答え合わせのときまで開かない。依頼の文面は、`prompts/debug-drill.md` の文面をもとに、次の条件を足して自分で組み立てる。
 
-- 対象は、G17のAPIのコピー。学習済みの範囲（G1〜G20、D1〜D15、O1〜O2）の機能だけを使うこと
+- 対象は、G18 の API（`cmd/api`＋`internal/`）のコピー。学習済みの範囲（G1〜G20、D1〜D15、O1〜O2）の機能だけを使うこと
 - 運用中に現れる障害を3つ、`fault1`、`fault2`、`fault3` の別々のディレクトリに、1つずつ仕込むこと
 - 症状は「つながらない・起動しない」「遅い」「時間とともにリソースが増え続ける」の3種類から、1つずつにすること
 - どの障害も、`ss`、`lsof`、`strace`、`pprof` のどれかで、原因に近づく手がかりが得られること
