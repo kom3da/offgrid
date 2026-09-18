@@ -1,10 +1,10 @@
 ---
 title: ホーム
-description: AIなし・閉域でも「書ける・読める・直せる」力を、ゼロから付け直すための学習カリキュラム
+description: AIに頼らずに「書ける・読める・直せる」力を、ゼロから付け直すための学習カリキュラム
 template: splash
 hero:
   title: offgrid
-  tagline: AIに頼らずに、自分で書ける・読める・直せる。コンピュータの仕組みから、Go・PostgreSQL・TypeScript、閉域での運用までを、「AIなしデー」を積み上げてゼロから学び直すカリキュラム。
+  tagline: AIに頼らずに、自分で書ける・読める・直せる。コンピュータの仕組みから、Go・PostgreSQL・TypeScript、運用までを、「AIなしデー」を積み上げてゼロから学び直すカリキュラム。
   actions:
     - text: はじめかた（Day 0）
       link: /offgrid/getting-started/
@@ -23,13 +23,13 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 		1回6時間。AIの補完もチャットも切り、`man` と公式ドキュメントと書籍だけで手を動かす。ペースは週1回でも週3回でもよい。次の日に、そのコードをAIにレビューしてもらう。
 	</Card>
 	<Card title="ゼロから、順番に" icon="list-format">
-		2進数とシェルから始めて、Git、ネットワーク、Go、SQL、TypeScript、運用まで。6つのステージと約80のユニットを、完了条件を確かめながら進む。
+		2進数とシェルから始めて、Git、ネットワーク、Go、SQL、TypeScript、運用まで。6つのステージと73のユニットを、完了条件を確かめながら進む。
 	</Card>
 	<Card title="問題だけの課題シート" icon="pencil">
 		すべてのユニットに、答えのない課題シートがある。観察して、予想して、確かめる。付属のコマンドが、課題を1問ずつ案内し、やり残しを教える。
 	</Card>
-	<Card title="最後に、閉域で動くものを作る" icon="rocket">
-		卒業制作は、監視ダッシュボード「watchdeck」。ネットワークを切った状態で、ビルドから起動までをやり切る。
+	<Card title="最後に、動かし続けられるものを作る" icon="rocket">
+		卒業制作は、監視ダッシュボード「watchdeck」。runbook だけからの再構築と、計画した障害の試験で、自力で動かし続けられることを示す。
 	</Card>
 </CardGrid>
 
@@ -39,7 +39,7 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 	<LinkCard title="1. 準備する" description="まっさらなマシンから、Ubuntuと自分の学習用リポジトリを用意する" href="/offgrid/getting-started/" />
 	<LinkCard title="2. 全体をつかむ" description="6つのステージと、1回のAIなしデーの時間割" href="/offgrid/roadmap/" />
 	<LinkCard title="3. 最初のユニットを開く" description="F1 コンピュータの仕組み" href="/offgrid/units/f01-binary/" />
-	<LinkCard title="教材とツール" description="書籍、オフラインで使えるドキュメント、道具の一覧" href="/offgrid/resources/" />
+	<LinkCard title="教材とツール" description="書籍、公式ドキュメント、道具の一覧" href="/offgrid/resources/" />
 </CardGrid>
 
 ## トラック
@@ -49,6 +49,6 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 	<LinkCard title="G：Go" description="Stage 1〜3　文法からWeb API、並行処理、DB連携まで" href="/offgrid/track-g-go/" />
 	<LinkCard title="T：Webフロントエンド" description="Stage 2〜3　HTML・JavaScript・TypeScript・React" href="/offgrid/track-t-web/" />
 	<LinkCard title="D：PostgreSQL" description="Stage 1〜3　SQLの基礎から実行計画、時系列データまで" href="/offgrid/track-d-postgresql/" />
-	<LinkCard title="O：運用と閉域" description="Stage 4　systemd・Docker・構成管理・オフライン開発" href="/offgrid/track-o-ops/" />
+	<LinkCard title="O：運用" description="Stage 4　systemd・Docker・構成管理・再現できるビルド・引き継ぎ" href="/offgrid/track-o-ops/" />
 	<LinkCard title="C：卒業制作" description="Stage 5　監視ダッシュボード watchdeck" href="/offgrid/track-c-capstone/" />
 </CardGrid>

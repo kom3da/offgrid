@@ -43,7 +43,7 @@ export default defineConfig({
 		mermaid(),
 		starlight({
 			title: 'offgrid',
-			description: 'AIなし・閉域でも「書ける・読める・直せる」力をゼロから付け直す学習カリキュラム',
+			description: 'AIに頼らずに「書ける・読める・直せる」力をゼロから付け直す学習カリキュラム',
 			locales: { root: { label: '日本語', lang: 'ja' } },
 			social: [{ icon: 'github', label: 'GitHub', href: repoUrl }],
 			plugins: [starlightThemeRapide()],
@@ -62,7 +62,7 @@ export default defineConfig({
 						track('G：Go', '11-track-g-go', 'go'),
 						track('T：Webフロントエンド', '12-track-t-web', 'ts'),
 						track('D：PostgreSQL', '13-track-d-postgresql', 'sql'),
-						track('O：運用と閉域', '14-track-o-ops', 'infra'),
+						track('O：運用', '14-track-o-ops', 'infra'),
 						track('C：卒業制作', '15-track-c-capstone', 'capstone'),
 					],
 				},
