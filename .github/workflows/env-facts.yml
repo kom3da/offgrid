@@ -26,7 +26,7 @@ jobs:
         run: |
           # CLAUDE.md に「Ubuntu 26.04 の ls・sort などは uutils」と書いてある。
           # どちらであっても落とさないが、変わったら記述を直す合図として残す。
-          for c in ls sort uniq wc cut head tail cat chmod stat cp mv rm; do
+          for c in ls sort uniq wc cut head tail cat chmod stat shuf cp mv rm; do
             v="$($c --version 2>/dev/null | head -1)"
             case "$v" in
               *uutils*) impl=uutils ;;

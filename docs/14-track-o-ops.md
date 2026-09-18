@@ -24,7 +24,7 @@ Stage 0の知識と、GoとDBを結びつけ、「ネットワークがなくて
 - **[O4 Dockerfile](../drills/infra/O04-dockerfile/TASKS.md)**：イメージのサイズが30MB以下
 - **[O5 docker compose](../drills/infra/O05-compose/TASKS.md)**：`docker compose up` だけで、API・PostgreSQL・リバースプロキシが動く
 - **[O6 構成管理入門](../drills/infra/O06-ansible/TASKS.md)**：Ansibleで、同じ手順で何度でも作り直せる
-- **[O7 再現できるビルド](../drills/infra/O07-reproducible-build/TASKS.md)**：`build.sh` をまっさらな環境で実行して、手元と同じ `checksums.txt` になる
+- **[O7 再現できるビルド](../drills/infra/O07-reproducible-build/TASKS.md)**：`build.sh` をまっさらな仮想マシンで実行して、バイナリと `dist/` の `checksums.txt` が手元と同じになる
 - **[O8 引き継ぎ](../drills/infra/O08-handover/TASKS.md)**：AIが書いて問題を仕込んだサービスを、答えを見ずに読み、仕込まれた問題の6割以上を見つけて直し、機能を1つ足して動かす
 - **[O9 負荷試験入門](../drills/infra/O09-load-test/TASKS.md)**：改善前後のp95（遅いほうから5%目の応答時間）を記録できる
 
@@ -38,8 +38,8 @@ Stage 0の知識と、GoとDBを結びつけ、「ネットワークがなくて
 - `go mod vendor` で依存を固め、`-mod=vendor` でビルドできる
 - `package-lock.json` と npm のキャッシュで、`npm ci` が同じ結果になる
 - ベースイメージをダイジェストで固定し、`docker save` / `docker load` で持ち運べる
-- `build.sh` が、リポジトリだけを入力に、バイナリ・`dist/`・イメージの tar と `checksums.txt` を出す
-- まっさらな環境で `build.sh` を実行して、手元と同じ `checksums.txt` になる
+- `build.sh` が、リポジトリだけを入力に、バイナリ・`dist/`・イメージの tar と、バイナリと `dist/` の `checksums.txt` を出す（tar は再ビルドのたびに変わるので、一致の対象にしない）
+- まっさらな仮想マシンで `build.sh` を実行して、手元と同じ `checksums.txt` になる
 
 ## 引き継ぎ（O8）
 

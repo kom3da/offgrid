@@ -2,7 +2,7 @@
 title: "O7 再現できるビルド"
 ---
 
-> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2〜3回 ／ 前提：O1、O4、O5、G18、T10
+> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2〜3回 ／ 前提：O1、O4、O5、O6、G18、T10
 
 ## ねらい
 
@@ -63,7 +63,7 @@ cd ~/sandbox/o7 && git init && git add -A && git commit -m "start"
 ### 発展（任意）
 
 - `GOFLAGS=-mod=vendor` を環境変数にしたときと、コマンドの引数にしたときの違いを調べる
-- `docker build` に `--no-cache` を付けたときと付けないときで、`checksums.txt` は変わるか
+- `docker build` に `--no-cache` を付けたときと付けないときで、イメージから取り出したバイナリ（課題10）は変わるか。tar はどうか
 
 ## 詰まりやすいところ
 

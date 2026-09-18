@@ -32,7 +32,7 @@ title: "C7 障害試験と runbook"
 
 ## 準備
 
-まっさらな環境を用意する（新しい仮想マシンか、作り直した Ubuntu）。持ち込むのはリポジトリ一式と `.env` だけ。C6 の課題12で作った配布物（tar と `sha256sum` の一覧）と、C6 で書き始めた `capstone/docs/runbook.md` が揃っていること。障害は自分で仕込むと答えを知ってしまうので、**種類は決めるが順番は `shuf`（`man shuf`）で決める**。
+まっさらな環境を用意する（新しい仮想マシンか、作り直した Ubuntu）。持ち込むのは、リポジトリ一式、`.env`、C6 の課題12で作った配布物（tar と `sha256sum` の一覧）だけ。リポジトリの中に、C6 で書き始めた `capstone/docs/runbook.md` があること。障害は自分で仕込むと答えを知ってしまうので、**種類は決めるが順番は `shuf`（`man shuf`）で決める**。
 
 ```sh
 mkdir -p capstone/docs/tests
