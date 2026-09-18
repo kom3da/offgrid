@@ -249,7 +249,7 @@ git push origin main
 
 初回のウォームアップは、再現する内容がまだないので、「Ubuntuのシェルを開き、`cd ~/offgrid-log` で移動し、`ls` で中身を見る」を何も見ずにやる（`offgrid` も、そう表示する）。
 
-このカリキュラムは[ブラウザでも読める](https://kom3da.github.io/offgrid/)が、セッション中に開くのは、自分のリポジトリの中のMarkdownでよい。ネットワークを切る回（O8、C7、閉域AIデー）では、それが唯一の読み方になる。
+このカリキュラムは[ブラウザでも読める](https://kom3da.github.io/offgrid/)が、セッション中に開くのは、自分のリポジトリの中のMarkdownでよい。
 
 ## カリキュラムが改訂されたとき
 

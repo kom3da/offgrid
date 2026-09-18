@@ -104,5 +104,5 @@ go vet ./... && go test -race -cover ./...
 ## 次につながるユニット
 
 - G19・G20（HTTPクライアント、SSE）：新しく書くコードを、この構成（`cmd/` と `internal/`）に置く
-- O7（閉域の準備）：`build-offline.sh` の手順を、閉域環境の準備チェックリストの1項目として組み込む。npmの依存も同じ考え方で固める
+- O7（再現できるビルド）：`build-offline.sh` の考え方を `build.sh` に発展させ、成果物のハッシュで再現を確かめる。npm の依存も同じ考え方で固める
 - C2〜C6（卒業制作）：`capstone/` は、最初からこの構成で始める。`docker build` の中で `-mod=vendor` を使う（C6）

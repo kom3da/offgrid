@@ -31,6 +31,15 @@ RETIRED = [
     ("GNUコマンド", "Ubuntu 26.04 の coreutils は uutils（CLAUDE.md を参照）"),
     ("週1回前提", "ペースは学習者が決める（docs/04）"),
     ("週次レビュー", "セッションを暦に結び付けない（docs/04）"),
+    # 閉域は目的ではなく動機（docs/01）。測るのは「AIなしで自分でできるか」
+    ("ネットワークを切", "ネットワークは切らない。測るのはAIなしで自分でできるか（docs/01・04）"),
+    ("ネットワーク遮断", "同上"),
+    ("閉域シミュレーション", "O8 は「引き継ぎ」になった"),
+    ("閉域の準備", "O7 は「再現できるビルド」になった"),
+    ("閉域での再構築", "C7 は「障害試験と runbook」になった"),
+    ("閉域AIデー", "廃止した（弱いAIを使えるかは目的ではない）"),
+    ("運用と閉域", "トラック名は「運用」"),
+    ("オフライン開発", "同上"),
 ]
 # 引退語を書いてよい場所（その言い回し自体を説明しているファイル）
 ALLOW = {
@@ -120,8 +129,8 @@ def check_links():
 def check_retired():
     for path in md_files():
         r = rel(path)
-        if r.startswith(".github/"):
-            continue  # この検査スクリプト自身
+        if r.startswith(".github/") or r == "CHANGELOG.md":
+            continue  # この検査スクリプト自身と、引退したことを記録する変更履歴
         for i, line in enumerate(read(path).splitlines(), 1):
             for phrase, why in RETIRED:
                 if phrase in line and r not in ALLOW.get(phrase, set()):

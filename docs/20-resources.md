@@ -85,14 +85,12 @@ title: "教材とツール"
 - **エディタ**：Ubuntuの中の `vim` / `nano`（最初から入っている）。手元のOSから開くなら [Visual Studio Code](https://code.visualstudio.com/) や JetBrains の Remote Development など。要件は[はじめかた](02-getting-started.md)にある
 - **GitHub CLI**：[gh](https://cli.github.com/)
 
-## 教材の手元への置きかた
+## 手元に置いておくと便利なもの（任意）
 
-ふだんのセッションはネットワークにつないだままでよいので、**先に全部を揃える必要はない**。使うことになったものを、その都度保存する。オフラインのドキュメント一式を揃えて手順をコード化するのは、Stage 4の[O7（閉域の準備）](14-track-o-ops.md)の課題そのものなので、そこまで前倒ししない。
-
-下の一覧は「O7で何を揃えるか」の目安として置いてある。必須の関門ではない。
+セッションはネットワークにつないだままでよいので、**何も揃えなくても始められる**。ただ、よく引くものは手元にあると速い。下は、そのつど保存すればよいものの一覧で、必須ではない。
 
 - **Stage 0**：Linux標準教科書とPro GitのPDF。DevDocsでBash・Git・HTTP・Dockerを保存。`man` が引けることの確認
 - **Stage 1**：A Tour of Goと `pkgsite` のローカル起動。PostgreSQLの日本語マニュアルのPDF。pagilaのSQL
 - **Stage 2**：DevDocsでMDN（HTML・CSS・JavaScript）・TypeScript・Reactを保存。JavaScript Primerのclone
 - **Stage 3**：`pgx` のソースとドキュメントのclone。コードリーディング対象のOSSのclone
-- **Stage 4**：Ansible・Docker Compose・負荷試験ツール（vegetaかk6）のドキュメントを保存。`man systemd.service`、`man journalctl` が引けることを確認。[閉域環境の準備](14-track-o-ops.md)（O7）で、ここまでの手順をコード化する（ここが本番）
+- **Stage 4**：Ansible・Docker Compose・負荷試験ツール（vegetaかk6）のドキュメント。`man systemd.service`、`man journalctl` が引けることを確認

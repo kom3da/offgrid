@@ -2,7 +2,7 @@
 title: "O2 systemd"
 ---
 
-> トラック：[O：運用と閉域](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2回 ／ 前提：O1、G12〜G17
+> トラック：[O：運用](../../../docs/14-track-o-ops.md) ／ Stage 4 ／ 目安：メイン枠で2回 ／ 前提：O1、G12〜G17
 
 ## ねらい
 
