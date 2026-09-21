@@ -119,3 +119,21 @@ jobs:
             gh release view "$TAG" --json assets --jq '.assets[].name'
             exit 1
           fi
+
+      # 件数がそろっても、中身が壊れていることはある。落として確かめる。
+      - name: 公開した資産を落として確かめる
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          mkdir -p /tmp/dl && cd /tmp/dl
+          gh release download "$TAG" --clobber
+          # checksums.txt は dist/ の中で作ったので、そこに並んでいる名前で照合できる
+          sha256sum -c checksums.txt
+          chmod +x offgrid-linux-amd64
+          got=$(./offgrid-linux-amd64 version)
+          echo "$got"
+          [ "$got" = "offgrid $TAG" ] || {
+            echo "::error::公開したバイナリが名乗る版が違う（$got、期待は offgrid $TAG）"
+            exit 1
+          }
