@@ -8,6 +8,15 @@
 
 学習者は `./scripts/update-curriculum.sh <版>` で取り込む。バイナリは、同じ版のリリースに付く。
 
+## v1.1.1（2026-09-21）
+
+Windows（WSL2）の Day 0 を実機で検証した。**手順の誤りは見つからなかった**ので、[はじめかた](docs/02-getting-started.md)の「実機で検証できていない」の断りを外した。
+
+- Windows 11（WSL 2.5.9）＋ Ubuntu 26.04.1 LTS（x86_64）で、`wsl --install` からセッションを始められるところまで通した。`apt` の3本、`offgrid` の x86_64 の判定、`gh auth login`、`gh repo create --template` からクローン、`rm -rf site .github`、`offgrid status`・`next`・`selftest`、`offgrid serve` を WSL2 に立てて Windows のブラウザから `http://localhost:7777` で開くところまで
+- WSL2 の Ubuntu 26.04 でも、`ls`・`sort` は uutils、`grep` は GNU、`/tmp` は tmpfs、bash は 5.3、systemd は既定で有効だった。Lima の VM と前提が変わらない
+- Windows の節に、ポート転送の1行を足した（Lima の節にはあって、こちらに無かった）
+- **C7 の「時刻をずらしても数秒で戻る」に、WSL2 の場合の調べどころを足した。** WSL2 では NTP を止めるだけでは足りず、ホストの時計に合わせる仕組みが巻き戻しを数秒で打ち消す（進めるほうは打ち消さない）。Lima を前提にした書き方のままだと、この障害で行き止まりになる
+
 ## v1.1.0（2026-09-18）
 
 目的の言い直し。**測るのは「AIなしで自分でできるか」であって、ネットワークの有無ではない。** 閉域は目的ではなく、AIが使えない場面の一例に戻した。
