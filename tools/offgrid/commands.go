@@ -546,12 +546,18 @@ func stageAll(root string) (excluded []string, err error) {
 			continue
 		}
 		name := head[2]
-		if name == "" { // 名前が次の欄にある（renameやバイナリ）
+		if name == "" {
+			// 名前が別の欄にある。rename は「旧名 NUL 新名」の2つ続くので、
+			// 取り消すのは索引に載っている新しいほう。
 			if i+1 >= len(fields) {
 				break
 			}
 			i++
 			name = fields[i]
+			if i+1 < len(fields) && !strings.Contains(fields[i+1], "\t") && fields[i+1] != "" {
+				i++
+				name = fields[i]
+			}
 		}
 		f := []string{head[0], head[1], name}
 		if f[0] != "-" || f[1] != "-" {

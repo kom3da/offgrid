@@ -436,3 +436,28 @@ func TestLocalSheetIsNotDroppedFromAllSheets(t *testing.T) {
 		t.Errorf("TASKS.local.md にしたら %d本 → %d本 に減った", len(before), len(after))
 	}
 }
+
+// 名前を変えた実行ファイルも、コミットから外れること。
+// numstat の -z は、rename のとき「旧名 NUL 新名」と2つ並べて出す。
+func TestRenamedBinaryIsLeftOut(t *testing.T) {
+	_, h, root := newServer(t)
+	old := filepath.Join(root, "旧名")
+	if err := os.WriteFile(old, []byte("\x7fELF\x00\x01binary\x00"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initGit(t, root) // 旧名を追跡した状態から始める
+	if out, err := gitOut(root, "mv", "旧名", "新名"); err != nil {
+		t.Fatalf("git mv: %s", out)
+	}
+	sh, _ := LoadSheet(root, "F3")
+	if err := os.WriteFile(filepath.Join(sh.Dir(), "notes.md"), []byte("メモ\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if w := post(t, h, "/end/commit", url.Values{"action": {"commit"}, "message": {"メモ"}, "unit": {"F3"}}); w.Code != 303 {
+		t.Fatalf("commit = %d\n%s", w.Code, w.Body.String())
+	}
+	staged, _ := gitOut(root, "diff", "--cached", "--name-only")
+	if strings.Contains(staged, "新名") {
+		t.Errorf("名前を変えた実行ファイルが、まだ索引に載っている:\n%s", staged)
+	}
+}
