@@ -322,3 +322,68 @@ func TestRetroFieldKeysDoNotShift(t *testing.T) {
 		t.Errorf("同じ文が2つの欄に入った:\n%s", raw)
 	}
 }
+
+// 別のサイトから GET で開かれただけで、終わりの手続きが当日ログを作らないこと。
+// /session・/unit/・/retro は塞いだが、/end を入れ忘れていた。
+func TestCrossSiteGetOnEndCreatesNothing(t *testing.T) {
+	_, h, root := newServer(t)
+	sess, err := LoadSession(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := httptest.NewRequest(http.MethodGet, "/end", nil)
+	r.Host = "localhost:7777"
+	r.RemoteAddr = "127.0.0.1:50000"
+	r.Header.Set("Sec-Fetch-Site", "cross-site")
+	r.Header.Set("Origin", "https://evil.example")
+	if w := do(t, h, r); w.Code != http.StatusForbidden {
+		t.Errorf("別サイトからの GET /end = %d, want 403", w.Code)
+	}
+	if _, err := os.Stat(sess.Log); err == nil {
+		t.Error("別サイトからの GET で、その日の振り返りファイルができた")
+	}
+	if w := get(t, h, "/end"); w.Code != http.StatusOK {
+		t.Errorf("自分で開いた /end = %d", w.Code)
+	}
+}
+
+// docs/ や logs/ に置いたリンクから、リポジトリの外や answers/ に届かないこと。
+func TestSymlinksCannotLeaveTheRepository(t *testing.T) {
+	s, h, root := newServer(t)
+	outside := t.TempDir()
+	outsideFile := filepath.Join(outside, "probe.md")
+	if err := os.WriteFile(outsideFile, []byte("# 外のファイル\n- \n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outsideFile, filepath.Join(root, "docs", "alias.md")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "logs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "logs", "alias")); err != nil {
+		t.Fatal(err)
+	}
+	if w := get(t, h, "/file/docs/alias.md"); strings.Contains(w.Body.String(), "外のファイル") {
+		t.Error("リンク経由で、リポジトリの外のファイルが読めた")
+	}
+	if _, ok := s.logPath("logs/alias/probe.md"); ok {
+		t.Error("リンク経由で、リポジトリの外に書ける")
+	}
+	// answers/ へのリンクも通さない
+	if err := os.MkdirAll(filepath.Join(root, "answers"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "answers", "a.md"), []byte("こたえ\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(root, "answers", "a.md"), filepath.Join(root, "docs", "ans.md")); err != nil {
+		t.Fatal(err)
+	}
+	if w := get(t, h, "/file/docs/ans.md"); strings.Contains(w.Body.String(), "こたえ") {
+		t.Error("リンク経由で answers/ が読めた")
+	}
+	if _, ok := s.logPath("logs/answers/a.md"); ok {
+		t.Error("logs/answers/ を通している")
+	}
+}
