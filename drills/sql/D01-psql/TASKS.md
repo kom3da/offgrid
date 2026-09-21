@@ -33,7 +33,7 @@ title: "D1 データベースとは・psql"
 
 - 『SQL ゼロからはじめるデータベース操作』第1章 1-1〜1-3（データベースとは何か、データベースの構成、SQL の概要）、1-4（テーブルの作成）
 - PostgreSQL公式マニュアル（PDF）の、チュートリアルの「さあ始めましょう」にあたる部分と、「psql」のリファレンスのメタコマンドの節（眺めるだけでよい）
-- 平日のうちに、pagila の配布リポジトリ（GitHub の devrimgunduz/pagila）から、schema と data の SQL を取得しておく。置き場所は `~/sandbox/pagila/`。ファイル名は、配布元の README で確かめる
+- 平日のうちに、pagila の配布リポジトリ（GitHub の devrimgunduz/pagila）の**タグ `pagila-v3.1.0`** から、schema と data の SQL を取得しておく。置き場所は `~/sandbox/pagila/`。ファイル名は、配布元の README で確かめる（新しい版は pgvector 拡張が要り、`pg-offgrid` では読み込めない）
 
 ## 準備
 

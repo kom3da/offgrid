@@ -56,7 +56,7 @@ docker exec -it pg-offgrid psql -U postgres -d pagila
 9. 移動平均。月別の売上に、「その月を含む直近3か月の平均」の列を足す（`ROWS BETWEEN 2 PRECEDING AND CURRENT ROW`）。先頭の2行は、何行の平均になっているか。それでよいか
 10. `GROUP BY` との違い。「各映画のタイトルと長さと、その `rating` の平均の長さ」を、1行が1本の映画になる形で出す。`GROUP BY` で書こうとするとどうなるか（D3 の課題3）。ウィンドウ関数で書き、そこから「自分の `rating` の平均より長い映画」だけを取り出す
 11. NULL と順位。`rental` を返却日の新しい順に `ROW_NUMBER` を付けると、返却日が NULL の行は何番になるか。D8 の `predict.md` を見ずに予想してから確かめる。NULL を末尾にする書き方を、`OVER` の中でも使えるか
-12. ウィンドウ関数を使う問い合わせの `EXPLAIN`（D9）を出し、`WindowAgg` と `Sort` が出ることを確かめる。`PARTITION BY` の列で並べ替えが起きているのはなぜか
+12. ウィンドウ関数を使う問い合わせの `EXPLAIN`（D9）を出し、`WindowAgg` と、その下に並べ替えの節点（`Sort` か `Incremental Sort`）が出ることを確かめる。`PARTITION BY` の列で並べ替えが起きているのはなぜか
 
 ### 発展（任意）
 
