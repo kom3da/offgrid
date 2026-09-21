@@ -8,6 +8,14 @@
 
 学習者は `./scripts/update-curriculum.sh <版>` で取り込む。バイナリは、同じ版のリリースに付く。
 
+## v1.2.0（2026-09-21）
+
+**`AGENTS.md` を置いた。** これまで「学習を奪わない」の決まりは `CLAUDE.md` にしか無く、Claude Code 以外のAIは読まなかった。学習者が課題の途中で別のAIに助けを求めたとき、答えを出されても止めるものが無い状態だった（[Issue #9](https://github.com/kom3da/offgrid/issues/9)）。
+
+- リポジトリの根に `AGENTS.md`（13行）。絶対に破られたくない5つ（学習者のコードを勝手に直さない、`answers/` を読まない、課題を解かない、Go は標準ライブラリ、答えの載ったページを勧めない）を書き写し、残りは `CLAUDE.md` を指す
+- `.github/` は学習者が消すので、ベンダー固有の指示ファイルは作らない。根に置く1本で通す
+- `scripts/update-curriculum.sh` が `AGENTS.md` も取り込む。`check-docs.py` が、要点が落ちていないかを検査する（`CLAUDE.md` だけ直して `AGENTS.md` が古くなるのを止めるため）
+
 ## v1.1.3（2026-09-21）
 
 環境で結果が変わりうる記述を、Ubuntu 26.04 の仮想マシンで通しで確かめた（[Issue #3](https://github.com/kom3da/offgrid/issues/3)）。4件の誤りが見つかり、直した。

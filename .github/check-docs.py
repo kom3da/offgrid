@@ -247,10 +247,35 @@ def check_numbers():
 # ----------------------------------------------------------------
 
 
+def check_agents():
+    """AGENTS.md（Claude 以外のツールが読む指示）が、要点を落としていないか。
+
+    CLAUDE.md だけ直して AGENTS.md が古くなる、という取り残しを機械で止める。
+    ここで見るのは「最重要ルール：学習を奪わない」の写しだけ。
+    """
+    path = os.path.join(ROOT, "AGENTS.md")
+    if not os.path.exists(path):
+        add("AGENTS.md がない（Claude 以外のAIがルールを読めなくなる）")
+        return
+    text = read(path)
+    for phrase, why in (
+        ("頼まれずに書き換えない", "学習者のコードを勝手に直さない"),
+        ("`answers/` は読まない", "答えを引用させない"),
+        ("解かない", "課題シートとデバッグドリルを解かせない"),
+        ("pgx", "外部ライブラリは G17 の pgx だけ"),
+        ("勧めない", "答えの載ったページを勧めさせない"),
+        ("CLAUDE.md", "残りの決まりへの案内"),
+    ):
+        if phrase not in text:
+            add(f"AGENTS.md に「{phrase}」が無い（{why}）")
+    notes.append("AGENTS.md：要点6つを検査した")
+
+
 def main():
     check_links()
     check_retired()
     check_numbers()
+    check_agents()
     for n in notes:
         print(f"  {n}")
     if problems:
