@@ -387,3 +387,52 @@ func TestSymlinksCannotLeaveTheRepository(t *testing.T) {
 		t.Error("logs/answers/ を通している")
 	}
 }
+
+// 日本語の名前のバイナリも、ちゃんとコミットから外れること。
+// git の numstat は非ASCIIの名前を引用して出すので、そのまま渡しても外れなかった。
+func TestBinaryWithJapaneseNameIsLeftOut(t *testing.T) {
+	_, h, root := newServer(t)
+	initGit(t, root)
+	sh, _ := LoadSheet(root, "F3")
+	if err := os.WriteFile(filepath.Join(sh.Dir(), "notes.md"), []byte("メモ\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	name := "実行ファイル"
+	if err := os.WriteFile(filepath.Join(root, name), []byte("\x7fELF\x00\x01binary\x00"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	w := post(t, h, "/end/commit", url.Values{"action": {"commit"}, "message": {"メモ"}, "unit": {"F3"}})
+	if w.Code != 303 {
+		t.Fatalf("commit = %d\n%s", w.Code, w.Body.String())
+	}
+	tracked, _ := gitOut(root, "ls-files", "-z")
+	if strings.Contains(tracked, name) {
+		t.Error("日本語の名前の実行ファイルがコミットされた")
+	}
+	if !strings.Contains(w.Header().Get("Location"), "excluded=") {
+		t.Error("外したことを知らせていない")
+	}
+}
+
+// つなぎのシート（TASKS.local.md）だけのユニットも、selftest と status から消えないこと。
+func TestLocalSheetIsNotDroppedFromAllSheets(t *testing.T) {
+	root := newRepo(t)
+	before, err := AllSheets(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sh, err := LoadSheet(root, "F3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(sh.Path, filepath.Join(sh.Dir(), "TASKS.local.md")); err != nil {
+		t.Fatal(err)
+	}
+	after, err := AllSheets(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(after) != len(before) {
+		t.Errorf("TASKS.local.md にしたら %d本 → %d本 に減った", len(before), len(after))
+	}
+}

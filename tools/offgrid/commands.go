@@ -532,13 +532,29 @@ func stageAll(root string) (excluded []string, err error) {
 	if out, err := gitOut(root, "add", "-A"); err != nil {
 		return nil, fmt.Errorf("git add: %s", strings.TrimSpace(out))
 	}
-	out, err := gitOut(root, "diff", "--cached", "--numstat")
+	// -z で読む。付けないと、日本語などの名前が "\345\256\237..." と引用されて出てきて、
+	// そのまま git reset に渡しても外れない（「除外した」と言いながらコミットしていた）。
+	out, err := gitOut(root, "diff", "--cached", "--numstat", "-z")
 	if err != nil {
 		return nil, fmt.Errorf("git diff: %s", strings.TrimSpace(out))
 	}
-	for _, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
-		f := strings.SplitN(line, "\t", 3)
-		if len(f) != 3 || f[0] != "-" || f[1] != "-" {
+	// -z の並びは「追加\t削除\t」のあとに NUL 区切りの名前が続く
+	fields := strings.Split(strings.TrimRight(out, "\x00"), "\x00")
+	for i := 0; i < len(fields); i++ {
+		head := strings.SplitN(fields[i], "\t", 3)
+		if len(head) < 3 {
+			continue
+		}
+		name := head[2]
+		if name == "" { // 名前が次の欄にある（renameやバイナリ）
+			if i+1 >= len(fields) {
+				break
+			}
+			i++
+			name = fields[i]
+		}
+		f := []string{head[0], head[1], name}
+		if f[0] != "-" || f[1] != "-" {
 			continue // 追加・削除の行数が出るのはテキスト
 		}
 		if out, err := gitOut(root, "reset", "-q", "--", f[2]); err != nil {

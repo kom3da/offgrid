@@ -253,8 +253,17 @@ func AllSheets(root string) ([]*Sheet, error) {
 				return nil, fmt.Errorf("%s のディレクトリが%d個あります（%s）。中身を1つにまとめて、古いほうを消してください",
 					id, len(names), strings.Join(names, "、"))
 			}
-			p := filepath.Join(root, names[0], "TASKS.md")
-			if _, err := os.Stat(p); err != nil {
+			// LoadSheet と同じ順で探す。片方だけが TASKS.local.md を見ないと、
+			// つなぎのシートを置いたユニットが selftest と status から黙って消える。
+			p := ""
+			for _, name := range []string{"TASKS.md", "TASKS.local.md"} {
+				q := filepath.Join(root, names[0], name)
+				if _, err := os.Stat(q); err == nil {
+					p = q
+					break
+				}
+			}
+			if p == "" {
 				continue // シートの無いディレクトリ（学習者のメモ置き場など）
 			}
 			sh, err := parseSheet(p, id, root)
