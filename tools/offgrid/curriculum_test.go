@@ -296,7 +296,7 @@ func TestSessionAndRetro(t *testing.T) {
 	if len(fields) != 4 {
 		t.Fatalf("空欄の数 = %d（%+v）", len(fields), fields)
 	}
-	if err := RetroWrite(s.Log, fields[0].Key, "F3をやった"); err != nil {
+	if err := RetroWrite(root, s.Log, fields[0].Key, "F3をやった"); err != nil {
 		t.Fatal(err)
 	}
 	raw, _ := os.ReadFile(s.Log)
@@ -306,10 +306,10 @@ func TestSessionAndRetro(t *testing.T) {
 	if len(RetroFields(s.Log)) != 3 {
 		t.Error("埋めた欄が、まだ空欄として数えられている")
 	}
-	if err := AppendStuck(s.Log, "sort の順が合わない"); err != nil {
+	if err := AppendStuck(root, s.Log, "sort の順が合わない"); err != nil {
 		t.Fatal(err)
 	}
-	if err := AppendStuck(s.Log, "uniq が効かない"); err != nil {
+	if err := AppendStuck(root, s.Log, "uniq が効かない"); err != nil {
 		t.Fatal(err)
 	}
 	raw, _ = os.ReadFile(s.Log)

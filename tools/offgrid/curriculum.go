@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -252,8 +253,17 @@ func AllSheets(root string) ([]*Sheet, error) {
 				return nil, fmt.Errorf("%s のディレクトリが%d個あります（%s）。中身を1つにまとめて、古いほうを消してください",
 					id, len(names), strings.Join(names, "、"))
 			}
-			p := filepath.Join(root, names[0], "TASKS.md")
-			if _, err := os.Stat(p); err != nil {
+			// LoadSheet と同じ順で探す。片方だけが TASKS.local.md を見ないと、
+			// つなぎのシートを置いたユニットが selftest と status から黙って消える。
+			p := ""
+			for _, name := range []string{"TASKS.md", "TASKS.local.md"} {
+				q := filepath.Join(root, names[0], name)
+				if _, err := os.Stat(q); err == nil {
+					p = q
+					break
+				}
+			}
+			if p == "" {
 				continue // シートの無いディレクトリ（学習者のメモ置き場など）
 			}
 			sh, err := parseSheet(p, id, root)
@@ -279,7 +289,20 @@ func (s *Sheet) workLine(n int) string {
 // すでにあるときは、シートに増えた課題の行だけを足す。カリキュラムを取り込んで課題が増えても、
 // 番号がそろっていないと「できた」を記録できなくなるため。
 func (s *Sheet) EnsureWork() (created bool, added []int, err error) {
+	err = withLock(s.root, func() error {
+		created, added, err = s.ensureWork()
+		return err
+	})
+	return created, added, err
+}
+
+func (s *Sheet) ensureWork() (created bool, added []int, err error) {
 	raw, readErr := os.ReadFile(s.WorkPath())
+	// 読めない理由が「まだ無い」以外なら、作り直さない。
+	// 権限のエラーを「未作成」と扱って書くと、学習者の記録がそのまま消える。
+	if readErr != nil && !os.IsNotExist(readErr) {
+		return false, nil, fmt.Errorf("作業記録を読めません（上書きを避けて中止しました）: %w", readErr)
+	}
 	if readErr != nil {
 		var b strings.Builder
 		fmt.Fprintf(&b, "# %s 作業記録\n\n", s.Title)
@@ -339,7 +362,11 @@ func (s *Sheet) WorkState() map[int]bool {
 }
 
 func (s *Sheet) Tick(n int, done bool) error {
-	if _, _, err := s.EnsureWork(); err != nil {
+	return withLock(s.root, func() error { return s.tick(n, done) })
+}
+
+func (s *Sheet) tick(n int, done bool) error {
+	if _, _, err := s.ensureWork(); err != nil {
 		return err
 	}
 	raw, err := os.ReadFile(s.WorkPath())
@@ -472,7 +499,15 @@ func (p *Progress) IsDone(unit string) bool {
 	return false
 }
 
-func (p *Progress) MarkDone(unit string) (bool, error) {
+func (p *Progress) MarkDone(unit string) (ok bool, err error) {
+	err = withLock(filepath.Dir(p.Path), func() error {
+		ok, err = p.markDone(unit)
+		return err
+	})
+	return ok, err
+}
+
+func (p *Progress) markDone(unit string) (bool, error) {
 	raw, err := os.ReadFile(p.Path)
 	if err != nil {
 		return false, err
@@ -489,6 +524,10 @@ func (p *Progress) MarkDone(unit string) (bool, error) {
 }
 
 func (p *Progress) SetNext(unit string, db bool) error {
+	return withLock(filepath.Dir(p.Path), func() error { return p.setNext(unit, db) })
+}
+
+func (p *Progress) setNext(unit string, db bool) error {
 	label := "次のユニット"
 	if db {
 		label = "次のPostgreSQLユニット"
@@ -627,6 +666,10 @@ var (
 	emptyBulletRe = regexp.MustCompile(`^- *$`)
 	emptyNumRe    = regexp.MustCompile(`^(\d+)\. *$`)
 	labelRe       = regexp.MustCompile(`：\s*$`)
+	// 埋まった欄。空いている欄と同じ並びで数えるために要る
+	filledBulletRe = regexp.MustCompile(`^- +\S`)
+	filledNumRe    = regexp.MustCompile(`^\d+\. +\S`)
+	filledLabelRe  = regexp.MustCompile(`^(.*：)\s*\S`)
 )
 
 // RetroFields は、テンプレートのまま空いている欄を返す。
@@ -638,23 +681,34 @@ func RetroFields(log string) []RetroField {
 	var out []RetroField
 	heading := ""
 	seen := map[string]int{}
-	add := func(i int, label string) {
+	// 番号は、埋まった欄も数えて進める。空いている欄だけで数えると、1つ書いた時点で
+	// 残りの識別子がずれ、次の送信が別の欄に入る（同じ文が2つの欄に入ることを実測した）。
+	add := func(i int, label string, empty bool) {
 		k := heading + "|" + label
 		seen[k]++
+		if !empty {
+			return
+		}
 		out = append(out, RetroField{Line: i, Key: fmt.Sprintf("%s|%d", k, seen[k]), Label: label})
 	}
 	for i, line := range strings.Split(string(raw), "\n") {
+		label := heading
+		if label == "" {
+			label = "（見出しなし）"
+		}
 		switch {
 		case strings.HasPrefix(line, "#"):
 			heading = strings.TrimSpace(strings.TrimLeft(line, "# "))
 		case emptyBulletRe.MatchString(line), emptyNumRe.MatchString(line):
-			label := heading
-			if label == "" {
-				label = "（見出しなし）"
-			}
-			add(i, label)
+			add(i, label, true)
 		case labelRe.MatchString(line):
-			add(i, strings.TrimLeft(strings.TrimSpace(line), "- "))
+			// 「- ラベル：」で終わる行は、これから書く欄
+			add(i, strings.TrimLeft(strings.TrimSpace(line), "- "), true)
+		case filledLabelRe.MatchString(line):
+			// 「- ラベル：中身」は、同じ欄の埋まった姿。番号を進めるために数える
+			add(i, strings.TrimLeft(strings.TrimSpace(filledLabelRe.FindStringSubmatch(line)[1]), "- "), false)
+		case filledBulletRe.MatchString(line), filledNumRe.MatchString(line):
+			add(i, label, false)
 		}
 	}
 	return out
@@ -663,7 +717,11 @@ func RetroFields(log string) []RetroField {
 // RetroWrite は、まだ空いている欄に書き込む。
 // 行番号ではなく見出しと項目名で探すので、書いている間にファイルへ1行入っても、別の行を壊さない。
 // すでに埋まっている欄には書かない（二重送信で同じ文が2回入るのを防ぐ）。
-func RetroWrite(log, key, text string) error {
+func RetroWrite(root, log, key, text string) error {
+	return withLock(root, func() error { return retroWrite(log, key, text) })
+}
+
+func retroWrite(log, key, text string) error {
 	index := -1
 	for _, f := range RetroFields(log) {
 		if f.Key == key {
@@ -697,7 +755,11 @@ func RetroWrite(log, key, text string) error {
 }
 
 // AppendStuck は、詰まりメモを「詰まったこと」の欄に時刻付きで書く。
-func AppendStuck(log, text string) error {
+func AppendStuck(root, log, text string) error {
+	return withLock(root, func() error { return appendStuck(log, text) })
+}
+
+func appendStuck(log, text string) error {
 	raw, err := os.ReadFile(log)
 	if err != nil {
 		return err
@@ -730,12 +792,21 @@ func AppendStuck(log, text string) error {
 // AppendNote は、そのユニットの notes.md に、時刻付きで1行足す。
 // ブラウザからでも書けるようにして、エディタに移る手間を減らす。
 func (s *Sheet) AppendNote(text string) error {
+	return withLock(s.root, func() error { return s.appendNote(text) })
+}
+
+func (s *Sheet) appendNote(text string) error {
 	path := filepath.Join(s.Dir(), "notes.md")
 	body := ""
-	if raw, err := os.ReadFile(path); err == nil {
+	raw, readErr := os.ReadFile(path)
+	switch {
+	case readErr == nil:
 		body = string(raw)
-	} else {
+	case os.IsNotExist(readErr):
 		body = fmt.Sprintf("# %s メモ\n\n課題をやりながら気づいたこと、試したコマンドと結果を書く。\n", s.Title)
+	default:
+		// 読めないメモに追記すると、書いてあったものが消える
+		return fmt.Errorf("メモを読めません（上書きを避けて中止しました）: %w", readErr)
 	}
 	if !strings.HasSuffix(body, "\n") {
 		body += "\n"
@@ -826,6 +897,23 @@ func rel(root, path string) string {
 // writeFile は、同じ場所に一時ファイルを作って書き、最後に置き換える。
 // ターミナルとブラウザを行き来しながら使うので、途中で止まっても
 // 書きかけの（中身が切れた）ファイルが残らないようにする。
+// withLock は、リポジトリに1つのロックを取ってから fn を実行する。
+// 「読む → 変える → 書く」の全体を囲む。ターミナル（別プロセス）とブラウザが同じファイルを
+// 触るので、プロセスの中の排他では足りない（50件の更新のうち2件しか残らないことを実測した）。
+// 書き込みは人の速さなので、1つのロックで直列にしてよい。
+func withLock(root string, fn func() error) error {
+	f, err := os.OpenFile(filepath.Join(root, ".offgrid.lock"), os.O_CREATE|os.O_RDWR, 0o644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
+		return err
+	}
+	defer func() { _ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN) }()
+	return fn()
+}
+
 func writeFile(path string, data []byte) error {
 	dir := filepath.Dir(path)
 	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".tmp*")
@@ -841,7 +929,12 @@ func writeFile(path string, data []byte) error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Chmod(name, 0o644); err != nil {
+	// 既存ファイルの見える範囲を広げない（0600 のメモが 0644 になっていた）
+	mode := os.FileMode(0o644)
+	if fi, err := os.Stat(path); err == nil {
+		mode = fi.Mode().Perm()
+	}
+	if err := os.Chmod(name, mode); err != nil {
 		return err
 	}
 	return os.Rename(name, path)

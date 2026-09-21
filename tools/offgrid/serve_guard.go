@@ -79,11 +79,11 @@ func sameOrigin(r *http.Request) bool {
 }
 
 // createsFiles は、GET で開いただけでファイルを用意する画面。
-// 案内（振り返りと state）、ユニット（作業記録）、振り返り（その日のログ）。
+// 案内（振り返りと state）、ユニット（作業記録）、振り返りと終わりの手続き（その日のログ）。
 // 書き込みは軽いが、別のサイトの <img> で今日の振り返りファイルができると、
 // 翌日から「済んだ回」に数えられて回数と時間割がずれる。
 func createsFiles(path string) bool {
-	return path == "/session" || path == "/retro" || strings.HasPrefix(path, "/unit/")
+	return path == "/session" || path == "/retro" || path == "/end" || strings.HasPrefix(path, "/unit/")
 }
 
 // underAnswers は、パスのどこかに answers/ があるかどうか（デバッグドリルの答え）。
@@ -142,6 +142,41 @@ func (s *server) guard(next http.Handler) http.Handler {
 	})
 }
 
+// resolve は、シンボリックリンクをたどってから、リポジトリの中に収まっているかを返す。
+// 文字列の上でパスを整えるだけでは、リンクの先までは見られない。
+// 実際に、docs/ に置いたリンクからリポジトリの外のファイルを読み書きできた。
+func (s *server) resolve(path string) (abs, rel string, ok bool) {
+	root, err := filepath.EvalSymlinks(s.root)
+	if err != nil {
+		return "", "", false
+	}
+	// ファイルもディレクトリも、まだ無いことがある（これから作る振り返り）。
+	// 実在する親までさかのぼってリンクをたどり、残りをつなぎ直す。
+	cur, rest := path, ""
+	for {
+		real, err := filepath.EvalSymlinks(cur)
+		if err == nil {
+			cur = real
+			break
+		}
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			return "", "", false
+		}
+		rest = filepath.Join(filepath.Base(cur), rest)
+		cur = parent
+	}
+	out := filepath.Join(cur, rest)
+	r, err := filepath.Rel(root, out)
+	if err != nil || r == ".." || strings.HasPrefix(r, ".."+string(filepath.Separator)) {
+		return "", "", false
+	}
+	if underAnswers(r) {
+		return "", "", false
+	}
+	return out, filepath.ToSlash(r), true
+}
+
 // markdownPath は、/file/ で開いてよいファイルだけを通す。
 // answers/ はデバッグドリルの答えなので、この道具からは開かせない（学習を奪わないため）。
 func (s *server) markdownPath(name string) (string, bool) {
@@ -154,18 +189,19 @@ func (s *server) markdownPath(name string) (string, bool) {
 	if err != nil || r == ".." || strings.HasPrefix(r, ".."+string(filepath.Separator)) {
 		return "", false
 	}
-	if underAnswers(r) {
+	out, rel, ok := s.resolve(path)
+	if !ok {
 		return "", false
 	}
-	parts := strings.Split(filepath.ToSlash(r), "/")
-	if len(parts) == 1 {
-		return path, true // README.md や PROGRESS.md
+	parts := strings.Split(rel, "/")
+	switch {
+	case len(parts) == 1: // README.md や PROGRESS.md
+	case parts[0] == "docs" || parts[0] == "drills" || parts[0] == "logs" ||
+		parts[0] == "prompts" || parts[0] == "templates" || parts[0] == "capstone":
+	default:
+		return "", false
 	}
-	switch parts[0] {
-	case "docs", "drills", "logs", "prompts", "templates", "capstone":
-		return path, true
-	}
-	return "", false
+	return out, true
 }
 
 // logPath は、/retro?file= で読み書きしてよいファイルだけを通す。
@@ -176,7 +212,15 @@ func (s *server) logPath(name string) (string, bool) {
 	if !strings.HasPrefix(path, base) || !strings.HasSuffix(path, ".md") {
 		return "", false
 	}
-	return path, true
+	out, rel, ok := s.resolve(path)
+	if !ok {
+		return "", false
+	}
+	// リンクをたどった先も logs/ の中であること
+	if !strings.HasPrefix(rel, "logs/") {
+		return "", false
+	}
+	return out, true
 }
 
 // backPath は、書き終わったあとに戻る先。外のサイトへは飛ばさない。

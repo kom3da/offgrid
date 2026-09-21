@@ -259,7 +259,7 @@ func (s *server) handleSessionTask(w http.ResponseWriter, r *http.Request) {
 	case "stuck":
 		if memo := strings.TrimSpace(r.FormValue("memo")); memo != "" {
 			if serr = sess.EnsureLog(); serr == nil {
-				serr = AppendStuck(sess.Log, fmt.Sprintf("%s 課題%d: %s", unit, n, memo))
+				serr = AppendStuck(s.root, sess.Log, fmt.Sprintf("%s 課題%d: %s", unit, n, memo))
 			}
 		}
 		if serr == nil {
@@ -391,7 +391,13 @@ func (s *server) handleEndDone(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, st, "記録できません", unit+" はすでに完了になっています")
 		return
 	}
-	if ok, err := p.MarkDone(unit); err != nil || !ok {
+	ok, err := p.MarkDone(unit)
+	if err != nil {
+		// 書けなかった理由を、行が無いことにすり替えない（直す場所を間違える）
+		s.fail(w, st, "記録できません", err.Error())
+		return
+	}
+	if !ok {
 		s.fail(w, st, "記録できません", fmt.Sprintf("PROGRESS.md に「- [ ] %s ...」の行がありません", unit))
 		return
 	}

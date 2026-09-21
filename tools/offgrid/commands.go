@@ -155,7 +155,7 @@ func guideUnit(sh *Sheet, s *Session, state *SessionState) error {
 				return err
 			}
 			if memo != "" {
-				if err := AppendStuck(s.Log, fmt.Sprintf("%s 課題%d: %s", sh.Unit, next, memo)); err != nil {
+				if err := AppendStuck(sh.root, s.Log, fmt.Sprintf("%s 課題%d: %s", sh.Unit, next, memo)); err != nil {
 					return err
 				}
 				fmt.Println(green("  → 詰まりメモに書きました"))
@@ -532,13 +532,35 @@ func stageAll(root string) (excluded []string, err error) {
 	if out, err := gitOut(root, "add", "-A"); err != nil {
 		return nil, fmt.Errorf("git add: %s", strings.TrimSpace(out))
 	}
-	out, err := gitOut(root, "diff", "--cached", "--numstat")
+	// -z で読む。付けないと、日本語などの名前が "\345\256\237..." と引用されて出てきて、
+	// そのまま git reset に渡しても外れない（「除外した」と言いながらコミットしていた）。
+	out, err := gitOut(root, "diff", "--cached", "--numstat", "-z")
 	if err != nil {
 		return nil, fmt.Errorf("git diff: %s", strings.TrimSpace(out))
 	}
-	for _, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
-		f := strings.SplitN(line, "\t", 3)
-		if len(f) != 3 || f[0] != "-" || f[1] != "-" {
+	// -z の並びは「追加\t削除\t」のあとに NUL 区切りの名前が続く
+	fields := strings.Split(strings.TrimRight(out, "\x00"), "\x00")
+	for i := 0; i < len(fields); i++ {
+		head := strings.SplitN(fields[i], "\t", 3)
+		if len(head) < 3 {
+			continue
+		}
+		name := head[2]
+		if name == "" {
+			// 名前が別の欄にある。rename は「旧名 NUL 新名」の2つ続くので、
+			// 取り消すのは索引に載っている新しいほう。
+			if i+1 >= len(fields) {
+				break
+			}
+			i++
+			name = fields[i]
+			if i+1 < len(fields) && !strings.Contains(fields[i+1], "\t") && fields[i+1] != "" {
+				i++
+				name = fields[i]
+			}
+		}
+		f := []string{head[0], head[1], name}
+		if f[0] != "-" || f[1] != "-" {
 			continue // 追加・削除の行数が出るのはテキスト
 		}
 		if out, err := gitOut(root, "reset", "-q", "--", f[2]); err != nil {
@@ -608,7 +630,7 @@ func cmdStuck(root string, s *Session, args []string) error {
 	if err := s.EnsureLog(); err != nil {
 		return err
 	}
-	if err := AppendStuck(s.Log, text); err != nil {
+	if err := AppendStuck(root, s.Log, text); err != nil {
 		return err
 	}
 	fmt.Println(green("  " + rel(root, s.Log) + " の「詰まったこと」に書きました"))
@@ -679,7 +701,7 @@ func cmdRetro(root string, s *Session, args []string) error {
 			break
 		}
 		if got != "" {
-			if err := RetroWrite(log, target.Key, got); err != nil {
+			if err := RetroWrite(root, log, target.Key, got); err != nil {
 				return err
 			}
 		}

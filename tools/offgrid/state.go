@@ -35,6 +35,9 @@ type SessionState struct {
 	Skipped map[string][]int     `json:"skipped,omitempty"` // ユニットID → あとで回した課題
 	TaskAt  map[string]time.Time `json:"task_at,omitempty"` // 「ユニット:番号」→ その課題を開いた時刻
 	path    string
+	root    string
+	// 読めなかった理由（「まだ無い」は nil）。空の記録で上書きしないために覚えておく。
+	readErr error
 }
 
 // Step は、その回の並びの1つ。
@@ -116,19 +119,23 @@ func statePath(root string, s *Session) string {
 }
 
 func LoadState(root string, s *Session) *SessionState {
-	return loadStateFile(statePath(root, s))
+	return loadStateFile(root, statePath(root, s))
 }
 
-func loadStateFile(path string) *SessionState {
+func loadStateFile(root, path string) *SessionState {
 	st := &SessionState{
 		Date:    time.Now().Format("2006-01-02"),
 		Steps:   map[StepID]StepState{},
 		Skipped: map[string][]int{},
 		TaskAt:  map[string]time.Time{},
 		path:    path,
+		root:    root,
 	}
 	raw, err := os.ReadFile(path)
 	if err != nil {
+		if !os.IsNotExist(err) {
+			st.readErr = err
+		}
 		return st
 	}
 	var got SessionState
@@ -145,13 +152,17 @@ func loadStateFile(path string) *SessionState {
 		got.TaskAt = map[string]time.Time{}
 	}
 	got.path = path
+	got.root = root
 	return &got
 }
 
 // Reload は、ファイルの今の中身を取り込む。ターミナルの run は state を持ち続けるので、
 // 課題を出すたびにこれを呼び、ブラウザ側で「あとで」にした課題を見落とさないようにする。
 func (st *SessionState) Reload() {
-	fresh := loadStateFile(st.path)
+	fresh := loadStateFile(st.root, st.path)
+	if fresh.readErr != nil {
+		return // 読めないときは、手元の記録をそのままにする
+	}
 	st.Date, st.Steps, st.Skipped, st.TaskAt = fresh.Date, fresh.Steps, fresh.Skipped, fresh.TaskAt
 }
 
@@ -159,13 +170,20 @@ func (st *SessionState) Reload() {
 // ターミナル（run）とブラウザ（serve）は同じファイルを共有していて、片方が持っている
 // 古い state を丸ごと書くと、もう片方が記録した「あとで」「詰まった」「枠の済み」が消える（実際に起きた）。
 func (st *SessionState) mutate(fn func(*SessionState)) error {
-	fresh := loadStateFile(st.path)
-	fn(fresh)
-	if err := fresh.save(); err != nil {
-		return err
-	}
-	st.Date, st.Steps, st.Skipped, st.TaskAt = fresh.Date, fresh.Steps, fresh.Skipped, fresh.TaskAt
-	return nil
+	return withLock(st.root, func() error {
+		fresh := loadStateFile(st.root, st.path)
+		// 読めない理由が「まだ無い」以外なら、書かない。空の記録で上書きすると、
+		// あとで回した課題も済んだ枠も消える（権限エラーで実際に消えた）。
+		if fresh.readErr != nil {
+			return fmt.Errorf("進みの記録を読めません（上書きを避けて中止しました）: %w", fresh.readErr)
+		}
+		fn(fresh)
+		if err := fresh.save(); err != nil {
+			return err
+		}
+		st.Date, st.Steps, st.Skipped, st.TaskAt = fresh.Date, fresh.Steps, fresh.Skipped, fresh.TaskAt
+		return nil
+	})
 }
 
 func (st *SessionState) save() error {
