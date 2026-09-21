@@ -126,8 +126,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.ver.outputs.tag }}
         run: |
-          mkdir -p /tmp/dl && cd /tmp/dl
-          gh release download "$TAG" --clobber
+          # 作業ディレクトリの外で動かすので、対象のリポジトリを明示する
+          # （リポジトリの外で gh を叩くと「not a git repository」で止まる）
+          mkdir -p /tmp/dl
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir /tmp/dl --clobber
+          cd /tmp/dl
           # checksums.txt は dist/ の中で作ったので、そこに並んでいる名前で照合できる
           sha256sum -c checksums.txt
           chmod +x offgrid-linux-amd64
