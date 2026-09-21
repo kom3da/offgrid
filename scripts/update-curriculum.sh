@@ -10,7 +10,7 @@ main() {
   TEMPLATE="${TEMPLATE:-kom3da/offgrid}"
   tag="${1:?usage: update-curriculum.sh <tag>  (see CHANGELOG.md for the list)}"
   dirs=(docs prompts templates scripts tools)
-  files=(CLAUDE.md README.md CHANGELOG.md)
+  files=(AGENTS.md CLAUDE.md README.md CHANGELOG.md)
 
   cd "$(dirname "$0")/.."
 

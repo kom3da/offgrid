@@ -57,6 +57,7 @@ offgridは、AIに頼らずに、自分で「書ける・読める・直せる�
 ├── tools/offgrid/     # 学習用コマンド offgrid のソース（Go）
 ├── scripts/           # 補助スクリプト（ダミーのログ生成、カリキュラムの取り込み）
 ├── site/              # ドキュメントサイト（Astro Starlight）。テンプレート側でだけ使う
+├── AGENTS.md          # AI全般が守る禁止事項（どのツールでも読まれるように）
 ├── CLAUDE.md          # Claude Code 向けのコンテキストとレビュー方針
 └── CHANGELOG.md       # 版ごとの変更履歴
 ```
