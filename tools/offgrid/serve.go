@@ -348,7 +348,7 @@ func (s *server) handleRetro(w http.ResponseWriter, r *http.Request) {
 			if !strings.HasPrefix(key, "field-") || len(vals) == 0 || strings.TrimSpace(vals[0]) == "" {
 				continue
 			}
-			if err := RetroWrite(log, strings.TrimPrefix(key, "field-"), strings.TrimSpace(vals[0])); err != nil {
+			if err := RetroWrite(s.root, log, strings.TrimPrefix(key, "field-"), strings.TrimSpace(vals[0])); err != nil {
 				failed = append(failed, err.Error())
 			}
 		}
@@ -385,7 +385,7 @@ func (s *server) handleStuck(w http.ResponseWriter, r *http.Request) {
 			s.fail(w, st, "書けません", err.Error())
 			return
 		}
-		if err := AppendStuck(sess.Log, text); err != nil {
+		if err := AppendStuck(s.root, sess.Log, text); err != nil {
 			s.fail(w, st, "書けません", err.Error())
 			return
 		}

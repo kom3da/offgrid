@@ -219,10 +219,10 @@ func TestRetroWriteSurvivesShiftedLines(t *testing.T) {
 	}
 	target := fields[0] // 「メインドリル（ユニット）：」
 	// 画面を出したあとに、別のところから1行入る
-	if err := AppendStuck(sess.Log, "xxd が読めない"); err != nil {
+	if err := AppendStuck(root, sess.Log, "xxd が読めない"); err != nil {
 		t.Fatal(err)
 	}
-	if err := RetroWrite(sess.Log, target.Key, "F3をやった"); err != nil {
+	if err := RetroWrite(root, sess.Log, target.Key, "F3をやった"); err != nil {
 		t.Fatal(err)
 	}
 	raw, _ := os.ReadFile(sess.Log)
@@ -236,7 +236,7 @@ func TestRetroWriteSurvivesShiftedLines(t *testing.T) {
 		}
 	}
 	// 二重送信では、同じ文を2回入れない
-	if err := RetroWrite(sess.Log, target.Key, "F3をやった"); err == nil {
+	if err := RetroWrite(root, sess.Log, target.Key, "F3をやった"); err == nil {
 		t.Error("埋まっている欄に、もう一度書けてしまう")
 	}
 	raw, _ = os.ReadFile(sess.Log)

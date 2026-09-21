@@ -155,7 +155,7 @@ func guideUnit(sh *Sheet, s *Session, state *SessionState) error {
 				return err
 			}
 			if memo != "" {
-				if err := AppendStuck(s.Log, fmt.Sprintf("%s 課題%d: %s", sh.Unit, next, memo)); err != nil {
+				if err := AppendStuck(sh.root, s.Log, fmt.Sprintf("%s 課題%d: %s", sh.Unit, next, memo)); err != nil {
 					return err
 				}
 				fmt.Println(green("  → 詰まりメモに書きました"))
@@ -608,7 +608,7 @@ func cmdStuck(root string, s *Session, args []string) error {
 	if err := s.EnsureLog(); err != nil {
 		return err
 	}
-	if err := AppendStuck(s.Log, text); err != nil {
+	if err := AppendStuck(root, s.Log, text); err != nil {
 		return err
 	}
 	fmt.Println(green("  " + rel(root, s.Log) + " の「詰まったこと」に書きました"))
@@ -679,7 +679,7 @@ func cmdRetro(root string, s *Session, args []string) error {
 			break
 		}
 		if got != "" {
-			if err := RetroWrite(log, target.Key, got); err != nil {
+			if err := RetroWrite(root, log, target.Key, got); err != nil {
 				return err
 			}
 		}

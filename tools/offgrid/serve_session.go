@@ -259,7 +259,7 @@ func (s *server) handleSessionTask(w http.ResponseWriter, r *http.Request) {
 	case "stuck":
 		if memo := strings.TrimSpace(r.FormValue("memo")); memo != "" {
 			if serr = sess.EnsureLog(); serr == nil {
-				serr = AppendStuck(sess.Log, fmt.Sprintf("%s 課題%d: %s", unit, n, memo))
+				serr = AppendStuck(s.root, sess.Log, fmt.Sprintf("%s 課題%d: %s", unit, n, memo))
 			}
 		}
 		if serr == nil {

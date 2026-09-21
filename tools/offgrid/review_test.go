@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -164,5 +165,160 @@ func TestCommitLeavesBinariesOut(t *testing.T) {
 	body := get(t, h, w.Header().Get("Location")).Body.String()
 	if !strings.Contains(body, "コミットから外した") || !strings.Contains(body, "mywc") {
 		t.Error("外したファイルが画面に出ていない")
+	}
+}
+
+// 以下は、別ベンダーのAI（Codex）のレビューで見つかり、こちらで再現したもの。
+// どれも「書けた」と言いながら学習者の記録が消える種類の壊れ方だった。
+
+// ターミナル（別プロセス）とブラウザが同時に書いても、記録が落ちないこと。
+// 直す前は、50件のうち2件しか残らず、しかもエラーは0件だった。
+func TestConcurrentWritesKeepEveryRecord(t *testing.T) {
+	root := newRepo(t)
+	sess, err := LoadSession(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const n = 30
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+	errs := make(chan error, n)
+	for i := 1; i <= n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			st := LoadState(root, sess) // 各自が別々に読む（プロセスが別なのと同じ）
+			<-start
+			errs <- st.Skip("F3", i)
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("保存に失敗: %v", err)
+		}
+	}
+	if got := len(LoadState(root, sess).Skipped["F3"]); got != n {
+		t.Errorf("あとで回した課題が %d/%d しか残っていない", got, n)
+	}
+}
+
+// 読めないファイルを「まだ無い」と扱って上書きしないこと。
+// 直す前は、権限のエラーでも空の記録を書き、メモも進みも消えた。
+func TestUnreadableRecordsAreNotOverwritten(t *testing.T) {
+	root := newRepo(t)
+	sh, err := LoadSheet(root, "F3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"notes.md", "work.md"} {
+		path := filepath.Join(sh.Dir(), name)
+		if err := os.WriteFile(path, []byte("学習者が書いたもの\n"), 0o000); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
+	}
+	if err := sh.AppendNote("新しいメモ"); err == nil {
+		t.Error("読めない notes.md に追記して、エラーを返していない")
+	}
+	if _, _, err := sh.EnsureWork(); err == nil {
+		t.Error("読めない work.md を作り直して、エラーを返していない")
+	}
+	for _, name := range []string{"notes.md", "work.md"} {
+		path := filepath.Join(sh.Dir(), name)
+		if err := os.Chmod(path, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if raw, _ := os.ReadFile(path); !strings.Contains(string(raw), "学習者が書いたもの") {
+			t.Errorf("%s の中身が消えた: %q", name, raw)
+		}
+	}
+
+	// セッションの進みも同じ
+	sess, err := LoadSession(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st := LoadState(root, sess)
+	if err := st.Skip("F3", 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(st.path, 0o000); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(st.path, 0o644) })
+	if err := LoadState(root, sess).Finish(StepWarmup); err == nil {
+		t.Error("読めない state を上書きして、エラーを返していない")
+	}
+	if err := os.Chmod(st.path, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !LoadState(root, sess).isSkipped("F3", 1) {
+		t.Error("あとで回した課題が消えた")
+	}
+}
+
+// 保存で、ファイルの見える範囲を広げないこと（0600 のメモが 0644 になっていた）。
+func TestWriteKeepsFileMode(t *testing.T) {
+	root := newRepo(t)
+	sh, err := LoadSheet(root, "F3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(sh.Dir(), "notes.md")
+	if err := os.WriteFile(path, []byte("# メモ\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := sh.AppendNote("追記"); err != nil {
+		t.Fatal(err)
+	}
+	fi, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fi.Mode().Perm() != 0o600 {
+		t.Errorf("権限が %04o に変わった（0600 のはず）", fi.Mode().Perm())
+	}
+}
+
+// 振り返りの欄の識別子が、1つ書いたあともずれないこと。
+// 直す前は、空いている欄だけで番号を振っていたので、同じ送信が別の欄に入った。
+func TestRetroFieldKeysDoNotShift(t *testing.T) {
+	root := newRepo(t)
+	sess, err := LoadSession(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := sess.EnsureLog(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(sess.Log, []byte("## 記録\n1.\n2.\n3.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	fields := RetroFields(sess.Log)
+	if len(fields) != 3 {
+		t.Fatalf("空欄が3つのはず: %v", fields)
+	}
+	keys := []string{fields[0].Key, fields[1].Key, fields[2].Key}
+	if err := RetroWrite(root, sess.Log, keys[0], "ひとつめ"); err != nil {
+		t.Fatal(err)
+	}
+	// 1つ埋めても、2番目・3番目の識別子は変わらない
+	if err := RetroWrite(root, sess.Log, keys[2], "みっつめ"); err != nil {
+		t.Fatalf("3番目に書けない: %v", err)
+	}
+	raw, _ := os.ReadFile(sess.Log)
+	if got := string(raw); got != "## 記録\n1. ひとつめ\n2.\n3. みっつめ\n" {
+		t.Errorf("狙った欄に入っていない:\n%s", got)
+	}
+	// 同じ送信をもう一度しても、別の欄には入らない
+	if err := RetroWrite(root, sess.Log, keys[0], "ひとつめ"); err == nil {
+		t.Error("埋まっている欄への二重送信を受け入れた")
+	}
+	raw, _ = os.ReadFile(sess.Log)
+	if strings.Count(string(raw), "ひとつめ") != 1 {
+		t.Errorf("同じ文が2つの欄に入った:\n%s", raw)
 	}
 }
