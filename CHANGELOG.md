@@ -8,6 +8,17 @@
 
 学習者は `./scripts/update-curriculum.sh <版>` で取り込む。バイナリは、同じ版のリリースに付く。
 
+## v1.1.3（2026-09-21）
+
+環境で結果が変わりうる記述を、Ubuntu 26.04 の仮想マシンで通しで確かめた（[Issue #3](https://github.com/kom3da/offgrid/issues/3)）。4件の誤りが見つかり、直した。
+
+- **pagila を、動くタグ `pagila-v3.1.0` に固定した。** 配布リポジトリの新しい版（v4 以降）は pgvector 拡張を使うので、`pg-offgrid`（素の `postgres:18`）では schema が読み込めず、**D トラックの入口で止まる**。`env-facts` で月1回、読み込めることを確かめる
+- G1：`go test -race -cover ./...` は `[no test files]` を出さない（パッケージ名だけが出る）。`-cover` を付けない場合との違いを書いた
+- D9：100万行の表では、`EXPLAIN` の先頭行が `Gather`（並列）になり、`Parallel Seq Scan` はその下に出る。詰まりやすいところに足した
+- D12：ウィンドウ関数の計画に出るのは `Sort` とは限らず、`Incremental Sort` のことがある
+
+確かめて記述どおりだったもの：Go 1.27 での `ServeMux` のメソッド＋ワイルドカード（G12）、`go.mod` の `go` 行によるループ変数の挙動の違い（G15）、`-race requires cgo` と `build-essential` で直ること（G1）、npm で TypeScript・Vite・Vitest・ESLint が入り `npx tsc --noEmit --strict` などが動くこと（T5〜T11）、ESLint が設定ファイルを見つけられないときの文言（T7）、`ss`・`strace`・`systemctl status`・`journalctl -u` の出力（O2・O3）、`pg_restore` を `docker exec -i` の標準入力から流せること（D11）。
+
 ## v1.1.2（2026-09-21）
 
 課題シートの「平日に読むもの」に残っていた17箇所の章番号を入れた。翔泳社の4冊は、出版社サイトが目次の自動取得を拒否するため空けてあったが、書籍そのものの目次で確認した（[Issue #2](https://github.com/kom3da/offgrid/issues/2)）。

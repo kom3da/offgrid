@@ -95,7 +95,7 @@ mkdir hello calc
 - 課題12の `explain.md` を、何も見ずに書いてある。平日に、AIに採点を頼む（[`prompts/grade-explain.md`](../../../prompts/grade-explain.md)）。「もう一度」なら、次回のウォームアップで書き直す
 - `go vet ./...` が何も指摘しない
 
-これ以降のGoのユニットでは、確認に `go vet ./... && go test -race -cover ./...` を使う。テストはG7で学ぶので、それまでは `[no test files]` と表示されればよい。`-race` の意味はG15で学ぶ。今は分からなくてよい。
+これ以降のGoのユニットでは、確認に `go vet ./... && go test -race -cover ./...` を使う。テストはG7で学ぶので、それまでは、パッケージ名だけが出て終了コードが0ならよい（`-cover` を付けずに `go test ./...` だけ実行すると `[no test files]` と出る）。`-race` の意味はG15で学ぶ。今は分からなくてよい。
 
 ## 残すもの
 

@@ -10,7 +10,7 @@ title: "D9 インデックス入門"
 
 ## このユニットで身につけること
 
-- `EXPLAIN` の出力の先頭行を読み、Seq Scan と Index Scan を見分ける
+- `EXPLAIN` の出力の先頭の数行を読み、Seq Scan と Index Scan を見分ける
 - `CREATE INDEX` でインデックスを作り、`\d` と `\di` で確かめ、`DROP INDEX` で消す
 - `EXPLAIN (ANALYZE)` で、推定と実際の行数・時間を並べて読む
 - インデックスがあるのに使われない場合（小さいテーブル、当たる行が多すぎる、列に関数をかけている）を、実験で再現する
@@ -87,6 +87,7 @@ ANALYZE d09_events;
 
 ## 詰まりやすいところ
 
+- 先頭行が `Gather` で、Scan の種類が見当たらない → 行数が多いと並列で読む。その下の `Parallel Seq Scan` が本体。`SET max_parallel_workers_per_gather = 0;` で切ると、並列なしの計画と比べられる（戻し忘れに注意）
 - インデックスを作ったのに Seq Scan のまま → テーブルの行数、条件に当たる行の割合、列に関数や型変換をかけていないか、`ANALYZE` 済みか、の順に疑う
 - `EXPLAIN (ANALYZE)` を `UPDATE` や `DELETE` に使ったら、本当に実行されてしまった → `ANALYZE` を付けると実際に実行される。`BEGIN` と `ROLLBACK` で包む（D5）
 - 同じ問い合わせなのに、2回目のほうがずっと速い → 1回目に読んだデータが、メモリに残っている。比べるときは、それぞれ2回以上実行して、2回目以降の時間を使う

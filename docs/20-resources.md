@@ -67,7 +67,7 @@ title: "教材とツール"
 - **TypeScript Handbook** — <https://www.typescriptlang.org/docs/handbook/intro.html>。DevDocsで保存する
 - **Reactの公式ドキュメント** — [日本語版](https://ja.react.dev/learn)。DevDocsで保存する
 - **PostgreSQLの公式マニュアル** — [英語版](https://www.postgresql.org/docs/)は版ごとにPDFが配布されている。[日本語版](https://www.postgresql.jp/document/)はHTMLで、[PDFとEPUB](https://pgsql-jp.github.io/)も配布されている。初学者は日本語版のPDFを用意する
-- **pagila**（練習用のサンプルデータベース）— [リポジトリ](https://github.com/devrimgunduz/pagila)。schemaとdataのSQLを、Stage 1に入る前に取得しておく
+- **pagila**（練習用のサンプルデータベース）— [リポジトリ](https://github.com/devrimgunduz/pagila)。**タグ `pagila-v3.1.0`** の schema と data の SQL を、Stage 1に入る前に取得しておく（`pagila-v4` 以降は pgvector 拡張を使うので、素の `postgres:18` では読み込めない。実機で確認済み）
 
 ## ツール
 
