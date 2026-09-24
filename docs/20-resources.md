@@ -57,11 +57,11 @@ title: "教材とツール"
 
 - 『Site Reliability Engineering』（Betsy Beyer ほか編、O'Reilly、2016）— [Web版](https://sre.google/sre-book/table-of-contents/)が無料（英語）。日本語版『SRE サイトリライアビリティエンジニアリング』（オライリー・ジャパン、2017）— [出版社のページ](https://www.oreilly.co.jp/books/9784873117911/)。**どちらも章番号は同じ**（1〜34章。両方の公開されている目次で確かめた）ので、読みやすいほうでよい。使うユニット：C7、C8
 
-## オンライン教材（オフライン化の方法）
+## オンライン教材（手元に置く方法）
 
 - **Linux標準教科書**（LPI-Japan）— [配布ページ](https://linuc.org/textbooks/linux/)。PDFとEPUBは無料だが、フォームに答えてメールでダウンロード用のコードを受け取る手順なので、平日に済ませておく
 - **Pro Git** — [PDFとEPUB](https://github.com/progit/progit2-ja/releases)をダウンロードする
-- **MDN Web Docs**（HTML・CSS・JavaScript）— [日本語版](https://developer.mozilla.org/ja/)。オフライン化は下のDevDocsで
+- **MDN Web Docs**（HTML・CSS・JavaScript）— [日本語版](https://developer.mozilla.org/ja/)。手元に置くなら下のDevDocsで
 - **DevDocs** — <https://devdocs.io/>。設定の「Offline」で、Bash・Git・HTTP・JavaScript・TypeScript・Reactなどのドキュメントをブラウザの中に保存できる。保存先はブラウザの中なので、ブラウザのデータを消すと失われる。消えたら取り直す
 - **JavaScript Primer** — [Web版](https://jsprimer.net/)。[リポジトリ](https://github.com/js-primer/js-primer)をcloneすると、手元で閲覧できる（起動のしかたはREADMEに書いてある）
 - **A Tour of Go** — [Web版](https://go.dev/tour/)。手元で動かすには `go install golang.org/x/website/tour@latest` のあと `tour` を実行し、`http://localhost:3999/` を開く

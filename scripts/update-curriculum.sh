@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # テンプレート（kom3da/offgrid）の指定した版から、カリキュラム部分だけを取り込む。
 # 使い方: ./scripts/update-curriculum.sh <版>   （版の一覧は CHANGELOG.md）
-# 置き換えるのは docs/ prompts/ templates/ scripts/ tools/ CLAUDE.md README.md CHANGELOG.md と、
+# 置き換えるのは docs/ prompts/ templates/ scripts/ tools/ AGENTS.md CLAUDE.md README.md CHANGELOG.md と、
 # drills/ の中の TASKS.md（課題シート）だけ。それ以外の自分のファイルには触れない。
 set -euo pipefail
 
@@ -58,7 +58,9 @@ main() {
   echo "Updated to ${tag}. Review the changes, then commit:"
   echo "  git diff --stat"
   echo "  git add -A && git commit -m \"[docs] Update curriculum to ${tag}\""
-  echo "To undo instead: git restore . && git clean -fd docs prompts templates scripts tools"
+  # 始める前に作業ツリーがきれいなことを確かめているので、いま未追跡のものは取り込みで入ったものだけ。
+  # drills/ と根のファイルも含めないと、新しく配られた課題シートや AGENTS.md が残って、元に戻らない
+  echo "To undo instead (right away, before adding files of your own): git restore . && git clean -fd docs prompts templates scripts tools drills AGENTS.md CLAUDE.md README.md CHANGELOG.md"
 
   # The binary is installed once on Day 0, so a MAJOR bump needs an explicit swap:
   # the sheet format changes and the old tool cannot read it.
