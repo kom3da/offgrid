@@ -183,7 +183,9 @@ func (s *server) fail(w http.ResponseWriter, st *serveState, heading, message st
 // linkRewriter は、Markdown の中の相対リンクを、この画面のURLに直す。
 func (s *server) linkRewriter(from string) func(string) string {
 	return func(href string) string {
-		if strings.HasPrefix(href, "http") || strings.HasPrefix(href, "#") || strings.HasPrefix(href, "/") {
+		// 「:」を含むもの（http:、HTTPS:、mailto: など）は、ファイルへのリンクとして扱わない。
+		// 行き先を許すかどうかは safeHref が決める
+		if strings.Contains(strings.SplitN(href, "/", 2)[0], ":") || strings.HasPrefix(href, "#") || strings.HasPrefix(href, "/") {
 			return href
 		}
 		target := filepath.Clean(filepath.Join(filepath.Dir(from), strings.SplitN(href, "#", 2)[0]))
@@ -191,9 +193,12 @@ func (s *server) linkRewriter(from string) func(string) string {
 		if i := strings.Index(href, "#"); i >= 0 {
 			frag = href[i:]
 		}
-		rel, err := filepath.Rel(s.root, target)
-		if err != nil || strings.HasPrefix(rel, "..") {
-			return href
+		// 見かけのパスでなく、リンクをたどった先で判定する。/file/ は解決後のパスを渡してくるので、
+		// ルートの側も解決しないと、パスの途中にリンクがある環境（macOS の /var など）で
+		// 相対パスが .. から始まり、書き換えが丸ごと効かなくなっていた
+		_, rel, ok := resolveInRepo(s.root, target)
+		if !ok {
+			return "" // リポジトリの外や answers/ は、押せるリンクとして見せない（文字だけ出る）
 		}
 		switch {
 		case strings.HasPrefix(rel, "docs/") && strings.HasSuffix(rel, ".md"):
@@ -488,10 +493,15 @@ func (s *server) handleFind(w http.ResponseWriter, r *http.Request) {
 			sort.Strings(paths)
 			for _, path := range paths {
 				name := filepath.Base(path)
-				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) || underAnswers(rel(s.root, path)) {
+				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) {
 					continue
 				}
-				raw, err := os.ReadFile(path)
+				// 見かけのパスではなく、リンクをたどった先で判定する（リンクで外や answers/ に出られた）
+				resolved, _, ok := s.resolve(path)
+				if !ok {
+					continue
+				}
+				raw, err := os.ReadFile(resolved)
 				if err != nil {
 					continue
 				}

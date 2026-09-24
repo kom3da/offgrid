@@ -52,19 +52,22 @@ func inlineHTML(s string, link func(string) string) string {
 	})
 	out = mdLink.ReplaceAllStringFunc(out, func(m string) string {
 		g := mdLink.FindStringSubmatch(m)
-		href := g[2]
+		// out は先にエスケープ済みなので、いったん元の文字に戻してから行き先を組み立てる。
+		// 書き換えはファイルのディレクトリ名を継ぎ足すので、最後にもう一度エスケープして属性に入れる
+		// （ディレクトリ名に `">` を含めると、属性を抜けて要素を差し込めた）
+		href := html.UnescapeString(g[2])
 		if link != nil {
 			href = link(href)
 		}
 		href = safeHref(href)
 		if href == "" {
-			return g[1] // 行き先が怪しいときは、文字だけ出す
+			return g[1] // 行き先が怪しいとき、開けないときは、文字だけ出す
 		}
 		rel := ""
-		if strings.HasPrefix(href, "http") {
+		if l := strings.ToLower(href); strings.HasPrefix(l, "http://") || strings.HasPrefix(l, "https://") {
 			rel = ` rel="noreferrer" target="_blank"`
 		}
-		return fmt.Sprintf(`<a href="%s"%s>%s</a>`, href, rel, g[1])
+		return fmt.Sprintf(`<a href="%s"%s>%s</a>`, html.EscapeString(href), rel, g[1])
 	})
 	out = mdStrong.ReplaceAllString(out, "<strong>$1</strong>")
 	out = mdCode.ReplaceAllString(out, "<code>$1</code>")

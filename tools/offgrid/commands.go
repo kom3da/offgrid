@@ -422,10 +422,14 @@ func cmdFind(root string, args []string) error {
 			sort.Strings(paths)
 			for _, path := range paths {
 				name := filepath.Base(path)
-				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) || underAnswers(rel(root, path)) {
+				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) {
 					continue
 				}
-				raw, err := os.ReadFile(path)
+				resolved, _, ok := resolveInRepo(root, path)
+				if !ok {
+					continue
+				}
+				raw, err := os.ReadFile(resolved)
 				if err != nil {
 					continue
 				}

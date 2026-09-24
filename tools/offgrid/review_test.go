@@ -461,3 +461,103 @@ func TestRenamedBinaryIsLeftOut(t *testing.T) {
 		t.Errorf("名前を変えた実行ファイルが、まだ索引に載っている:\n%s", staged)
 	}
 }
+
+// 以下は、#27（まだ誰もレビューしていなかった範囲を別ベンダーのAIに見せた）で見つかり、再現したもの。
+
+// リンクの書き換えが継ぎ足すディレクトリ名から、HTML を差し込めないこと。
+// Markdown の本文は先にエスケープしていたが、継ぎ足した部分はそのまま属性に入っていた。
+func TestRewrittenLinkIsEscaped(t *testing.T) {
+	_, h, root := newServer(t)
+	dir := filepath.Join(root, "drills", "foundation", `F02-"><img src=x onerror=alert(1)>`)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "notes.md"), []byte("[次へ](next.md)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	body := get(t, h, "/file/drills/foundation/"+url.PathEscape(`F02-"><img src=x onerror=alert(1)>`)+"/notes.md").Body.String()
+	// 書き換えが本当に起きていること（起きていなければ、この検査は素通りする）
+	if !strings.Contains(body, `href="/file/drills/foundation/F02-`) {
+		t.Fatalf("相対リンクが /file/ に書き換わっていない:\n%s", body)
+	}
+	if strings.Contains(body, "<img src=x") {
+		t.Errorf("ディレクトリ名から要素を差し込めた:\n%s", body)
+	}
+}
+
+// /find が、リンクをたどってリポジトリの外や answers/ の中身を返さないこと。
+// /file/ と /retro は #25 で塞いだが、/find は見かけのパスしか見ていなかった。
+func TestFindDoesNotFollowLinksOut(t *testing.T) {
+	_, h, root := newServer(t)
+	outside := filepath.Join(t.TempDir(), "outside.txt")
+	if err := os.WriteFile(outside, []byte("OUTSIDE_SENTINEL\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sh, _ := LoadSheet(root, "F3")
+	if err := os.Symlink(outside, filepath.Join(sh.Dir(), "outside.md")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "answers"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "answers", "a.md"), []byte("ANSWER_SENTINEL\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(root, "answers", "a.md"), filepath.Join(sh.Dir(), "ans.md")); err != nil {
+		t.Fatal(err)
+	}
+	for _, q := range []string{"OUTSIDE_SENTINEL", "ANSWER_SENTINEL"} {
+		if body := get(t, h, "/find?q="+q).Body.String(); strings.Contains(body, "<mark>"+q) {
+			t.Errorf("ブラウザの検索が、リンク越しに %s を返した", q)
+		}
+		out := capture(t, func() { _ = cmdFind(root, []string{q}) })
+		if strings.Contains(out, q) && strings.Contains(out, ".md:") {
+			t.Errorf("ターミナルの検索が、リンク越しに %s を返した:\n%s", q, out)
+		}
+	}
+}
+
+// answers/ を指す相対リンクは、押せるリンクにしない（開けない行き先を見せない）。
+// 大文字のスキーム（HTTPS://）は、外のリンクのまま扱う。
+func TestLinkTargetsThatShouldNotBecomeFileLinks(t *testing.T) {
+	_, h, root := newServer(t)
+	sh, _ := LoadSheet(root, "F3")
+	md := "[メモ](notes.md)\n\n[こたえ](../../../answers/probe.md)\n\n[外](HTTPS://example.com/)\n"
+	if err := os.WriteFile(filepath.Join(sh.Dir(), "links.md"), []byte(md), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	body := get(t, h, "/file/drills/foundation/F03-pipeline/links.md").Body.String()
+	if !strings.Contains(body, `href="/file/drills/foundation/F03-pipeline/notes.md"`) {
+		t.Fatalf("ふつうの相対リンクが書き換わっていない:\n%s", body)
+	}
+	if strings.Contains(body, ">こたえ</a>") {
+		t.Errorf("answers/ を指すリンクを、押せるリンクとして出した:\n%s", body)
+	}
+	if strings.Contains(body, "HTTPS:/example.com") || !strings.Contains(body, `href="HTTPS://example.com/"`) {
+		t.Errorf("大文字の HTTPS をファイルへのリンクに書き換えた:\n%s", body)
+	}
+}
+
+// 学習用リポジトリの置き場所の途中にシンボリックリンクがあっても、相対リンクが書き換わること。
+// #25 で /file/ がリンクをたどった先のパスを返すようにしたとき、linkRewriter は
+// たどる前のルートと比べていたので、書き換えが丸ごと効かなくなっていた。
+// Linux の /tmp はリンクではないので、環境まかせにせず、リンクを挟んだルートを明示的に作る。
+func TestLinksAreRewrittenUnderASymlinkedRoot(t *testing.T) {
+	actual := newRepo(t)
+	linked := filepath.Join(t.TempDir(), "offgrid-log")
+	if err := os.Symlink(actual, linked); err != nil {
+		t.Fatal(err)
+	}
+	s := &server{root: linked, token: "test-token"}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/file/", s.handleFile)
+	h := s.guard(mux)
+	sh, _ := LoadSheet(linked, "F3")
+	if err := os.WriteFile(filepath.Join(sh.Dir(), "links.md"), []byte("[メモ](notes.md)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	body := get(t, h, "/file/drills/foundation/F03-pipeline/links.md").Body.String()
+	if !strings.Contains(body, `href="/file/drills/foundation/F03-pipeline/notes.md"`) {
+		t.Errorf("リンクを挟んだルートで、相対リンクが書き換わらない:\n%s", body)
+	}
+}
