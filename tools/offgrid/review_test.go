@@ -461,3 +461,203 @@ func TestRenamedBinaryIsLeftOut(t *testing.T) {
 		t.Errorf("名前を変えた実行ファイルが、まだ索引に載っている:\n%s", staged)
 	}
 }
+
+// 以下は、#27（まだ誰もレビューしていなかった範囲を別ベンダーのAIに見せた）で見つかり、再現したもの。
+
+// リンクの書き換えが継ぎ足すディレクトリ名から、HTML を差し込めないこと。
+// Markdown の本文は先にエスケープしていたが、継ぎ足した部分はそのまま属性に入っていた。
+func TestRewrittenLinkIsEscaped(t *testing.T) {
+	_, h, root := newServer(t)
+	dir := filepath.Join(root, "drills", "foundation", `F02-"><img src=x onerror=alert(1)>`)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "notes.md"), []byte("[次へ](next.md)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	body := get(t, h, "/file/drills/foundation/"+url.PathEscape(`F02-"><img src=x onerror=alert(1)>`)+"/notes.md").Body.String()
+	// 書き換えが本当に起きていること（起きていなければ、この検査は素通りする）
+	if !strings.Contains(body, `href="/file/drills/foundation/F02-`) {
+		t.Fatalf("相対リンクが /file/ に書き換わっていない:\n%s", body)
+	}
+	if strings.Contains(body, "<img src=x") {
+		t.Errorf("ディレクトリ名から要素を差し込めた:\n%s", body)
+	}
+}
+
+// /find が、リンクをたどってリポジトリの外や answers/ の中身を返さないこと。
+// /file/ と /retro は #25 で塞いだが、/find は見かけのパスしか見ていなかった。
+func TestFindDoesNotFollowLinksOut(t *testing.T) {
+	_, h, root := newServer(t)
+	outside := filepath.Join(t.TempDir(), "outside.txt")
+	if err := os.WriteFile(outside, []byte("OUTSIDE_SENTINEL\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sh, _ := LoadSheet(root, "F3")
+	if err := os.Symlink(outside, filepath.Join(sh.Dir(), "outside.md")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "answers"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "answers", "a.md"), []byte("ANSWER_SENTINEL\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(root, "answers", "a.md"), filepath.Join(sh.Dir(), "ans.md")); err != nil {
+		t.Fatal(err)
+	}
+	for _, q := range []string{"OUTSIDE_SENTINEL", "ANSWER_SENTINEL"} {
+		if body := get(t, h, "/find?q="+q).Body.String(); strings.Contains(body, "<mark>"+q) {
+			t.Errorf("ブラウザの検索が、リンク越しに %s を返した", q)
+		}
+		out := capture(t, func() { _ = cmdFind(root, []string{q}) })
+		if strings.Contains(out, q) && strings.Contains(out, ".md:") {
+			t.Errorf("ターミナルの検索が、リンク越しに %s を返した:\n%s", q, out)
+		}
+	}
+}
+
+// answers/ を指す相対リンクは、押せるリンクにしない（開けない行き先を見せない）。
+// 大文字のスキーム（HTTPS://）は、外のリンクのまま扱う。
+func TestLinkTargetsThatShouldNotBecomeFileLinks(t *testing.T) {
+	_, h, root := newServer(t)
+	sh, _ := LoadSheet(root, "F3")
+	md := "[メモ](notes.md)\n\n[こたえ](../../../answers/probe.md)\n\n[外](HTTPS://example.com/)\n"
+	if err := os.WriteFile(filepath.Join(sh.Dir(), "links.md"), []byte(md), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	body := get(t, h, "/file/drills/foundation/F03-pipeline/links.md").Body.String()
+	if !strings.Contains(body, `href="/file/drills/foundation/F03-pipeline/notes.md"`) {
+		t.Fatalf("ふつうの相対リンクが書き換わっていない:\n%s", body)
+	}
+	if strings.Contains(body, ">こたえ</a>") {
+		t.Errorf("answers/ を指すリンクを、押せるリンクとして出した:\n%s", body)
+	}
+	if strings.Contains(body, "HTTPS:/example.com") || !strings.Contains(body, `href="HTTPS://example.com/"`) {
+		t.Errorf("大文字の HTTPS をファイルへのリンクに書き換えた:\n%s", body)
+	}
+}
+
+// 学習用リポジトリの置き場所の途中にシンボリックリンクがあっても、相対リンクが書き換わること。
+// #25 で /file/ がリンクをたどった先のパスを返すようにしたとき、linkRewriter は
+// たどる前のルートと比べていたので、書き換えが丸ごと効かなくなっていた。
+// Linux の /tmp はリンクではないので、環境まかせにせず、リンクを挟んだルートを明示的に作る。
+func TestLinksAreRewrittenUnderASymlinkedRoot(t *testing.T) {
+	actual := newRepo(t)
+	linked := filepath.Join(t.TempDir(), "offgrid-log")
+	if err := os.Symlink(actual, linked); err != nil {
+		t.Fatal(err)
+	}
+	s := &server{root: linked, token: "test-token"}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/file/", s.handleFile)
+	h := s.guard(mux)
+	sh, _ := LoadSheet(linked, "F3")
+	if err := os.WriteFile(filepath.Join(sh.Dir(), "links.md"), []byte("[メモ](notes.md)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	body := get(t, h, "/file/drills/foundation/F03-pipeline/links.md").Body.String()
+	if !strings.Contains(body, `href="/file/drills/foundation/F03-pipeline/notes.md"`) {
+		t.Errorf("リンクを挟んだルートで、相対リンクが書き換わらない:\n%s", body)
+	}
+}
+
+// NO_COLOR は色だけを消す。端末なら、引数なしでメニューが出る（直す前は、色の有無で端末かどうかを決めていた）
+func TestNoColorKeepsTheMenu(t *testing.T) {
+	root := newRepo(t)
+	t.Setenv("OFFGRID_REPO", root)
+	prevArgs, prevC, prevI := os.Args, colorOn, interactive
+	t.Cleanup(func() { os.Args, colorOn, interactive = prevArgs, prevC, prevI })
+	os.Args = []string{"offgrid"}
+	colorOn, interactive = false, true // 端末だが NO_COLOR が付いている
+	withInput(t, "q")
+	out := capture(t, func() {
+		if err := run(); err != nil {
+			t.Errorf("run: %v", err)
+		}
+	})
+	if !strings.Contains(out, "何をする？") {
+		t.Errorf("NO_COLOR でメニューが消えた:\n%s", out)
+	}
+}
+
+// 引数を取らないコマンドに余分な引数が来たら、黙って通さない
+func TestStrayArgumentsAreRejected(t *testing.T) {
+	root := newRepo(t)
+	t.Setenv("OFFGRID_REPO", root)
+	prev := os.Args
+	t.Cleanup(func() { os.Args = prev })
+	for _, args := range [][]string{{"version", "x"}, {"today", "x"}, {"status", "x"}, {"selftest", "--bogus"}, {"doctor", "x"}} {
+		os.Args = append([]string{"offgrid"}, args...)
+		var err error
+		capture(t, func() { err = run() })
+		if err == nil {
+			t.Errorf("offgrid %s を通した", strings.Join(args, " "))
+		}
+	}
+	// 正しい使い方は、これまでどおり通る
+	os.Args = []string{"offgrid", "selftest", "-q"}
+	var err error
+	capture(t, func() { err = run() })
+	if err != nil {
+		t.Errorf("selftest -q が通らない: %v", err)
+	}
+}
+
+// 折り返しは、2行目以降の字下げを引いた幅に収め、色の指定を途中で切らない
+func TestWrapKeepsWidthAndColour(t *testing.T) {
+	prevW, prevC := termWidth, colorOn
+	t.Cleanup(func() { termWidth, colorOn = prevW, prevC })
+	termWidth, colorOn = 48, true
+
+	for _, l := range wrap("- "+strings.Repeat("あ", 60), "  ") {
+		if width(l) > 48 {
+			t.Errorf("端末の幅（48）をはみ出した（%d）: %q", width(l), l)
+		}
+	}
+	for _, l := range wrap(strings.Repeat("あ", 22)+green("XYZ")+strings.Repeat("い", 10), "  ") {
+		if strings.HasSuffix(l, "\x1b[") || strings.HasPrefix(strings.TrimLeft(l, " "), "32m") {
+			t.Errorf("色の指定を途中で切った: %q", l)
+		}
+		if width(l) > 48 {
+			t.Errorf("端末の幅をはみ出した: %q", l)
+		}
+	}
+	p := pad(green("abcdefgh"), 5)
+	if strings.Contains(p, "\x1b[32…") || !strings.HasSuffix(p, "…") || width(p) > 5 {
+		t.Errorf("省略が色の指定を切った、または幅を超えた: %q（幅 %d）", p, width(p))
+	}
+}
+
+// 抜けていた絵文字の範囲と、幅を持たない文字
+func TestEmojiWidths(t *testing.T) {
+	for _, c := range []struct {
+		s    string
+		want int
+	}{{"🚀", 2}, {"日本語", 6}, {"é", 1}, {"‍", 0}, {"🪐", 2}} {
+		if got := width(c.s); got != c.want {
+			t.Errorf("width(%q) = %d, want %d", c.s, got, c.want)
+		}
+	}
+}
+
+// Markdown の装飾は、コードの中とリンク先の中に当てない。「**[リンク](…)**」の太字は保つ
+func TestInlineFormattingStaysOutOfCodeAndHrefs(t *testing.T) {
+	for _, c := range []struct {
+		in, want, notWant string
+	}{
+		{"`[x](https://example.com/)`", "<code>[x](https://example.com/)</code>", "<a "},
+		{"[a](https://example.com/**draft**)", `href="https://example.com/**draft**"`, "<strong>draft"},
+		{"**[O8](https://example.com/)**", "<strong><a href=\"https://example.com/\"", ""},
+		{"`**本題**` と書く", "<code>**本題**</code>", "<code><strong>"},
+		{"**`COUNT(*)` と `COUNT(列)`**：", "<strong><code>COUNT(*)</code> と <code>COUNT(列)</code></strong>", ""},
+	} {
+		got := inlineHTML(c.in, nil)
+		if !strings.Contains(got, c.want) {
+			t.Errorf("inlineHTML(%q)\n got: %s\nwant: %s", c.in, got, c.want)
+		}
+		if c.notWant != "" && strings.Contains(got, c.notWant) {
+			t.Errorf("inlineHTML(%q) に %q が出た: %s", c.in, c.notWant, got)
+		}
+	}
+}

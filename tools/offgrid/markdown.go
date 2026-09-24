@@ -45,31 +45,61 @@ func safeHref(h string) string {
 // inlineHTML は、行の中の記法（コード、強調、リンク）をHTMLにする。
 func inlineHTML(s string, link func(string) string) string {
 	out := html.EscapeString(s)
-	// リンクを先に処理する（中のテキストは、あとで装飾される）
+	// コードを先に取り出して、印に置き換えておく。コードの中の [x](y) や ** は、文字のまま出す
+	// （あとで処理すると、コードの中がリンクになり、リンク先の中まで <strong> に置き換わった）
+	var codes []string
+	out = mdCode.ReplaceAllStringFunc(out, func(m string) string {
+		codes = append(codes, "<code>"+mdCode.FindStringSubmatch(m)[1]+"</code>")
+		return fmt.Sprintf("\uE000%d\uE001", len(codes)-1)
+	})
+	// リンクを処理する（中のテキストは、あとで装飾される）
 	out = mdBareURL.ReplaceAllStringFunc(out, func(m string) string {
 		url := mdBareURL.FindStringSubmatch(m)[1]
 		return fmt.Sprintf(`<a href="%s" rel="noreferrer" target="_blank">%s</a>`, url, url)
 	})
 	out = mdLink.ReplaceAllStringFunc(out, func(m string) string {
 		g := mdLink.FindStringSubmatch(m)
-		href := g[2]
+		// out は先にエスケープ済みなので、いったん元の文字に戻してから行き先を組み立てる。
+		// 書き換えはファイルのディレクトリ名を継ぎ足すので、最後にもう一度エスケープして属性に入れる
+		// （ディレクトリ名に `">` を含めると、属性を抜けて要素を差し込めた）
+		href := html.UnescapeString(g[2])
 		if link != nil {
 			href = link(href)
 		}
 		href = safeHref(href)
 		if href == "" {
-			return g[1] // 行き先が怪しいときは、文字だけ出す
+			return g[1] // 行き先が怪しいとき、開けないときは、文字だけ出す
 		}
 		rel := ""
-		if strings.HasPrefix(href, "http") {
+		if l := strings.ToLower(href); strings.HasPrefix(l, "http://") || strings.HasPrefix(l, "https://") {
 			rel = ` rel="noreferrer" target="_blank"`
 		}
-		return fmt.Sprintf(`<a href="%s"%s>%s</a>`, href, rel, g[1])
+		return fmt.Sprintf(`<a href="%s"%s>%s</a>`, html.EscapeString(href), rel, g[1])
+	})
+	// 太字は、タグの外だけに当てる。タグを印に置き換えてから当てると、
+	// リンク先（href）の中の ** は壊さず、「**[リンク](…)**」の太字は保てる
+	var tags []string
+	out = htmlTag.ReplaceAllStringFunc(out, func(m string) string {
+		tags = append(tags, m)
+		return fmt.Sprintf("\uE002%d\uE003", len(tags)-1)
 	})
 	out = mdStrong.ReplaceAllString(out, "<strong>$1</strong>")
-	out = mdCode.ReplaceAllString(out, "<code>$1</code>")
+	out = tagMark.ReplaceAllStringFunc(out, func(m string) string {
+		i, _ := strconv.Atoi(tagMark.FindStringSubmatch(m)[1])
+		return tags[i]
+	})
+	out = codeMark.ReplaceAllStringFunc(out, func(m string) string {
+		i, _ := strconv.Atoi(codeMark.FindStringSubmatch(m)[1])
+		return codes[i]
+	})
 	return out
 }
+
+var (
+	htmlTag  = regexp.MustCompile(`<[^>]+>`)
+	tagMark  = regexp.MustCompile("\uE002(\\d+)\uE003")
+	codeMark = regexp.MustCompile("\uE000(\\d+)\uE001")
+)
 
 type listState struct {
 	tag    string // ul か ol

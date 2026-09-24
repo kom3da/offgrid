@@ -384,7 +384,7 @@ func cmdUnit(root string, p *Progress, args []string) error {
 	if err != nil {
 		return err
 	}
-	if colorOn {
+	if interactive {
 		if pager, err := exec.LookPath("less"); err == nil {
 			c := exec.Command(pager, "-R", sh.Path)
 			c.Stdin, c.Stdout, c.Stderr = os.Stdin, os.Stdout, os.Stderr
@@ -422,10 +422,14 @@ func cmdFind(root string, args []string) error {
 			sort.Strings(paths)
 			for _, path := range paths {
 				name := filepath.Base(path)
-				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) || underAnswers(rel(root, path)) {
+				if strings.HasPrefix(name, ".") || (g.skipTask && strings.HasPrefix(name, "TASKS")) {
 					continue
 				}
-				raw, err := os.ReadFile(path)
+				resolved, _, ok := resolveInRepo(root, path)
+				if !ok {
+					continue
+				}
+				raw, err := os.ReadFile(resolved)
 				if err != nil {
 					continue
 				}

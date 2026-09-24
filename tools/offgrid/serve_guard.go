@@ -146,7 +146,13 @@ func (s *server) guard(next http.Handler) http.Handler {
 // 文字列の上でパスを整えるだけでは、リンクの先までは見られない。
 // 実際に、docs/ に置いたリンクからリポジトリの外のファイルを読み書きできた。
 func (s *server) resolve(path string) (abs, rel string, ok bool) {
-	root, err := filepath.EvalSymlinks(s.root)
+	return resolveInRepo(s.root, path)
+}
+
+// resolveInRepo は、シンボリックリンクをたどってから、リポジトリの中に収まっているかを返す。
+// answers/ に着くものも通さない。/file/・/retro・/find・CLI の find が共通で使う。
+func resolveInRepo(repo, path string) (abs, rel string, ok bool) {
+	root, err := filepath.EvalSymlinks(repo)
 	if err != nil {
 		return "", "", false
 	}

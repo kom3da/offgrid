@@ -19,7 +19,8 @@ type fakeDoctor struct {
 
 func newFakeDoctor() *fakeDoctor {
 	return &fakeDoctor{
-		osRelease: "NAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\n",
+		// Ubuntu 26.04 の /etc/os-release と同じ形（判定は ID で行う）
+		osRelease: "PRETTY_NAME=\"Ubuntu 26.04 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nID=ubuntu\nID_LIKE=debian\n",
 		missing:   map[string]bool{},
 		fail:      map[string]string{},
 		out: map[string]string{
@@ -265,5 +266,95 @@ func TestDoctorOutsideRepository(t *testing.T) {
 	}
 	if strings.Contains(out, "go が無い") && !strings.Contains(out, "まだ要らない") {
 		t.Errorf("進み具合が分からないのに、Go まで求めている:\n%s", out)
+	}
+}
+
+// 以下は #27 で見つかったもの。
+
+// os-release は、機械向けの ID で判定する。単引用符でもよく、/etc に無ければ /usr/lib を見る。
+// 直す前は、表示名（NAME）の完全一致と二重引用符しか扱わず、Ubuntu を「Ubuntu の外」と言った。
+func TestDoctorReadsOSReleaseByTheRules(t *testing.T) {
+	root := repoAtStage(t, "0", false)
+	cases := []struct {
+		name, content, path string
+		wantErr             bool
+		want                string
+	}{
+		{"単引用符", "NAME='Ubuntu'\nID='ubuntu'\nVERSION_ID='26.04'\n", "/etc/os-release", false, "Ubuntu 26.04"},
+		{"表示名が違っても ID が ubuntu", "NAME=\"Ubuntu Server\"\nID=ubuntu\nVERSION_ID=\"26.04\"\n", "/etc/os-release", false, "Ubuntu 26.04"},
+		{"/usr/lib にだけある", "NAME=\"Ubuntu\"\nID=ubuntu\nVERSION_ID=\"26.04\"\n", "/usr/lib/os-release", false, "Ubuntu 26.04"},
+		{"Ubuntu の派生は警告で通す", "NAME=\"Linux Mint\"\nID=linuxmint\nID_LIKE=\"ubuntu debian\"\nVERSION_ID=\"22\"\n", "/etc/os-release", false, "Ubuntu の派生"},
+		{"Ubuntu と関係ない", "NAME=\"Fedora Linux\"\nID=fedora\nVERSION_ID=41\n", "/etc/os-release", true, "Ubuntu の中で実行していない"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFakeDoctor()
+			env := f.env()
+			env.read = func(p string) ([]byte, error) {
+				if p == c.path {
+					return []byte(c.content), nil
+				}
+				return nil, os.ErrNotExist
+			}
+			var err error
+			out := capture(t, func() { err = cmdDoctor(env, root, nil) })
+			if (err != nil) != c.wantErr {
+				t.Errorf("err=%v（期待：失敗=%v）\n%s", err, c.wantErr, out)
+			}
+			if !strings.Contains(out, c.want) {
+				t.Errorf("%q が出ていない:\n%s", c.want, out)
+			}
+		})
+	}
+}
+
+// bash・Go・Node が「入っているが動かない」ときに、黙って通さない。
+// 直す前は、bash は項目ごと消え、Node は失敗の文面を版として ✓ に出していた。
+func TestDoctorReportsToolsThatDoNotRun(t *testing.T) {
+	cases := []struct {
+		name, stage, cmd, want string
+	}{
+		{"bash", "0", "bash --version", "bash を実行できない"},
+		{"go", "1", "go version", "go を実行できない"},
+		{"node", "2", "node --version", "node を実行できない"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFakeDoctor()
+			f.fail[c.cmd] = "error while loading shared libraries: libfoo.so"
+			out, err := runDoctor(t, f, repoAtStage(t, c.stage, false))
+			if err == nil || !strings.Contains(out, c.want) {
+				t.Errorf("動かない %s を通した: %v\n%s", c.name, err, out)
+			}
+			if strings.Contains(out, "✓ "+c.name+" error") {
+				t.Errorf("失敗の文面を版として ✓ に出した:\n%s", out)
+			}
+		})
+	}
+}
+
+// Docker が動いていないときの直し方は、接続先で変える。Docker Desktop に systemctl を案内しても直らない
+func TestDoctorDockerStartHint(t *testing.T) {
+	cases := []struct {
+		name, out   string
+		noSystemctl bool
+		want        string
+	}{
+		{"Ubuntu の中の docker", "Cannot connect to the Docker daemon at unix:///var/run/docker.sock.", false, "sudo systemctl start docker"},
+		{"Docker Desktop", "Cannot connect to the Docker daemon at unix:///home/l/.docker/desktop/docker.sock.", false, "Docker Desktop を起動する"},
+		{"systemd の無い WSL", "Cannot connect to the Docker daemon at unix:///var/run/docker.sock.", true, "sudo service docker start"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFakeDoctor()
+			f.fail["docker info"] = c.out
+			if c.noSystemctl {
+				f.missing["systemctl"] = true
+			}
+			out, _ := runDoctor(t, f, repoAtStage(t, "1", false))
+			if !strings.Contains(out, c.want) {
+				t.Errorf("%q を案内していない:\n%s", c.want, out)
+			}
+		})
 	}
 }

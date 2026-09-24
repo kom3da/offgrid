@@ -54,8 +54,9 @@ func need(stage, from int) (bool, string) {
 func cmdDoctor(env doctorEnv, wd string, args []string) error {
 	// Ubuntu の外（Mac や Windows の側）で叩くと、残りの結果はその手元の話で意味が無い。
 	// bash が古い、shellcheck が無い、と並ぶと本当の原因が埋もれるので、ここで止める。
-	name, ver := osRelease(env)
-	if name != "Ubuntu" {
+	osr := osRelease(env)
+	name := osr.name
+	if osr.id != "ubuntu" && !osr.likeUbuntu() {
 		where := name
 		if where == "" {
 			where = map[string]string{"darwin": "macOS", "windows": "Windows"}[env.goos]
@@ -89,7 +90,7 @@ func cmdDoctor(env doctorEnv, wd string, args []string) error {
 		title string
 		items []finding
 	}{
-		{"Ubuntu と基本の道具", doctorBase(env, ver)},
+		{"Ubuntu と基本の道具", doctorBase(env, osr)},
 		{"学習用リポジトリ", doctorRepo(env, root, rerr, p)},
 		{"Docker と PostgreSQL", doctorDocker(env, shown, p)},
 		{"Go", doctorGo(env, shown)},
@@ -132,11 +133,16 @@ func cmdDoctor(env doctorEnv, wd string, args []string) error {
 	return nil
 }
 
-func doctorBase(env doctorEnv, ver string) []finding {
+func doctorBase(env doctorEnv, osr osInfo) []finding {
 	var out []finding
 	always := func(f finding) finding { f.needed = true; return f }
+	ver := osr.version
 
 	switch {
+	case osr.id != "ubuntu":
+		// Ubuntu の派生（Linux Mint など）。多くは動くが、カリキュラムは Ubuntu で確かめている
+		out = append(out, finding{ok: true, warn: true, needed: true,
+			label: osr.name + "（Ubuntu の派生。カリキュラムは Ubuntu 26.04 で確かめている）"})
 	case ver != "26.04":
 		out = append(out, finding{ok: true, warn: true, needed: true,
 			label: "Ubuntu " + ver + "（カリキュラムは 26.04 で確かめている。多くはそのまま動く）"})
@@ -144,7 +150,10 @@ func doctorBase(env doctorEnv, ver string) []finding {
 		out = append(out, finding{ok: true, needed: true, label: "Ubuntu " + ver})
 	}
 
-	if v, err := env.run("bash", "--version"); err == nil {
+	if v, err := env.run("bash", "--version"); err != nil {
+		// 動かないことを黙って飛ばすと、ほかが整っていれば「整っています」になってしまう
+		out = append(out, always(finding{label: "bash を実行できない（" + firstLine(v) + "）", fix: "Ubuntu のシェルそのものを確かめる（docs/02）"}))
+	} else {
 		m := regexp.MustCompile(`version (\d+)\.(\d+)`).FindStringSubmatch(v)
 		if major, _ := strconv.Atoi(safeIndex(m, 1)); major >= 5 {
 			out = append(out, finding{ok: true, needed: true, label: "bash " + m[1] + "." + m[2]})
@@ -178,26 +187,51 @@ func doctorBase(env doctorEnv, ver string) []finding {
 	return out
 }
 
-// osRelease は /etc/os-release から、名前と版を読む。
-func osRelease(env doctorEnv) (name, version string) {
-	raw, err := env.read("/etc/os-release")
-	if err != nil {
-		return "", ""
+// osInfo は os-release の中身。判定は機械向けの ID で行い、表示には NAME を使う。
+type osInfo struct {
+	id, idLike, name, version string
+}
+
+func (o osInfo) likeUbuntu() bool {
+	for _, f := range strings.Fields(o.idLike) {
+		if f == "ubuntu" {
+			return true
+		}
 	}
+	return false
+}
+
+// osRelease は os-release を読む。/etc に無ければ /usr/lib を見る（どちらも os-release の決まり）。
+// 値は二重引用符でも単引用符でも囲めるので、両方を外す。
+func osRelease(env doctorEnv) osInfo {
+	var raw []byte
+	for _, path := range []string{"/etc/os-release", "/usr/lib/os-release"} {
+		if b, err := env.read(path); err == nil {
+			raw = b
+			break
+		}
+	}
+	var o osInfo
 	for _, line := range strings.Split(string(raw), "\n") {
-		k, v, ok := strings.Cut(line, "=")
+		k, v, ok := strings.Cut(strings.TrimSpace(line), "=")
 		if !ok {
 			continue
 		}
-		v = strings.Trim(v, `"`)
+		if len(v) >= 2 && (v[0] == '"' || v[0] == '\'') && v[len(v)-1] == v[0] {
+			v = v[1 : len(v)-1]
+		}
 		switch k {
+		case "ID":
+			o.id = v
+		case "ID_LIKE":
+			o.idLike = v
 		case "NAME":
-			name = v
+			o.name = v
 		case "VERSION_ID":
-			version = v
+			o.version = v
 		}
 	}
-	return name, version
+	return o
 }
 
 func doctorRepo(env doctorEnv, root string, rerr error, p *Progress) []finding {
@@ -244,7 +278,7 @@ func doctorDocker(env doctorEnv, stage int, p *Progress) []finding {
 			return []finding{{needed: needed, later: later, label: "docker を使う権限が無い",
 				fix: `sudo usermod -aG docker "$USER" のあと、ログインし直す（F10）`}}
 		}
-		return []finding{{needed: needed, later: later, label: "Docker が動いていない", fix: "sudo systemctl start docker"}}
+		return []finding{{needed: needed, later: later, label: "Docker が動いていない", fix: dockerStartHint(env, out)}}
 	}
 	res := []finding{{ok: true, needed: true, label: "Docker が動いている"}}
 
@@ -293,9 +327,12 @@ func doctorGo(env doctorEnv, stage int) []finding {
 		out = append(out, finding{needed: needed, later: later + "。G1 で入れる", label: "go が無い",
 			fix: "G1 の準備（公式サイトの「Download and install」）"})
 	} else {
-		v, _ := env.run("go", "version")
+		v, err := env.run("go", "version")
 		m := regexp.MustCompile(`go1\.(\d+)`).FindStringSubmatch(v)
-		if minor, err := strconv.Atoi(safeIndex(m, 1)); err != nil || minor < 22 {
+		if err != nil {
+			out = append(out, finding{needed: needed, later: later, label: "go を実行できない（" + firstLine(v) + "）",
+				fix: "G1 の準備（公式サイトの「Download and install」）で入れ直す"})
+		} else if minor, err := strconv.Atoi(safeIndex(m, 1)); err != nil || minor < 22 {
 			out = append(out, finding{needed: needed, later: later, label: "Go が 1.22 より古い（" + v + "）",
 				fix: "G1 の準備（公式サイトの「Download and install」）"})
 		} else {
@@ -320,10 +357,41 @@ func doctorNode(env doctorEnv, stage int) []finding {
 				fix: "T2 の準備（Node.js の公式ドキュメントの方法で、LTS 版を入れる）"})
 			continue
 		}
-		v, _ := env.run(tool, "--version")
+		v, err := env.run(tool, "--version")
+		if err != nil {
+			out = append(out, finding{needed: needed, later: later, label: tool + " を実行できない（" + firstLine(v) + "）",
+				fix: "T2 の準備（Node.js の公式ドキュメントの方法で、LTS 版を入れ直す）"})
+			continue
+		}
 		out = append(out, finding{ok: true, needed: true, label: tool + " " + v})
 	}
 	return out
+}
+
+// dockerStartHint は、Docker が動いていないときの直し方を、接続先に合わせて選ぶ。
+// Docker Desktop（WSL の連携を含む）は、Ubuntu の中の docker サービスとは別物なので、
+// そこで systemctl を案内しても直らない。systemd の無い WSL では service を使う。
+func dockerStartHint(env doctorEnv, out string) string {
+	l := strings.ToLower(out)
+	switch {
+	case strings.Contains(l, "docker desktop"), strings.Contains(l, "/.docker/desktop/"):
+		return "Docker Desktop を起動する（Windows なら、Docker Desktop の設定で WSL の連携を有効にする）"
+	}
+	if _, err := env.look("systemctl"); err != nil {
+		return "sudo service docker start（systemd が無い環境）"
+	}
+	return "sudo systemctl start docker"
+}
+
+func firstLine(s string) string {
+	s = strings.TrimSpace(s)
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		s = s[:i]
+	}
+	if s == "" {
+		return "理由は出力されなかった"
+	}
+	return s
 }
 
 func safeIndex(s []string, i int) string {

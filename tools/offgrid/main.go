@@ -138,6 +138,9 @@ func run() error {
 			usage()
 			return nil
 		case "version", "--version", "-v":
+			if len(args) > 1 {
+				return fmt.Errorf("version は引数を取りません（%s）", strings.Join(args[1:], " "))
+			}
 			fmt.Println("offgrid " + version)
 			return nil
 		}
@@ -148,6 +151,9 @@ func run() error {
 	}
 	// doctor は、学習用リポジトリがまだ無い Day 0 の途中でも使えるように、リポジトリを探す前に分ける
 	if len(args) > 0 && args[0] == "doctor" {
+		if len(args) > 1 {
+			return fmt.Errorf("doctor は引数を取りません（%s）", strings.Join(args[1:], " "))
+		}
 		return cmdDoctor(hostEnv, wd, args[1:])
 	}
 	root, err := findRepo(wd)
@@ -166,7 +172,7 @@ func run() error {
 		return err
 	}
 	sub := "menu"
-	if !colorOn {
+	if !interactive {
 		sub = "today" // 端末でないとき（パイプなど）は、対話しない
 	}
 	if len(args) > 0 {
@@ -174,6 +180,14 @@ func run() error {
 		args = args[1:]
 	} else {
 		args = nil
+	}
+	// 引数を取らないコマンドに余分な引数が来たら、黙って通さない
+	// （打ち間違いに気づけず、スクリプトからも指定が効いたように見えた）
+	switch sub {
+	case "run", "today", "status", "end":
+		if len(args) > 0 {
+			return fmt.Errorf("%s は引数を取りません（%s）", sub, strings.Join(args, " "))
+		}
 	}
 	switch sub {
 	case "menu":
