@@ -11,6 +11,7 @@
 使い方: python3 .github/check-docs.py
 """
 
+import glob
 import os
 import re
 import sys
@@ -247,6 +248,75 @@ def check_numbers():
 # ----------------------------------------------------------------
 
 
+# 課題シートでの書き方が、docs/20 の書名と違う本
+BOOK_ALIASES = {
+    "［改訂3版］内部構造から学ぶPostgreSQL": ["『内部構造から学ぶPostgreSQL』"],
+    "Site Reliability Engineering": ["『Site Reliability Engineering』"],
+}
+
+
+def _expand_units(spec):
+    """「F2〜F7、F10」を {F2,...,F7,F10} にする。"""
+    out = set()
+    for part in re.split(r"[、,]", spec):
+        part = part.strip()
+        m = re.match(r"([FGTDOC])(\d+)〜(?:[FGTDOC])?(\d+)$", part)
+        if m:
+            out |= {f"{m.group(1)}{i}" for i in range(int(m.group(2)), int(m.group(3)) + 1)}
+        elif re.match(r"[FGTDOC]\d+$", part):
+            out.add(part)
+    return out
+
+
+def check_books():
+    """docs/20 の「使うユニット」と置き場所（いつ買うか）が、課題シートと合っているか。
+
+    書名を人が照合していたので、シートに本を足すたびに docs/20 が取り残された。
+    19冊中14冊がずれ、2冊は買う時期が間に合っていなかった（最初に使うユニットより後の節にあった）。
+    """
+    sheets, stage = {}, {}
+    for path in glob.glob(os.path.join(ROOT, "drills", "*", "*", "TASKS.md")):
+        m = UNIT_RE.match(os.path.basename(os.path.dirname(path)))
+        if not m:
+            continue
+        unit = f"{m.group(1)}{int(m.group(2))}"
+        text = read(path)
+        sheets[unit] = text
+        st = re.search(r"Stage (\d)", text)
+        stage[unit] = int(st.group(1)) if st else 9
+    order = lambda u: ("FGTDOC".index(u[0]), int(u[1:]))
+
+    section_stage = None
+    checked = 0
+    for line in read(os.path.join(ROOT, "docs", "20-resources.md")).splitlines():
+        if line.startswith("### "):
+            head = line[4:]
+            m = re.search(r"Stage ?(\d)", head)
+            section_stage = int(m.group(1)) if m else (0 if "最初に" in head else None)
+            continue
+        m = re.match(r"- 『([^』]+)』.*?使うユニット：([^\n（。]+)", line)
+        if not m:
+            continue
+        title, spec = m.group(1), m.group(2).strip()
+        key = re.sub(r"\s*(第\d+版|増補改訂版|改訂\d版)$", "", title).replace("SQL 第2版 ", "SQL ")
+        pats = BOOK_ALIASES.get(title, [f"『{key}"])
+        actual = {u for u, t in sheets.items() if any(p in t for p in pats)}
+        stated = _expand_units(spec)
+        checked += 1
+        if not actual:
+            add(f"docs/20 の『{title}』を、どの課題シートも引いていない（書名の揺れなら BOOK_ALIASES に足す）")
+            continue
+        if stated != actual:
+            extra = "、".join(sorted(stated - actual, key=order))
+            missing = "、".join(sorted(actual - stated, key=order))
+            detail = "".join([f" 足りない: {missing}" if missing else "", f" 余分: {extra}" if extra else ""])
+            add(f"docs/20 の『{title}』の使うユニットがシートと違う{detail}")
+        first = min(actual, key=lambda u: (stage[u], order(u)))
+        if section_stage is not None and section_stage > stage[first]:
+            add(f"docs/20 の『{title}』は Stage {section_stage} の節にあるが、{first}（Stage {stage[first]}）で使う。買う時期が間に合わない")
+    notes.append(f"教材の一覧：{checked} 冊の使うユニットと置き場所を検査した")
+
+
 def check_agents():
     """AGENTS.md（Claude 以外のツールが読む指示）が、要点を落としていないか。
 
@@ -275,6 +345,7 @@ def main():
     check_links()
     check_retired()
     check_numbers()
+    check_books()
     check_agents()
     for n in notes:
         print(f"  {n}")
