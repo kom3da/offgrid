@@ -32,7 +32,7 @@ title: "教材とツール"
 
 - 『初めてのGo言語 第2版』（Jon Bodner 著、武舎広幸 訳、オライリー・ジャパン、2025）— [出版社のページ](https://www.oreilly.co.jp/books/9784814401192/)。使うユニット：G1〜G11
 - 『なっとく！アルゴリズム 第2版』（Aditya Y. Bhargava、翔泳社、2025）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798186894)。使うユニット：G9、G10
-- 『SQL 第2版 ゼロからはじめるデータベース操作』（ミック、翔泳社、2016）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798144450)。使うユニット：D1〜D5
+- 『SQL 第2版 ゼロからはじめるデータベース操作』（ミック、翔泳社、2016）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798144450)。使うユニット：D1〜D5、D8、D10、D12
 - 任意：『プログラミング言語Go』（Donovan、Kernighan 著、柴田芳樹 訳、丸善出版、2016）— [出版社のページ](https://www.maruzen-publishing.co.jp/item/?book_no=295039)。**絶版**（古書か電子版のみ）。2016年刊で、モジュールやジェネリクス以前の内容。練習問題の題材として使えるが、なくてもよい
 
 ### Stage 2の開始時
@@ -42,7 +42,7 @@ title: "教材とツール"
 - 『サバイバルTypeScript』（YYTypeScript）— [Web版](https://typescriptbook.jp/)のみ（無料。紙の書籍はない）。使うユニット：T5、T6、T8
 - 『プロを目指す人のためのTypeScript入門』（鈴木僚太、技術評論社、2022）— [出版社のページ](https://gihyo.jp/book/2022/978-4-297-12747-3)。使うユニット：T5〜T8
 - 『達人に学ぶDB設計徹底指南書 第2版』（ミック、翔泳社、2024）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798186627)。使うユニット：D6、D7
-- 『達人に学ぶSQL徹底指南書 第2版』（ミック、翔泳社、2018）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798157825)。使うユニット：D10〜D14
+- 『達人に学ぶSQL徹底指南書 第2版』（ミック、翔泳社、2018）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798157825)。使うユニット：D8、D10、D12、D14
 
 ### Stage 3の開始時
 
