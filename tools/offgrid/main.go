@@ -50,6 +50,7 @@ func usage() {
 		{"done [ID]", "完了条件を確かめて、PROGRESS.md に記録する"},
 		{"end", "終わりの手続き（記入漏れ、残すもの、コミット）"},
 		{"serve [--port N]", "ブラウザで開く画面を、手元に立てる（ネットワークには出さない）"},
+		{"doctor", "学習の環境が整っているかを検査し、足りないものの直し方を出す"},
 		{"selftest", "カリキュラムの課題シートが、この版のツールで読めるかを検査する"},
 		{"version", "版を表示する"},
 	}
@@ -144,6 +145,10 @@ func run() error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
+	}
+	// doctor は、学習用リポジトリがまだ無い Day 0 の途中でも使えるように、リポジトリを探す前に分ける
+	if len(args) > 0 && args[0] == "doctor" {
+		return cmdDoctor(hostEnv, wd, args[1:])
 	}
 	root, err := findRepo(wd)
 	if err != nil {
