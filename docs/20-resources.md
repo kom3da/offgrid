@@ -14,8 +14,8 @@ title: "教材とツール"
 
 ### 最初に買う2冊
 
-- 『コンピュータはなぜ動くのか 第2版』（矢沢久雄、日経BP、2022）— [出版社のページ](https://bookplus.nikkei.com/atcl/catalog/22/09/15/00390/)。使うユニット：F1
-- 『新しいLinuxの教科書 第2版』（三宅英明、大角祐介、SBクリエイティブ、2024）— [出版社のページ](https://www.sbcr.jp/product/4815624316/)。使うユニット：F2〜F5、F10
+- 『コンピュータはなぜ動くのか 第2版』（矢沢久雄、日経BP、2022）— [出版社のページ](https://bookplus.nikkei.com/atcl/catalog/22/09/15/00390/)。使うユニット：F1、G9、G10
+- 『新しいLinuxの教科書 第2版』（三宅英明、大角祐介、SBクリエイティブ、2024）— [出版社のページ](https://www.sbcr.jp/product/4815624316/)。使うユニット：F2〜F7、F10、O1
 
 ### 最初に入手する（無料）
 
@@ -24,35 +24,38 @@ title: "教材とツール"
 ### Stage 0（使うユニットに入る前に買う）
 
 - 『プログラムはなぜ動くのか 第3版』（矢沢久雄、日経BP、2021）— [出版社のページ](https://bookplus.nikkei.com/atcl/catalog/21/S00190/)。使うユニット：G1、G4
-- 『［試して理解］Linuxのしくみ 増補改訂版』（武内覚、技術評論社、2022）— [出版社のページ](https://gihyo.jp/book/2022/978-4-297-13148-7)。使うユニット：F4、O1〜O3、C7
-- 『マスタリングTCP/IP 入門編 第6版』（井上直也 ほか、オーム社、2019）— [出版社のページ](https://www.ohmsha.co.jp/book/9784274224478.html)。使うユニット：F8
-- 『Webを支える技術』（山本陽平、技術評論社、2010）— [出版社のページ](https://gihyo.jp/book/2010/978-4-7741-4204-3)。使うユニット：F9、G12
+- 『［試して理解］Linuxのしくみ 増補改訂版』（武内覚、技術評論社、2022）— [出版社のページ](https://gihyo.jp/book/2022/978-4-297-13148-7)。使うユニット：F4、F10、O1〜O4、O9、C2、C6、C7
+- 『マスタリングTCP/IP 入門編 第6版』（井上直也 ほか、オーム社、2019）— [出版社のページ](https://www.ohmsha.co.jp/book/9784274224478.html)。使うユニット：F8、F9
+- 『Webを支える技術』（山本陽平、技術評論社、2010）— [出版社のページ](https://gihyo.jp/book/2010/978-4-7741-4204-3)。使うユニット：F9、G12〜G14、T1、C4
 
 ### Stage 1の開始時
 
-- 『初めてのGo言語 第2版』（Jon Bodner 著、武舎広幸 訳、オライリー・ジャパン、2025）— [出版社のページ](https://www.oreilly.co.jp/books/9784814401192/)。使うユニット：G1〜G11
+- 『初めてのGo言語 第2版』（Jon Bodner 著、武舎広幸 訳、オライリー・ジャパン、2025）— [出版社のページ](https://www.oreilly.co.jp/books/9784814401192/)。使うユニット：G1〜G11、G15、G16、G18、G20
 - 『なっとく！アルゴリズム 第2版』（Aditya Y. Bhargava、翔泳社、2025）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798186894)。使うユニット：G9、G10
 - 『SQL 第2版 ゼロからはじめるデータベース操作』（ミック、翔泳社、2016）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798144450)。使うユニット：D1〜D5、D8、D10、D12
 - 任意：『プログラミング言語Go』（Donovan、Kernighan 著、柴田芳樹 訳、丸善出版、2016）— [出版社のページ](https://www.maruzen-publishing.co.jp/item/?book_no=295039)。**絶版**（古書か電子版のみ）。2016年刊で、モジュールやジェネリクス以前の内容。練習問題の題材として使えるが、なくてもよい
 
 ### Stage 2の開始時
 
-- 『実用 Go言語 第2版』（渋川よしき、辻大志郎、真野隼記、後藤玲雄、オライリー・ジャパン、2025）— [出版社のページ](https://www.oreilly.co.jp/books/9784814401369/)。使うユニット：G12〜G20
+- 『実用 Go言語 第2版』（渋川よしき、辻大志郎、真野隼記、後藤玲雄、オライリー・ジャパン、2025）— [出版社のページ](https://www.oreilly.co.jp/books/9784814401369/)。使うユニット：G12〜G14、G16〜G20、T11、C3、C4
 - 『JavaScript Primer 改訂2版』（azu、Suguru Inatomi、アスキードワンゴ、2023）— [出版社のページ](https://asciidwango.jp/post/723801325836664832/javascript-primer-%E6%94%B9%E8%A8%822%E7%89%88)。[Web版](https://jsprimer.net/)は無料で、書籍より新しい内容に追従している。使うユニット：T2〜T4
-- 『サバイバルTypeScript』（YYTypeScript）— [Web版](https://typescriptbook.jp/)のみ（無料。紙の書籍はない）。使うユニット：T5、T6、T8
-- 『プロを目指す人のためのTypeScript入門』（鈴木僚太、技術評論社、2022）— [出版社のページ](https://gihyo.jp/book/2022/978-4-297-12747-3)。使うユニット：T5〜T8
-- 『達人に学ぶDB設計徹底指南書 第2版』（ミック、翔泳社、2024）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798186627)。使うユニット：D6、D7
+- 『サバイバルTypeScript』（YYTypeScript）— [Web版](https://typescriptbook.jp/)のみ（無料。紙の書籍はない）。使うユニット：T5〜T9
+- 『プロを目指す人のためのTypeScript入門』（鈴木僚太、技術評論社、2022）— [出版社のページ](https://gihyo.jp/book/2022/978-4-297-12747-3)。使うユニット：T5〜T8、T10、C5
+- 『達人に学ぶDB設計徹底指南書 第2版』（ミック、翔泳社、2024）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798186627)。使うユニット：D6、D7、D9、D13、C1
 - 『達人に学ぶSQL徹底指南書 第2版』（ミック、翔泳社、2018）— [出版社のページ](https://www.shoeisha.co.jp/book/detail/9784798157825)。使うユニット：D8、D10、D12、D14
+- 『［改訂3版］内部構造から学ぶPostgreSQL』（上原一樹 ほか、技術評論社、2022。PostgreSQL 14準拠）— [出版社のページ](https://gihyo.jp/book/2022/978-4-297-13206-4)。使うユニット：D6、D9、D11、D13〜D15、C1、C3
 
 ### Stage 3の開始時
 
-- 『Go言語による並行処理』（Katherine Cox-Buday 著、山口能迪 訳、オライリー・ジャパン、2018）— [出版社のページ](https://www.oreilly.co.jp/books/9784873118468/)。使うユニット：G15、G16
-- 『［改訂3版］内部構造から学ぶPostgreSQL』（上原一樹 ほか、技術評論社、2022。PostgreSQL 14準拠）— [出版社のページ](https://gihyo.jp/book/2022/978-4-297-13206-4)。使うユニット：D14
+- 『Go言語による並行処理』（Katherine Cox-Buday 著、山口能迪 訳、オライリー・ジャパン、2018）— [出版社のページ](https://www.oreilly.co.jp/books/9784873118468/)。使うユニット：G15、G16、G19、C4
+
+### Stage 4の開始時
+
+- 『入門 監視』（Mike Julian 著、松浦隼人 訳、オライリー・ジャパン、2019）— [出版社のページ](https://www.oreilly.co.jp/books/9784873118642/)。使うユニット：O9、C1、C2、C5、C8
 
 ### Stage 5の開始時
 
-- 『入門 監視』（Mike Julian 著、松浦隼人 訳、オライリー・ジャパン、2019）— [出版社のページ](https://www.oreilly.co.jp/books/9784873118642/)。使うユニット：C1、C7
-- 『SRE サイトリライアビリティエンジニアリング』（Google、オライリー・ジャパン、2017）— [出版社のページ](https://www.oreilly.co.jp/books/9784873117911/)。原書は[Web版](https://sre.google/sre-book/table-of-contents/)が無料（英語）。使うユニット：C7、C8
+- 『Site Reliability Engineering』（Betsy Beyer ほか編、O'Reilly、2016）— [Web版](https://sre.google/sre-book/table-of-contents/)が無料（英語）。**課題シートの章番号は、この Web 版のもの**。日本語版『SRE サイトリライアビリティエンジニアリング』（オライリー・ジャパン、2017）もあるが、章番号が一致するかは確かめていない。使うユニット：C7、C8
 
 ## オンライン教材（オフライン化の方法）
 
