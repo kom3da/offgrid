@@ -45,6 +45,26 @@ func TestSelftestCatchesBrokenSheets(t *testing.T) {
 		{"番号なしの本題が2つ", func(s string) string {
 			return strings.Replace(s, "4. `sed` で置き換える", "4. **本題** `sed` で置き換える", 1)
 		}, "番号なし"},
+		// 以下は #27 で見つかったもの。どれも、直す前の selftest は「問題ありません」と言った
+		{"課題の番号が重なる（前の課題が上書きされて消える）", func(s string) string {
+			return strings.Replace(s, "4. `sed` で置き換える", "3. 重なった課題\n4. `sed` で置き換える", 1)
+		}, "1 から順に"},
+		{"課題の番号が飛ぶ", func(s string) string {
+			return strings.Replace(s, "5. `awk` で合計を出す", "6. `awk` で合計を出す", 1)
+		}, "1 から順に"},
+		{"課題の途中に小見出し（後ろの課題が読めない）", func(s string) string {
+			return strings.Replace(s, "4. `sed` で置き換える", "### 後半\n\n4. `sed` で置き換える", 1)
+		}, "小見出し"},
+		{"本題が前置きの文にしか無い", func(s string) string {
+			s = strings.Replace(s, "2. **本題**：上位10件を1行で出す", "2. 上位10件を1行で出す", 1)
+			return strings.Replace(s, "## 課題\n", "## 課題\n\n本題は、あとで決める。\n", 1)
+		}, "本題（**本題** か"},
+		{"本題の書き方が混ざる", func(s string) string {
+			return strings.Replace(s, "3. 次の3つを出す", "3. **本題（その1）** 次の3つを出す", 1)
+		}, "混ざって"},
+		{"本題の番号が「その1」から始まらない", func(s string) string {
+			return strings.Replace(s, "2. **本題**：", "2. **本題（その2）**：", 1)
+		}, "その1」から順に"},
 		{"残すものからファイル名が読めない", func(s string) string {
 			// 「残すもの」の節から、バッククォートのファイル名を全部消す
 			i := strings.Index(s, "## 残すもの")

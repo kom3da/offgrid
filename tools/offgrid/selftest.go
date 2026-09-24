@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -47,13 +49,7 @@ func cmdSelftest(root string, args []string) error {
 		if n := len(sh.TaskNums()); n < 5 {
 			problems = append(problems, fmt.Sprintf("%s: 課題が%d問しかありません（番号付きの行を読めていない可能性）", name, n))
 		}
-		if !strings.Contains(sh.Section("課題"), "本題") {
-			problems = append(problems, name+": 「本題」と書かれた課題がありません")
-		}
-		// 番号なしの「本題」が2つ以上あると、どれが核か分からなくなる（CLAUDE.md の書式）
-		if n := strings.Count(sh.Section("課題"), "**本題**"); n > 1 {
-			problems = append(problems, fmt.Sprintf("%s: 番号なしの「**本題**」が%d個あります（複数あるなら「**本題（その1）**」と番号を振る）", name, n))
-		}
+		problems = append(problems, checkTaskLines(name, sh)...)
 		if len(sh.KeepFiles()) == 0 {
 			problems = append(problems, name+": 「残すもの」からファイル名を読めません")
 		}
@@ -116,4 +112,89 @@ func cmdSelftest(root string, args []string) error {
 	}
 	fmt.Println(green("selftest: 問題ありません"))
 	return nil
+}
+
+var (
+	rawTaskRe    = regexp.MustCompile(`^(\d+)\. `)
+	mainTaskRe   = regexp.MustCompile(`\*\*本題\*\*`)
+	mainNumberRe = regexp.MustCompile(`\*\*本題（その(\d+)）\*\*`)
+)
+
+// checkTaskLines は、「## 課題」の節を生の行で読み、解析の結果と突き合わせる。
+// 解析器は、同じ番号の課題を後のほうで上書きし、課題の途中の小見出し（###）で読むのを止める。
+// 解析したあとの数だけを見ていると、課題が画面から消えていても通ってしまった。
+func checkTaskLines(name string, sh *Sheet) []string {
+	raw, err := os.ReadFile(sh.Path)
+	if err != nil {
+		return []string{name + ": 読めません: " + err.Error()}
+	}
+	var (
+		problems  []string
+		nums      []int
+		taskLines []string
+		inTasks   bool
+		inSub     bool // 「### 発展（任意）」など、課題の節の中の小見出しより後ろ
+	)
+	for _, line := range strings.Split(string(raw), "\n") {
+		switch {
+		case strings.HasPrefix(line, "## "):
+			inTasks = strings.TrimSpace(strings.TrimPrefix(line, "## ")) == "課題"
+			inSub = false
+			continue
+		case !inTasks:
+			continue
+		case strings.HasPrefix(line, "### "):
+			inSub = true
+			continue
+		}
+		m := rawTaskRe.FindStringSubmatch(line)
+		if m == nil {
+			continue
+		}
+		if inSub {
+			problems = append(problems, fmt.Sprintf(
+				"%s: 課題の途中に小見出し（###）があり、その後ろの課題 %s. を読めていません（小見出しは課題の最後に置く）", name, m[1]))
+			continue
+		}
+		n, _ := strconv.Atoi(m[1])
+		nums = append(nums, n)
+		taskLines = append(taskLines, line)
+	}
+
+	// 1 から順に、飛ばさず、重ねずに並んでいるか
+	for i, n := range nums {
+		if n != i+1 {
+			problems = append(problems, fmt.Sprintf(
+				"%s: 課題の番号が 1 から順に並んでいません（%d 問目が %d.）。同じ番号があると、後の課題で前の課題が上書きされて画面から消えます", name, i+1, n))
+			break
+		}
+	}
+	if got := len(sh.TaskNums()); got != len(nums) && len(problems) == 0 {
+		problems = append(problems, fmt.Sprintf("%s: 番号付きの行は %d 行あるのに、%d 問しか読めていません", name, len(nums), got))
+	}
+
+	// 本題は、番号付きの課題の行に付ける。前置きの文に「本題」と書いてあるだけでは、どれが核か分からない
+	plain, numbered := 0, []int{}
+	for _, l := range taskLines {
+		plain += len(mainTaskRe.FindAllString(l, -1))
+		for _, m := range mainNumberRe.FindAllStringSubmatch(l, -1) {
+			k, _ := strconv.Atoi(m[1])
+			numbered = append(numbered, k)
+		}
+	}
+	switch {
+	case plain == 0 && len(numbered) == 0:
+		problems = append(problems, name+": 本題（**本題** か **本題（その1）**）が付いた課題がありません")
+	case plain > 1:
+		problems = append(problems, fmt.Sprintf("%s: 番号なしの「**本題**」が%d個あります（複数あるなら「**本題（その1）**」と番号を振る）", name, plain))
+	case plain > 0 && len(numbered) > 0:
+		problems = append(problems, name+": 「**本題**」と「**本題（そのN）**」が混ざっています（どちらかにそろえる）")
+	}
+	for i, k := range numbered {
+		if k != i+1 {
+			problems = append(problems, fmt.Sprintf("%s: 本題の番号が「その1」から順に並んでいません（%d つ目が「その%d」）", name, i+1, k))
+			break
+		}
+	}
+	return problems
 }
