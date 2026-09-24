@@ -19,8 +19,11 @@ var requiredSections = []string{
 func cmdSelftest(root string, args []string) error {
 	quiet := false
 	for _, a := range args {
-		if a == "-q" || a == "--quiet" {
+		switch a {
+		case "-q", "--quiet":
 			quiet = true
+		default:
+			return fmt.Errorf("selftest が知らない指定です: %s（使えるのは -q だけ）", a)
 		}
 	}
 	sheets, err := AllSheets(root)

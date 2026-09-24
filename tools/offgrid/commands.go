@@ -384,7 +384,7 @@ func cmdUnit(root string, p *Progress, args []string) error {
 	if err != nil {
 		return err
 	}
-	if colorOn {
+	if interactive {
 		if pager, err := exec.LookPath("less"); err == nil {
 			c := exec.Command(pager, "-R", sh.Path)
 			c.Stdin, c.Stdout, c.Stderr = os.Stdin, os.Stdout, os.Stderr

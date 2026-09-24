@@ -45,7 +45,14 @@ func safeHref(h string) string {
 // inlineHTML は、行の中の記法（コード、強調、リンク）をHTMLにする。
 func inlineHTML(s string, link func(string) string) string {
 	out := html.EscapeString(s)
-	// リンクを先に処理する（中のテキストは、あとで装飾される）
+	// コードを先に取り出して、印に置き換えておく。コードの中の [x](y) や ** は、文字のまま出す
+	// （あとで処理すると、コードの中がリンクになり、リンク先の中まで <strong> に置き換わった）
+	var codes []string
+	out = mdCode.ReplaceAllStringFunc(out, func(m string) string {
+		codes = append(codes, "<code>"+mdCode.FindStringSubmatch(m)[1]+"</code>")
+		return fmt.Sprintf("\uE000%d\uE001", len(codes)-1)
+	})
+	// リンクを処理する（中のテキストは、あとで装飾される）
 	out = mdBareURL.ReplaceAllStringFunc(out, func(m string) string {
 		url := mdBareURL.FindStringSubmatch(m)[1]
 		return fmt.Sprintf(`<a href="%s" rel="noreferrer" target="_blank">%s</a>`, url, url)
@@ -69,10 +76,30 @@ func inlineHTML(s string, link func(string) string) string {
 		}
 		return fmt.Sprintf(`<a href="%s"%s>%s</a>`, html.EscapeString(href), rel, g[1])
 	})
+	// 太字は、タグの外だけに当てる。タグを印に置き換えてから当てると、
+	// リンク先（href）の中の ** は壊さず、「**[リンク](…)**」の太字は保てる
+	var tags []string
+	out = htmlTag.ReplaceAllStringFunc(out, func(m string) string {
+		tags = append(tags, m)
+		return fmt.Sprintf("\uE002%d\uE003", len(tags)-1)
+	})
 	out = mdStrong.ReplaceAllString(out, "<strong>$1</strong>")
-	out = mdCode.ReplaceAllString(out, "<code>$1</code>")
+	out = tagMark.ReplaceAllStringFunc(out, func(m string) string {
+		i, _ := strconv.Atoi(tagMark.FindStringSubmatch(m)[1])
+		return tags[i]
+	})
+	out = codeMark.ReplaceAllStringFunc(out, func(m string) string {
+		i, _ := strconv.Atoi(codeMark.FindStringSubmatch(m)[1])
+		return codes[i]
+	})
 	return out
 }
+
+var (
+	htmlTag  = regexp.MustCompile(`<[^>]+>`)
+	tagMark  = regexp.MustCompile("\uE002(\\d+)\uE003")
+	codeMark = regexp.MustCompile("\uE000(\\d+)\uE001")
+)
 
 type listState struct {
 	tag    string // ul か ol

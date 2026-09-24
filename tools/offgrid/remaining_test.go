@@ -311,8 +311,8 @@ func TestRunDispatchesSubcommands(t *testing.T) {
 
 // 端末の幅は、狭すぎても広すぎても読みにくいので、48〜92 に収める。
 func TestInitUIClampsTheWidth(t *testing.T) {
-	prevW, prevC := termWidth, colorOn
-	t.Cleanup(func() { termWidth, colorOn = prevW, prevC })
+	prevW, prevC, prevI := termWidth, colorOn, interactive
+	t.Cleanup(func() { termWidth, colorOn, interactive = prevW, prevC, prevI })
 	for _, tc := range []struct {
 		env  string
 		want int
