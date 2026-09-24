@@ -266,7 +266,7 @@ git add -A && git commit -m "[docs] Update curriculum to <版>"
 
 版の最初の数字（`1`）が上がったときは、**学習用コマンドも入れ替える**（手順2のダウンロードをもう一度やる）。課題シートの書き方が変わり、古いツールでは読めなくなるため。
 
-途中で失敗したら、`git restore . && git clean -fd docs prompts templates scripts tools` で、取り込む前の状態に戻せる。
+途中で失敗したら、**すぐに**（自分のファイルを足す前に）`git restore . && git clean -fd docs prompts templates scripts tools drills AGENTS.md CLAUDE.md README.md CHANGELOG.md` で、取り込む前の状態に戻せる。取り込みは作業ツリーがきれいなときしか始まらないので、このとき未追跡のファイルは、取り込みで入ったもの（新しいユニットの課題シートなど）だけ。
 
 置き換わるのは、`docs/`、`prompts/`、`templates/`、`scripts/`、`tools/`、`CLAUDE.md`、`README.md`、`CHANGELOG.md` と、`drills/` の中の `TASKS.md`（課題シート）だけ。これらは自分では書き換えない（書き換えても、次の取り込みで消える）。
 
