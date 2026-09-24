@@ -251,7 +251,7 @@ def check_numbers():
 # 課題シートでの書き方が、docs/20 の書名と違う本
 BOOK_ALIASES = {
     "［改訂3版］内部構造から学ぶPostgreSQL": ["『内部構造から学ぶPostgreSQL』"],
-    "Site Reliability Engineering": ["『Site Reliability Engineering』", "SRE 本（公開版）"],
+    "Site Reliability Engineering": ["『Site Reliability Engineering』"],
 }
 
 

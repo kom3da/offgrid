@@ -55,7 +55,7 @@ title: "教材とツール"
 
 ### Stage 5の開始時
 
-- 『Site Reliability Engineering』（Betsy Beyer ほか編、O'Reilly、2016）— [Web版](https://sre.google/sre-book/table-of-contents/)が無料（英語）。**課題シートの章番号は、この Web 版のもの**。日本語版『SRE サイトリライアビリティエンジニアリング』（オライリー・ジャパン、2017）もあるが、章番号が一致するかは確かめていない。使うユニット：C7、C8
+- 『Site Reliability Engineering』（Betsy Beyer ほか編、O'Reilly、2016）— [Web版](https://sre.google/sre-book/table-of-contents/)が無料（英語）。日本語版『SRE サイトリライアビリティエンジニアリング』（オライリー・ジャパン、2017）— [出版社のページ](https://www.oreilly.co.jp/books/9784873117911/)。**どちらも章番号は同じ**（1〜34章。両方の公開されている目次で確かめた）ので、読みやすいほうでよい。使うユニット：C7、C8
 
 ## オンライン教材（オフライン化の方法）
 

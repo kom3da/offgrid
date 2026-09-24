@@ -26,7 +26,7 @@ title: "C7 障害試験と runbook"
 
 ## 平日に読むもの
 
-- Google の SRE 本（公開版）の、Postmortem と Incident Response の章（章番号は目次で確認する）
+- 『Site Reliability Engineering』14章（Managing Incidents）、15章（Postmortem Culture: Learning from Failure）。英語の Web 版は無料。日本語版『SRE サイトリライアビリティエンジニアリング』も章番号は同じ（14章 インシデント管理、15章 ポストモーテムの文化）
 - 『［試して理解］Linuxのしくみ』第7章（ファイルシステム）、第9章（ブロック層）
 - O8 の自分の `retro.md`（引き継ぎで見つけられなかったものと、その理由）
 - server 側に使う、まっさらな仮想マシンを O6 の `target-setup.md` の手順で作り直し、Docker を入れておく（当日に作ると、それだけで1回消える）
